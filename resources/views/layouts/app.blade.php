@@ -29,10 +29,10 @@
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="{{ route('home') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Trang chủ</a>
-                    <a href="#" class="nav-link text-gray-700 hover:text-primary transition font-medium">Khóa học</a>
-                    <a href="#" class="nav-link text-gray-700 hover:text-primary transition font-medium">Giới thiệu</a>
-                    <a href="#" class="nav-link text-gray-700 hover:text-primary transition font-medium">Liên hệ</a>
-                    <a href="#" class="nav-link text-gray-700 hover:text-primary transition font-medium">Blog</a>
+                    <a href="{{ route('courses.index') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Khóa học</a>
+                    <a href="{{ route('about') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Giới thiệu</a>
+                    <a href="{{ route('contact') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Liên hệ</a>
+                    <a href="{{ route('blog') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Blog</a>
                 </div>
 
                 <!-- Right side -->

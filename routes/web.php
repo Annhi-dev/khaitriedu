@@ -21,6 +21,44 @@ Route::get('/', function () {
     return view('home', compact('studentCount', 'courseCount', 'teacherCount', 'courses'));
 })->name('home');
 
+// Trang Khóa học
+Route::get('/courses', function () {
+    $courses = App\Models\Course::with('subject', 'teacher')->orderBy('id', 'desc')->paginate(12);
+    return view('pages.courses', compact('courses'));
+})->name('courses.index');
+
+// Trang Giới thiệu
+Route::get('/about', function () {
+    $studentCount = User::where('role', 'hoc_vien')->count();
+    $courseCount = App\Models\Course::count();
+    $teacherCount = User::where('role', 'giang_vien')->count();
+    return view('pages.about', compact('studentCount', 'courseCount', 'teacherCount'));
+})->name('about');
+
+// Trang Liên hệ
+Route::get('/contact', function () {
+    return view('pages.contact');
+})->name('contact');
+
+Route::post('/contact', function (Request $request) {
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email',
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string|min:10',
+    ]);
+    // Lưu vào database hoặc gửi email
+    Mail::raw("Từ: {$request->name} ({$request->email})\n\n{$request->message}", function($message) use ($request) {
+        $message->to('admin@khaitriedu.com')->subject("Liên hệ: {$request->subject}");
+    });
+    return back()->with('status', 'Tin nhắn đã được gửi thành công. Chúng tôi sẽ liên hệ lại trong sớm nhất.');
+})->name('contact.post');
+
+// Trang Blog
+Route::get('/blog', function () {
+    return view('pages.blog');
+})->name('blog');
+
 Route::get('/login', function () {return view('auth.login');})->name('login');
 
 Route::post('/login', function (Request $request) {
