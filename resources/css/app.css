@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Màu sắc chủ đạo – xanh dương đậm hiện đại */
+    --color-primary: #2563eb;       /* blue-600 */
+    --color-primary-light: #60a5fa; /* blue-400 */
+    --color-primary-dark: #1e40af;  /* blue-800 */
+    --color-primary-accent: #3b82f6; /* blue-500 */
+    --color-secondary: #64748b;     /* slate-500 */
+}
+
+/* Hiệu ứng gợn sóng (ripple) – giữ nguyên nhưng cải tiến */
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    animation: ripple-animation 0.6s ease-out;
+    pointer-events: none;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Lớp nền cho các phần tử có ripple */
+.btn, .nav-link, .card, .stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hiệu ứng fade-in cho các section */
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-up {
+    animation: fade-up 0.8s ease-out forwards;
+}
