@@ -36,6 +36,16 @@ class Course extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function lessons()
+    {
+        return $this->hasManyThrough(Lesson::class, Module::class)->orderBy('order');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'subject_id', 'id');
+    }
+
     public function averageRating()
     {
         return $this->reviews()->avg('rating') ?? 0;

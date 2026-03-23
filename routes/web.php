@@ -527,6 +527,107 @@ Route::get('/courses/{id}', function ($id) {
     return view('courses.show', compact('course', 'user'));
 })->name('courses.show');
 
+Route::get('/courses/{course}/modules/{module}/lessons/{lesson}', function ($course, $module, $lesson) {
+    $user = User::find(session('user_id'));
+    $course = App\Models\Course::with('modules.lessons')->find($course);
+    $module = App\Models\Module::with('lessons')->where('course_id', $course->id)->find($module);
+    $lesson = App\Models\Lesson::with('quiz')->where('module_id', $module->id)->find($lesson);
+    if (!$course || !$module || !$lesson) {
+        return redirect()->route('courses.index')->with('error', 'Bài học không tồn tại.');
+    }
+
+    // Tự động đánh dấu tiến độ
+    if ($user && $user->role === 'hoc_vien') {
+        App\Models\LessonProgress::updateOrCreate(
+            ['user_id' => $user->id, 'lesson_id' => $lesson->id],
+            ['started_at' => now(), 'is_completed' => true, 'completed_at' => now(), 'time_spent' => 300]
+        );
+    }
+
+    return view('courses.lesson', compact('course', 'module', 'lesson', 'user'));
+})->name('courses.lesson.show');
+
+Route::get('/courses/{course}/quizzes/{quiz}', function ($course, $quiz) {
+    $user = User::find(session('user_id'));
+    $course = App\Models\Course::find($course);
+    $quiz = App\Models\Quiz::with('questions.options')->find($quiz);
+    if (!$course || !$quiz) {
+        return redirect()->route('courses.index')->with('error', 'Quiz không tồn tại.');
+    }
+    return view('courses.quiz', compact('course','quiz','user'));
+})->name('courses.quiz.show');
+
+Route::post('/courses/{course}/quizzes/{quiz}/submit', function (Request $request, $course, $quiz) {
+    $user = User::find(session('user_id'));
+    if (!$user || $user->role !== 'hoc_vien') {
+        return redirect()->route('login')->with('error', 'Vui lòng đăng nhập học viên.');
+    }
+    $course = App\Models\Course::find($course);
+    $quiz = App\Models\Quiz::with('questions.options')->find($quiz);
+    if (!$course || !$quiz) {
+        return redirect()->route('courses.index')->with('error', 'Quiz không tồn tại.');
+    }
+
+    $answers = $request->input('answers', []);
+    $totalPoints = 0;
+    $earnedPoints = 0;
+
+    foreach ($quiz->questions as $question) {
+        $totalPoints += $question->points;
+        $selected = $answers[$question->id] ?? null;
+
+        if ($question->type === 'short_answer') {
+            $isCorrect = false;
+        } else {
+            $option = App\Models\Option::find($selected);
+            $isCorrect = $option ? (bool)$option->is_correct : false;
+            if ($isCorrect) {
+                $earnedPoints += $question->points;
+            }
+        }
+
+        App\Models\QuizAnswer::create([
+            'user_id' => $user->id,
+            'quiz_id' => $quiz->id,
+            'question_id' => $question->id,
+            'option_id' => $selected,
+            'answer_text' => is_array($selected) ? json_encode($selected) : $selected,
+            'is_correct' => $isCorrect,
+            'attempt' => App\Models\QuizAnswer::where('user_id', $user->id)->where('quiz_id', $quiz->id)->count() + 1,
+        ]);
+    }
+
+    $score = $totalPoints ? round($earnedPoints / $totalPoints * 100, 2) : 0;
+    $passed = $score >= ($quiz->passing_score ?: 70);
+
+    if ($passed) {
+        App\Models\Certificate::create([
+            'user_id' => $user->id,
+            'course_id' => $course->id,
+            'certificate_number' => 'KT'.time().rand(100,999),
+            'score' => $score,
+            'issued_at' => now(),
+            'status' => 'issued',
+        ]);
+    }
+
+    return redirect()->route('courses.show', $course->id)->with('status', "Quiz hoàn thành: $score%. " . ($passed ? 'Đạt chứng chỉ.' : 'Không đạt.'));
+})->name('courses.quiz.submit');
+
+Route::get('/certificates', function () {
+    $user = User::find(session('user_id'));
+    if (!$user) return redirect()->route('login');
+    $certificates = App\Models\Certificate::where('user_id', $user->id)->with('course')->orderBy('issued_at', 'desc')->get();
+    return view('certificates.index', compact('user', 'certificates'));
+})->name('certificates.index');
+
+Route::get('/certificates/{id}', function ($id) {
+    $user = User::find(session('user_id'));
+    $cert = App\Models\Certificate::with('course')->find($id);
+    if (!$user || !$cert || $cert->user_id !== $user->id) return redirect()->route('certificates.index')->with('error', 'Chứng chỉ không tồn tại.');
+    return view('certificates.show', compact('cert', 'user'));
+})->name('certificates.show');
+
 Route::post('/courses/{id}/enroll', function (Request $request, $id) {
     $user = User::find(session('user_id'));
     if (!$user || $user->role !== 'hoc_vien') {
