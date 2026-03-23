@@ -129,20 +129,20 @@
                 <div>
                     <h4 class="font-semibold text-gray-800 mb-4">Liên kết</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Về chúng tôi</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Khóa học</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Giảng viên</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Tuyển dụng</a></li>
+                        <li><a href="{{ route('about') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Về chúng tôi</a></li>
+                        <li><a href="{{ route('courses.index') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Khóa học</a></li>
+                        <li><a href="{{ route('teachers') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Giảng viên</a></li>
+                        <li><a href="{{ route('careers') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Tuyển dụng</a></li>
                     </ul>
                 </div>
                 <!-- Cột 3 -->
                 <div>
                     <h4 class="font-semibold text-gray-800 mb-4">Hỗ trợ</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Trung tâm trợ giúp</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Liên hệ</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Điều khoản dịch vụ</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Chính sách bảo mật</a></li>
+                        <li><a href="{{ route('help') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Trung tâm trợ giúp</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Liên hệ</a></li>
+                        <li><a href="{{ route('terms') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Điều khoản dịch vụ</a></li>
+                        <li><a href="{{ route('privacy') }}" class="text-gray-600 hover:text-primary transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i>Chính sách bảo mật</a></li>
                     </ul>
                 </div>
                 <!-- Cột 4: Mạng xã hội + Đăng ký nhận tin -->

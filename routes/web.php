@@ -59,6 +59,31 @@ Route::get('/blog', function () {
     return view('pages.blog');
 })->name('blog');
 
+// Trang Giảng viên
+Route::get('/teachers', function () {
+    return view('pages.teachers');
+})->name('teachers');
+
+// Trang Tuyển dụng
+Route::get('/careers', function () {
+    return view('pages.careers');
+})->name('careers');
+
+// Trang Trung tâm trợ giúp
+Route::get('/help', function () {
+    return view('pages.help');
+})->name('help');
+
+// Trang Điều khoản dịch vụ
+Route::get('/terms', function () {
+    return view('pages.terms');
+})->name('terms');
+
+// Trang Chính sách bảo mật
+Route::get('/privacy', function () {
+    return view('pages.privacy');
+})->name('privacy');
+
 Route::get('/login', function () {return view('auth.login');})->name('login');
 
 Route::post('/login', function (Request $request) {
