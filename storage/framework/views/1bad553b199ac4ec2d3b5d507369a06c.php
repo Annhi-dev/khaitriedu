@@ -72,6 +72,43 @@
         </div>
     </div>
 
+    <!-- Categories Section -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Khám phá <span class="text-primary">danh mục</span></h2>
+            <p class="text-gray-600 mt-2">Tìm kiếm khóa học theo lĩnh vực bạn quan tâm</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <?php $__empty_1 = true; $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <a href="<?php echo e(route('courses.index', ['category' => $category->slug])); ?>" class="group">
+                    <div class="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 text-center border border-gray-100 group-hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                            <?php if($category->image_path): ?>
+                                <img src="<?php echo e(asset('storage/' . $category->image_path)); ?>" alt="<?php echo e($category->name); ?>" class="w-10 h-10 object-contain">
+                            <?php else: ?>
+                                <i class="fas fa-th-large text-2xl"></i>
+                            <?php endif; ?>
+                        </div>
+                        <h3 class="font-bold text-gray-800 group-hover:text-primary transition-colors line-clamp-1"><?php echo e($category->name); ?></h3>
+                        <div class="mt-2 flex items-center justify-center gap-2 text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-book-open"></i> <?php echo e($category->subjects_count); ?> môn
+                            </span>
+                            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                            <span class="flex items-center gap-1 text-primary">
+                                <i class="fas fa-graduation-cap"></i> <?php echo e($category->courses_count); ?> khóa
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500 italic">Chưa có danh mục nào được cập nhật.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Features Section -->
     <div class="container mx-auto px-4 py-20">
         <div class="text-center mb-12">

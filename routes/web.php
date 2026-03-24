@@ -23,12 +23,28 @@ Route::get('/', function () {
         ->orderBy('id', 'desc')
         ->limit(3)
         ->get();
-    return view('home', compact('studentCount', 'courseCount', 'teacherCount', 'courses', 'teachers'));})->name('home');
+    $categories = App\Models\Category::withCount(['subjects', 'courses'])->orderBy('order')->get();
+    return view('home', compact('studentCount', 'courseCount', 'teacherCount', 'courses', 'teachers', 'categories'));
+})->name('home');
 
 // Trang Khóa học
-Route::get('/courses', function () {
-    $courses = App\Models\Course::with('subject', 'teacher')->orderBy('id', 'desc')->paginate(12);
-    return view('pages.courses', compact('courses'));
+Route::get('/courses', function (Request $request) {
+    $user = User::find(session('user_id'));
+    $categorySlug = $request->query('category');
+    
+    $query = App\Models\Course::with(['subject.category', 'teacher', 'enrollments', 'modules'])
+        ->orderBy('id', 'desc');
+        
+    if ($categorySlug) {
+        $query->whereHas('subject.category', function($q) use ($categorySlug) {
+            $q->where('slug', $categorySlug);
+        });
+    }
+    
+    $courses = $query->paginate(12)->withQueryString();
+    $categories = App\Models\Category::orderBy('name')->get();
+    
+    return view('pages.courses', compact('courses', 'user', 'categories'));
 })->name('courses.index');
 
 // Trang Giới thiệu
@@ -580,11 +596,6 @@ Route::post('/admin/enrollments/{id}/update', function (Request $request, $id) {
     return redirect()->route('admin.enrollments')->with('status', 'Cập nhật đăng ký thành công.');
 })->name('admin.enrollments.update');
 
-Route::get('/courses', function () {
-    $user = User::find(session('user_id'));
-    $courses = App\Models\Course::with('subject', 'teacher')->orderBy('id', 'desc')->get();
-    return view('courses.index', compact('courses', 'user'));
-})->name('courses.index');
 
 Route::get('/courses/{id}', function ($id) {
     $user = User::find(session('user_id'));

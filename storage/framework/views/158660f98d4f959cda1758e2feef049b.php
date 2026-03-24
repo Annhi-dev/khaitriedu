@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@section('title', 'Khóa học - KhaiTriEdu')
 
-@section('content')
+<?php $__env->startSection('title', 'Khóa học - KhaiTriEdu'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 py-12">
     <!-- Hero Section -->
     <div class="mb-16 text-center">
@@ -23,13 +23,14 @@
                 <label class="block text-sm font-bold mb-3 text-gray-700 flex items-center gap-2">
                     <i class="fas fa-list text-primary"></i> Danh mục
                 </label>
-                <select id="categoryFilter" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-primary focus:outline-none transition" onchange="window.location.href = '{{ route('courses.index') }}?category=' + (this.value ? this.value : '')">
+                <select id="categoryFilter" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-primary focus:outline-none transition" onchange="window.location.href = '<?php echo e(route('courses.index')); ?>?category=' + (this.value ? this.value : '')">
                     <option value="">📚 Tất cả danh mục</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'selected' : '' }}>
-                            {{ $cat->name }}
+                    <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($cat->slug); ?>" <?php echo e(request('category') == $cat->slug ? 'selected' : ''); ?>>
+                            <?php echo e($cat->name); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
             <div>
@@ -47,12 +48,12 @@
 
     <!-- Courses Grid -->
     <div id="coursesGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        @forelse($courses as $course)
+        <?php $__empty_1 = true; $__currentLoopData = $courses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <div class="relative group course-card"
-                 data-title="{{ strtolower($course->title) }}"
-                 data-category="{{ strtolower($course->subject->name ?? '') }}"
-                 data-enrollments="{{ $course->enrollments->count() }}"
-                 data-created="{{ $course->created_at ?? now() }}">
+                 data-title="<?php echo e(strtolower($course->title)); ?>"
+                 data-category="<?php echo e(strtolower($course->subject->name ?? '')); ?>"
+                 data-enrollments="<?php echo e($course->enrollments->count()); ?>"
+                 data-created="<?php echo e($course->created_at ?? now()); ?>">
                 <!-- Gradient Border Effect -->
                 <div class="absolute -inset-0.5 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-3xl opacity-0 group-hover:opacity-100 transition duration-500 blur-lg"></div>
                 
@@ -60,7 +61,7 @@
                     <!-- Image Container -->
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-blue-100 to-purple-100">
                         <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?ixlib=rb-4.0.3&auto=format&fit=crop&w=1031&q=80"
-                             alt="{{ $course->title }}"
+                             alt="<?php echo e($course->title); ?>"
                              class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                         
                         <!-- Overlays -->
@@ -68,7 +69,8 @@
                         
                         <!-- Category Badge -->
                         <div class="absolute top-4 left-4 bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold px-5 py-2 rounded-full shadow-lg backdrop-blur-sm">
-                            {{ $course->subject->name ?? 'Khóa học' }}
+                            <?php echo e($course->subject->name ?? 'Khóa học'); ?>
+
                         </div>
                         
                         <!-- Premium Badge -->
@@ -86,50 +88,50 @@
 
                     <div class="p-6 flex-1 flex flex-col">
                         <!-- Title -->
-                        <h4 class="text-lg font-bold mb-2 line-clamp-2 text-gray-800 group-hover:text-primary transition">{{ $course->title }}</h4>
+                        <h4 class="text-lg font-bold mb-2 line-clamp-2 text-gray-800 group-hover:text-primary transition"><?php echo e($course->title); ?></h4>
                         
                         <!-- Description -->
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">{{ $course->description ?? 'Khóa học chất lượng cao với nội dung cập nhật liên tục.' }}</p>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-1"><?php echo e($course->description ?? 'Khóa học chất lượng cao với nội dung cập nhật liên tục.'); ?></p>
                         
                         <!-- Stats -->
                         <div class="grid grid-cols-3 gap-2 mb-4 pb-4 border-b border-gray-100">
                             <div class="text-center">
-                                <div class="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{{ $course->enrollments->count() }}</div>
+                                <div class="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"><?php echo e($course->enrollments->count()); ?></div>
                                 <div class="text-xs text-gray-500 font-medium">👥 Học viên</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{{ $course->modules->count() }}</div>
+                                <div class="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"><?php echo e($course->modules->count()); ?></div>
                                 <div class="text-xs text-gray-500 font-medium">📖 Module</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{{ substr($course->schedule ?? '1 tháng', 0, 2) }}</div>
+                                <div class="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"><?php echo e(substr($course->schedule ?? '1 tháng', 0, 2)); ?></div>
                                 <div class="text-xs text-gray-500 font-medium">⏱️ Thời gian</div>
                             </div>
                         </div>
 
                         <!-- Teacher Info - Only show if teacher is assigned to any enrollment -->
-                        @php
+                        <?php
                             $hasAssignedTeacher = $course->enrollments->whereNotNull('assigned_teacher_id')->count() > 0;
-                        @endphp
-                        @if($hasAssignedTeacher && $course->teacher)
+                        ?>
+                        <?php if($hasAssignedTeacher && $course->teacher): ?>
                             <div class="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 flex items-center gap-3">
-                                <img src="https://randomuser.me/api/portraits/men/{{ $course->teacher->id % 50 }}.jpg" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md">
+                                <img src="https://randomuser.me/api/portraits/men/<?php echo e($course->teacher->id % 50); ?>.jpg" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md">
                                 <div class="flex-1">
                                     <div class="text-xs text-gray-600 font-semibold uppercase">👨‍🏫 Giảng viên</div>
-                                    <div class="font-bold text-sm text-gray-800">{{ $course->teacher->name }}</div>
+                                    <div class="font-bold text-sm text-gray-800"><?php echo e($course->teacher->name); ?></div>
                                 </div>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
                         <!-- Price & Button -->
                         <div class="flex items-center justify-between gap-3 mt-auto">
                             <div>
                                 <span class="text-xs text-gray-500 font-medium">Giá:</span>
                                 <div class="text-2xl font-black bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
-                                    {{ number_format($course->subject->price ?? 0, 0, ',', '.') }}đ
+                                    <?php echo e(number_format($course->subject->price ?? 0, 0, ',', '.')); ?>đ
                                 </div>
                             </div>
-                            <a href="{{ route('courses.show', $course->id) }}" class="flex-1 text-center bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group/btn">
+                            <a href="<?php echo e(route('courses.show', $course->id)); ?>" class="flex-1 text-center bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group/btn">
                                 <span>Khám phá</span>
                                 <i class="fas fa-arrow-right text-xs group-hover/btn:translate-x-1 transition"></i>
                             </a>
@@ -137,7 +139,7 @@
                     </div>
                 </div>
             </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="col-span-3 text-center py-20">
                 <div class="mb-6">
                     <i class="fas fa-box-open text-8xl text-gray-200"></i>
@@ -145,13 +147,14 @@
                 <p class="text-2xl font-bold text-gray-700 mb-2">Không tìm thấy khóa học nào</p>
                 <p class="text-gray-500">Hãy thử thay đổi các bộ lọc hoặc quay lại sau</p>
             </div>
-        @endforelse
+        <?php endif; ?>
     </div>
 
     <!-- Pagination -->
     <div class="mt-16 flex justify-center">
         <div class="pagination">
-            {{ $courses->links() }}
+            <?php echo e($courses->links()); ?>
+
         </div>
     </div>
 </div>
@@ -194,7 +197,7 @@
     }
 </style>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('searchInput');
@@ -241,6 +244,8 @@
         applyFilters();
     });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\XXamp\htdocs\khaitriedu\resources\views/pages/courses.blade.php ENDPATH**/ ?>
