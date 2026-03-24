@@ -149,10 +149,11 @@
                 <div>
                     <h4 class="font-semibold text-gray-800 mb-4">Kết nối</h4>
                     <div class="flex space-x-4 mb-4">
-                        <a href="#" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-youtube"></i></a>
-                        <a href="#" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.facebook.com/profile.php?id=61575515763147" target="_blank" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-facebook"></i></a>
+                        <a href="https://www.youtube.com/channel/UCPrE7RBNFZHZAxJzvCxvMSg" target="_blank" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-youtube"></i></a>
+                        <a href="https://zalo.me/84867852853" target="_blank" class="hover:opacity-75 transition">
+                            <img src="/hinh/zalo.png" alt="Zalo" class="w-6 h-6">
+                        </a>
                     </div>
                     <p class="text-sm text-gray-600 mb-2">Nhận thông tin khóa học mới:</p>
                     <div class="flex">

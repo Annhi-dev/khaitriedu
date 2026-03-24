@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    $user = User::find(session('user_id'));
+    if ($user) {
+        return redirect()->route('dashboard');
+    }
+
     $studentCount = User::where('role', 'hoc_vien')->count();
     $courseCount = App\Models\Course::count();
     $teacherCount = User::where('role', 'giang_vien')->count();
@@ -265,7 +270,8 @@ Route::get('/admin', function () {
     $studentCount = App\Models\User::where('role','hoc_vien')->count();
     $teacherCount = App\Models\User::where('role','giang_vien')->count();
     $newEnrollments = App\Models\Enrollment::where('status','pending')->where('is_submitted', true)->count();
-    return view('dashboard_admin', compact('user', 'courseCount', 'subjectCount', 'studentCount', 'teacherCount', 'newEnrollments'));
+    $pendingTeacherApplications = App\Models\TeacherApplication::where('status', 'pending')->count();
+    return view('dashboard_admin', compact('user', 'courseCount', 'subjectCount', 'studentCount', 'teacherCount', 'newEnrollments', 'pendingTeacherApplications'));
 })->name('admin.dashboard');
 
 Route::get('/admin/report', function () {
@@ -280,6 +286,86 @@ Route::get('/admin/report', function () {
     $pendingEnrollments = App\Models\Enrollment::where('status','pending')->count();
     return view('admin.report', compact('courseCount', 'subjectCount', 'studentCount', 'teacherCount', 'pendingEnrollments', 'user'));
 })->name('admin.report');
+
+Route::get('/apply-teacher', function () {
+    return view('pages.apply-teacher');
+})->name('apply-teacher');
+
+Route::post('/apply-teacher', function (Request $request) {
+    $data = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'phone' => 'nullable|string|max:30',
+        'experience' => 'nullable|string|max:2000',
+        'message' => 'required|string|max:2000',
+    ]);
+
+    App\Models\TeacherApplication::create($data);
+
+    return redirect()->route('apply-teacher')->with('status', 'Đã gửi hồ sơ ứng tuyển. Admin sẽ phản hồi sớm.');
+})->name('apply-teacher.post');
+
+Route::get('/admin/teacher-applications', function () {
+    $current = User::find(session('user_id'));
+    if (!$current || $current->role !== 'admin') {
+        return redirect()->route('login');
+    }
+
+    $applications = App\Models\TeacherApplication::orderBy('created_at', 'desc')->get();
+    return view('admin.teacher_applications', compact('applications', 'current'));
+})->name('admin.teacher-applications');
+
+Route::get('/admin/teacher-applications/{id}', function ($id) {
+    $current = User::find(session('user_id'));
+    if (!$current || $current->role !== 'admin') {
+        return redirect()->route('login');
+    }
+
+    $application = App\Models\TeacherApplication::find($id);
+    if (!$application) {
+        return redirect()->route('admin.teacher-applications')->with('error', 'Hồ sơ không tồn tại.');
+    }
+
+    return view('admin.teacher_application_show', compact('application', 'current'));
+})->name('admin.teacher-applications.show');
+
+Route::post('/admin/teacher-applications/{id}/review', function (Request $request, $id) {
+    $current = User::find(session('user_id'));
+    if (!$current || $current->role !== 'admin') {
+        return redirect()->route('login');
+    }
+
+    $app = App\Models\TeacherApplication::find($id);
+    if (!$app) {
+        return redirect()->route('admin.teacher-applications')->with('error', 'Hồ sơ không tồn tại.');
+    }
+
+    $action = $request->input('action');
+    if (!in_array($action, ['approved', 'rejected'])) {
+        return redirect()->route('admin.teacher-applications')->with('error', 'Hành động không hợp lệ.');
+    }
+
+    $app->status = $action;
+    $app->reviewed_at = now();
+    $app->reviewed_by = $current->id;
+    $app->save();
+
+    if ($action === 'approved') {
+        // tự động thêm user giảng viên (nếu email chưa tồn tại)
+        if (!User::where('email', $app->email)->exists()) {
+            User::create([
+                'name' => $app->name,
+                'email' => $app->email,
+                'username' => explode('@', $app->email)[0] . '.' . rand(100,999),
+                'password' => Hash::make('12345678'),
+                'role' => 'giang_vien',
+                'email_verified_at' => now(),
+            ]);
+        }
+    }
+
+    return redirect()->route('admin.teacher-applications')->with('status', 'Cập nhật tình trạng hồ sơ thành công.');
+})->name('admin.teacher-applications.review');
 
 Route::get('/admin/users', function () {
     $user = User::find(session('user_id'));

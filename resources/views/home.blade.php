@@ -29,6 +29,9 @@
                             <a href="{{ route('courses.index') }}" class="btn px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-book-open"></i> Xem khóa học
                             </a>
+                            <a href="{{ route('apply-teacher') }}" class="btn px-8 py-4 bg-white/20 border border-white text-white rounded-xl font-semibold hover:bg-white/30 transition transform hover:scale-105 flex items-center gap-2">
+                                <i class="fas fa-chalkboard-teacher"></i> Ứng tuyển giảng viên
+                            </a>
                         @else
                             <a href="{{ route('dashboard') }}" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-chalkboard-user"></i> Vào học ngay

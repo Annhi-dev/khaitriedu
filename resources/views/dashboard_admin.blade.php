@@ -17,6 +17,7 @@
                     @endif
                   </a>
                 </li>
+                <li><a href="{{ route('admin.teacher-applications') }}" class="block nav-link px-3 py-2 rounded-lg hover:bg-primary-light/30 transition">Quản lý ứng tuyển giảng viên</a></li>
                 <li><a href="{{ route('admin.users') }}" class="block nav-link px-3 py-2 rounded-lg hover:bg-primary-light/30 transition">Quản lý người dùng</a></li>
             </ul>
         </div>
@@ -50,6 +51,10 @@
                     <h6 class="text-sm text-primary-dark font-medium">Giảng viên</h6>
                     <p class="text-2xl font-bold text-primary-dark">{{ $teacherCount ?? 0 }}</p>
                 </div>
+                <div class="card p-4 bg-yellow-100 rounded-xl">
+                    <h6 class="text-sm text-yellow-700 font-medium">Ứng tuyển mới</h6>
+                    <p class="text-2xl font-bold text-yellow-700">{{ $pendingTeacherApplications ?? 0 }}</p>
+                </div>
             </div>
 
             <div class="mt-6">
@@ -62,6 +67,7 @@
                         <span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ $newEnrollments }}</span>
                       @endif
                     </a>
+                    <a href="{{ route('admin.teacher-applications') }}" class="btn px-5 py-2 bg-primary text-white rounded-xl shadow hover:bg-primary-dark transition">Quản lý ứng tuyển giảng viên</a>
                     <a href="{{ route('admin.report') }}" class="btn px-5 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition">Báo cáo</a>
                 </div>
             </div>
