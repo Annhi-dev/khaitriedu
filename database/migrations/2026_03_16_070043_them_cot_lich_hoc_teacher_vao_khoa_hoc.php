@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('courses', function (Blueprint $table) {
+        Schema::table('khoa_hoc', function (Blueprint $table) {
             $table->string('schedule')->nullable();
-            $table->foreignId('teacher_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('teacher_id')->nullable()->constrained('nguoi_dung')->nullOnDelete();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('courses', function (Blueprint $table) {
+        Schema::table('khoa_hoc', function (Blueprint $table) {
             $table->dropForeign(['teacher_id']);
             $table->dropColumn(['schedule', 'teacher_id']);
         });

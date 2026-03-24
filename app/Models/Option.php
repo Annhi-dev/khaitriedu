@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Option extends Model
-{
+{    protected $table = 'lua_chon';
     use HasFactory;
 
     protected $fillable = ['question_id', 'option_text', 'is_correct', 'order'];

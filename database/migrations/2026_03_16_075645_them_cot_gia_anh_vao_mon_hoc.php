@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('subjects', function (Blueprint $table) {
-            $table->decimal('price', 13, 2)->default(0)->change();
+        Schema::table('mon_hoc', function (Blueprint $table) {
+            $table->decimal('price', 10, 2)->default(0);
+            $table->string('image')->nullable();
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('subjects', function (Blueprint $table) {
-            $table->decimal('price', 10, 2)->default(0)->change();
+        Schema::table('mon_hoc', function (Blueprint $table) {
+            $table->dropColumn(['price', 'image']);
         });
     }
 };

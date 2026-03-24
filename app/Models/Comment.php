@@ -9,6 +9,8 @@ class Comment extends Model
 {
     use HasFactory;
 
+    protected $table = 'binh_luan';
+
     protected $fillable = ['user_id', 'lesson_id', 'course_id', 'parent_id', 'content', 'likes', 'type'];
 
     public function user()

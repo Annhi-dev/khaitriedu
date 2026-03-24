@@ -8,22 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lessons', function (Blueprint $table) {
+        Schema::create('cau_hoi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('module_id')->constrained()->onDelete('cascade');
-            $table->string('title');
+            $table->foreignId('quiz_id')->constrained('bai_kiem_tra')->cascadeOnDelete();
+            $table->string('question');
             $table->text('description')->nullable();
-            $table->text('content');
+            $table->enum('type', ['multiple_choice', 'true_false', 'short_answer'])->default('multiple_choice');
             $table->integer('order')->default(0);
-            $table->integer('duration')->nullable(); // phút
-            $table->string('video_url')->nullable();
+            $table->integer('points')->default(1);
             $table->timestamps();
-            $table->index('module_id');
+            $table->index('quiz_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('lessons');
+        Schema::dropIfExists('cau_hoi');
     }
 };

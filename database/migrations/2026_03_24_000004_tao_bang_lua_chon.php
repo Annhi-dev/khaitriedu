@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('options', function (Blueprint $table) {
+        Schema::create('lua_chon', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('question_id')->constrained()->onDelete('cascade');
+            $table->foreignId('question_id')->constrained('cau_hoi')->cascadeOnDelete();
             $table->text('option_text');
             $table->boolean('is_correct')->default(false);
             $table->integer('order')->default(0);
@@ -21,6 +21,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('options');
+        Schema::dropIfExists('lua_chon');
     }
 };

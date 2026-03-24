@@ -9,6 +9,8 @@ class Announcement extends Model
 {
     use HasFactory;
 
+    protected $table = 'thong_bao_chung';
+
     protected $fillable = ['created_by', 'course_id', 'title', 'message', 'is_pinned', 'published_at', 'expires_at', 'status'];
 
     protected $dates = ['published_at', 'expires_at'];

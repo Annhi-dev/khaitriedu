@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class QuizAnswer extends Model
 {
+    protected $table = 'cau_tra_loi';
+
     use HasFactory;
 
     protected $fillable = ['user_id', 'quiz_id', 'question_id', 'option_id', 'answer_text', 'is_correct', 'attempt'];

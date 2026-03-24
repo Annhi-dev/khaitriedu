@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Quiz extends Model
 {
+    protected $table = 'bai_trac_nghiem';
+
     use HasFactory;
 
     protected $fillable = ['lesson_id', 'title', 'description', 'passing_score', 'is_required', 'max_attempts'];

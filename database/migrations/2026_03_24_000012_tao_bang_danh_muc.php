@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
+        Schema::create('danh_muc', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
             $table->string('slug')->unique();
@@ -19,17 +19,17 @@ return new class extends Migration
         });
 
         // Thêm category_id vào subjects
-        Schema::table('subjects', function (Blueprint $table) {
-            $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('set null');
+        Schema::table('mon_hoc', function (Blueprint $table) {
+            $table->foreignId('category_id')->nullable()->constrained('danh_muc')->onDelete('set null');
         });
     }
 
     public function down(): void
     {
-        Schema::table('subjects', function (Blueprint $table) {
-            $table->dropForeignIdFor(\App\Models\Category::class);
+        Schema::table('mon_hoc', function (Blueprint $table) {
+            $table->dropForeign(['category_id']);
             $table->dropColumn('category_id');
         });
-        Schema::dropIfExists('categories');
+        Schema::dropIfExists('danh_muc');
     }
 };

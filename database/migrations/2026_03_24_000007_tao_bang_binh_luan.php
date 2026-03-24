@@ -8,12 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('comments', function (Blueprint $table) {
+        Schema::create('binh_luan', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('nguoi_dung')->onDelete('cascade');
             $table->foreignId('lesson_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('course_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('parent_id')->nullable()->constrained('comments')->onDelete('cascade');
+            $table->foreignId('parent_id')->nullable()->constrained('binh_luan')->onDelete('cascade');
             $table->text('content');
             $table->integer('likes')->default(0);
             $table->enum('type', ['question', 'comment', 'feedback'])->default('comment');
@@ -24,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('comments');
+        Schema::dropIfExists('binh_luan');
     }
 };

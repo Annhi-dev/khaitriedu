@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class LessonProgress extends Model
 {
+    protected $table = 'tien_do_bai_hoc';
+
     use HasFactory;
 
     protected $fillable = ['user_id', 'lesson_id', 'is_completed', 'time_spent', 'started_at', 'completed_at'];

@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('attachments', function (Blueprint $table) {
+        Schema::create('tai_lieu_dinh_kem', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('lesson_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('quiz_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('lesson_id')->nullable()->constrained('bai_hoc')->onDelete('cascade');
+            $table->foreignId('quiz_id')->nullable()->constrained('bai_kiem_tra')->onDelete('cascade');
             $table->string('filename');
             $table->string('file_path');
             $table->string('mime_type');
@@ -24,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('attachments');
+        Schema::dropIfExists('tai_lieu_dinh_kem');
     }
 };

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Course extends Model
 {
+    protected $table = 'khoa_hoc';
+
     use HasFactory;
 
     protected $fillable = ['subject_id', 'title', 'description', 'schedule', 'teacher_id'];

@@ -9,6 +9,8 @@ class Category extends Model
 {
     use HasFactory;
 
+    protected $table = 'danh_muc';
+
     protected $fillable = ['name', 'slug', 'description', 'image_path', 'order'];
 
     public function subjects()

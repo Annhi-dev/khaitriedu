@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('enrollments', function (Blueprint $table) {
-            $table->text('schedule')->nullable()->after('note');
+        Schema::create('khoa_hoc', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('subject_id')->constrained('mon_hoc')->cascadeOnDelete();
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('enrollments', function (Blueprint $table) {
-            $table->dropColumn('schedule');
-        });
+        Schema::dropIfExists('khoa_hoc');
     }
 };

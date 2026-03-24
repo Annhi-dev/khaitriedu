@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('reviews', function (Blueprint $table) {
+        Schema::create('danh_gia', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('course_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('nguoi_dung')->onDelete('cascade');
+            $table->foreignId('course_id')->constrained('khoa_hoc')->onDelete('cascade');
             $table->integer('rating')->unsigned()->min(1)->max(5);
             $table->text('comment')->nullable();
             $table->timestamps();
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reviews');
+        Schema::dropIfExists('danh_gia');
     }
 };

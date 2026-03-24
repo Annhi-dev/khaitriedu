@@ -6,25 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('courses', function (Blueprint $table) {
+        Schema::create('bai_kiem_tra', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('subject_id')->constrained('subjects')->cascadeOnDelete();
+            $table->foreignId('lesson_id')->constrained('bai_hoc')->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
+            $table->integer('passing_score')->default(70); // %
+            $table->boolean('is_required')->default(true);
+            $table->integer('max_attempts')->default(3);
             $table->timestamps();
+            $table->index('lesson_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('courses');
+        Schema::dropIfExists('bai_kiem_tra');
     }
 };

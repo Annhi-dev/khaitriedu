@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('subjects', function (Blueprint $table) {
-            $table->decimal('price', 10, 2)->default(0);
-            $table->string('image')->nullable();
+        Schema::table('nguoi_dung', function (Blueprint $table) {
+            $table->enum('role', ['admin', 'giang_vien', 'hoc_vien'])->default('hoc_vien')->change();
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('subjects', function (Blueprint $table) {
-            $table->dropColumn(['price', 'image']);
+        Schema::table('nguoi_dung', function (Blueprint $table) {
+            $table->string('role')->default('hoc_vien')->change();
         });
     }
 };

@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('certificates', function (Blueprint $table) {
+        Schema::create('chung_chi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('course_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('nguoi_dung')->cascadeOnDelete();
+            $table->foreignId('course_id')->constrained('khoa_hoc')->onDelete('cascade');
             $table->string('certificate_number')->unique();
             $table->string('file_path')->nullable();
             $table->decimal('score', 5, 2)->default(0);
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('certificates');
+        Schema::dropIfExists('chung_chi');
     }
 };

@@ -9,6 +9,8 @@ class Certificate extends Model
 {
     use HasFactory;
 
+    protected $table = 'chung_chi';
+
     protected $fillable = ['user_id', 'course_id', 'certificate_number', 'file_path', 'score', 'issued_at', 'expires_at', 'status'];
 
     protected $dates = ['issued_at', 'expires_at'];

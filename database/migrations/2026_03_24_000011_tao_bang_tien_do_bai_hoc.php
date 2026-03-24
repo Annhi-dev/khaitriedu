@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lesson_progress', function (Blueprint $table) {
+        Schema::create('tien_do_bai_hoc', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('lesson_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('nguoi_dung')->cascadeOnDelete();
+            $table->foreignId('lesson_id')->constrained('bai_hoc')->cascadeOnDelete();
             $table->boolean('is_completed')->default(false);
             $table->integer('time_spent')->default(0); // giây
             $table->timestamp('started_at')->nullable();
@@ -24,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('lesson_progress');
+        Schema::dropIfExists('tien_do_bai_hoc');
     }
 };

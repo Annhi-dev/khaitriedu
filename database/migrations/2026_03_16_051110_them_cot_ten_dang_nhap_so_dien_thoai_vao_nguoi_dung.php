@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('nguoi_dung', function (Blueprint $table) {
             $table->string('username')->unique()->after('name');
             $table->string('phone')->nullable()->after('email');
         });
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('nguoi_dung', function (Blueprint $table) {
             $table->dropUnique(['username']);
             $table->dropColumn('username');
             $table->dropColumn('phone');

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Enrollment extends Model
 {
+    protected $table = 'dang_ky';
+
     use HasFactory;
 
     protected $fillable = [

@@ -10,6 +10,8 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    protected $table = 'nguoi_dung';
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 

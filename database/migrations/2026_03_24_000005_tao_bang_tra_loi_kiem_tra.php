@@ -8,12 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('quiz_answers', function (Blueprint $table) {
+        Schema::create('tra_loi_kiem_tra', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('quiz_id')->constrained()->onDelete('cascade');
-            $table->foreignId('question_id')->constrained()->onDelete('cascade');
-            $table->foreignId('option_id')->nullable()->constrained('options')->onDelete('set null');
+            $table->foreignId('user_id')->constrained('nguoi_dung')->onDelete('cascade');
+            $table->foreignId('quiz_id')->constrained('bai_kiem_tra')->onDelete('cascade');
+            $table->foreignId('question_id')->constrained('cau_hoi')->onDelete('cascade');
+            $table->foreignId('option_id')->nullable()->constrained('lua_chon')->onDelete('set null');
             $table->text('answer_text')->nullable();
             $table->boolean('is_correct')->default(false);
             $table->integer('attempt')->default(1);
@@ -24,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('quiz_answers');
+        Schema::dropIfExists('tra_loi_kiem_tra');
     }
 };

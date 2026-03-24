@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lesson extends Model
 {
+    protected $table = 'bai_hoc';
+
     use HasFactory;
 
     protected $fillable = ['module_id', 'title', 'description', 'content', 'order', 'duration', 'video_url'];

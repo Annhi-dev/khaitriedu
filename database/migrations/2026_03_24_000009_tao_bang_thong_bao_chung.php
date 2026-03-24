@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('announcements', function (Blueprint $table) {
+        Schema::create('thong_bao_chung', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('course_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('created_by')->constrained('nguoi_dung')->onDelete('cascade');
+            $table->foreignId('course_id')->nullable()->constrained('khoa_hoc')->onDelete('cascade');
             $table->string('title');
             $table->text('message');
             $table->boolean('is_pinned')->default(false);
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('announcements');
+        Schema::dropIfExists('thong_bao_chung');
     }
 };

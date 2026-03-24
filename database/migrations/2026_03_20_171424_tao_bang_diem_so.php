@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('grades', function (Blueprint $table) {
+        Schema::create('diem', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('enrollment_id')->constrained()->onDelete('cascade');
-            $table->foreignId('module_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('enrollment_id')->constrained('dang_ky')->onDelete('cascade');
+            $table->foreignId('module_id')->nullable()->constrained('chuong_hoc')->onDelete('cascade');
             $table->decimal('score', 5, 2)->nullable();
-            $table->string('grade')->nullable(); // A, B, C, D, F
+            $table->string('grade')->nullable();
             $table->text('feedback')->nullable();
             $table->timestamps();
         });
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('grades');
+        Schema::dropIfExists('diem');
     }
 };
