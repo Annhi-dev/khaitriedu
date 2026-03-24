@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@section('title', 'KhaiTriEdu - Học trực tuyến thông minh')
 
-@section('content')
+<?php $__env->startSection('title', 'KhaiTriEdu - Học trực tuyến thông minh'); ?>
+
+<?php $__env->startSection('content'); ?>
     <!-- Hero Section -->
     <div class="relative bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white overflow-hidden">
         <!-- Animated blob background -->
@@ -22,36 +22,36 @@
                         Nền tảng học tập trực tuyến hàng đầu Việt Nam, mang đến trải nghiệm học tập chất lượng cao với đội ngũ giảng viên giàu kinh nghiệm.
                     </p>
                     <div class="flex flex-wrap gap-4 justify-center lg:justify-start">
-                        @if(!session('user_id'))
-                            <a href="{{ route('register') }}" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
+                        <?php if(!session('user_id')): ?>
+                            <a href="<?php echo e(route('register')); ?>" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-rocket"></i> Bắt đầu học ngay
                             </a>
-                            <a href="{{ route('courses.index') }}" class="btn px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition transform hover:scale-105 flex items-center gap-2">
+                            <a href="<?php echo e(route('courses.index')); ?>" class="btn px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-book-open"></i> Xem khóa học
                             </a>
-                            <a href="{{ route('apply-teacher') }}" class="btn px-8 py-4 bg-white/20 border border-white text-white rounded-xl font-semibold hover:bg-white/30 transition transform hover:scale-105 flex items-center gap-2">
+                            <a href="<?php echo e(route('apply-teacher')); ?>" class="btn px-8 py-4 bg-white/20 border border-white text-white rounded-xl font-semibold hover:bg-white/30 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-chalkboard-teacher"></i> Ứng tuyển giảng viên
                             </a>
-                        @else
-                            <a href="{{ route('dashboard') }}" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
+                        <?php else: ?>
+                            <a href="<?php echo e(route('dashboard')); ?>" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-chalkboard-user"></i> Vào học ngay
                             </a>
-                            <a href="{{ route('courses.index') }}" class="btn px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition transform hover:scale-105 flex items-center gap-2">
+                            <a href="<?php echo e(route('courses.index')); ?>" class="btn px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-search"></i> Khám phá khóa học
                             </a>
-                        @endif
+                        <?php endif; ?>
                     </div>
                     <div class="flex flex-wrap gap-8 justify-center lg:justify-start pt-8">
                         <div>
-                            <div class="text-3xl font-bold">{{ number_format($studentCount) }}+</div>
+                            <div class="text-3xl font-bold"><?php echo e(number_format($studentCount)); ?>+</div>
                             <div class="text-blue-200">Học viên</div>
                         </div>
                         <div>
-                            <div class="text-3xl font-bold">{{ number_format($courseCount) }}+</div>
+                            <div class="text-3xl font-bold"><?php echo e(number_format($courseCount)); ?>+</div>
                             <div class="text-blue-200">Khóa học</div>
                         </div>
                         <div>
-                            <div class="text-3xl font-bold">{{ number_format($teacherCount) }}+</div>
+                            <div class="text-3xl font-bold"><?php echo e(number_format($teacherCount)); ?>+</div>
                             <div class="text-blue-200">Giảng viên</div>
                         </div>
                     </div>
@@ -112,7 +112,7 @@
                 <p class="text-gray-600 mt-4">Những khóa học được yêu thích nhất tại KhaiTriEdu</p>
             </div>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                @forelse($courses as $course)
+                <?php $__empty_1 = true; $__currentLoopData = $courses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <div class="relative group">
                         <!-- Gradient Border Effect -->
                         <div class="absolute inset-0 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-2xl opacity-0 group-hover:opacity-100 transition duration-300 blur-lg"></div>
@@ -120,12 +120,13 @@
                         <div class="relative card bg-white rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 overflow-hidden">
                             <div class="relative overflow-hidden h-56 bg-gradient-to-br from-blue-100 to-purple-100">
                                 <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?ixlib=rb-4.0.3&auto=format&fit=crop&w=1031&q=80"
-                                     alt="{{ $course->title }}"
+                                     alt="<?php echo e($course->title); ?>"
                                      class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                                 
                                 <!-- Category Badge -->
                                 <div class="absolute top-3 left-3 bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                                    {{ $course->subject->name ?? 'Khóa học' }}
+                                    <?php echo e($course->subject->name ?? 'Khóa học'); ?>
+
                                 </div>
                                 
                                 <!-- Premium Badge -->
@@ -138,19 +139,19 @@
 
                             <div class="p-6">
                                 <!-- Title -->
-                                <h4 class="text-lg font-bold mb-2 line-clamp-2 text-gray-800 group-hover:text-primary transition">{{ $course->title }}</h4>
+                                <h4 class="text-lg font-bold mb-2 line-clamp-2 text-gray-800 group-hover:text-primary transition"><?php echo e($course->title); ?></h4>
                                 
                                 <!-- Description -->
-                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ $course->description ?? 'Khóa học chất lượng cao với nội dung cập nhật liên tục.' }}</p>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2"><?php echo e($course->description ?? 'Khóa học chất lượng cao với nội dung cập nhật liên tục.'); ?></p>
                                 
                                 <!-- Stats -->
                                 <div class="grid grid-cols-3 gap-2 mb-4 pb-4 border-b">
                                     <div class="text-center">
-                                        <div class="text-lg font-bold text-primary">{{ $course->enrollments->count() }}</div>
+                                        <div class="text-lg font-bold text-primary"><?php echo e($course->enrollments->count()); ?></div>
                                         <div class="text-xs text-gray-500">Học viên</div>
                                     </div>
                                     <div class="text-center">
-                                        <div class="text-lg font-bold text-primary">{{ $course->modules->count() }}</div>
+                                        <div class="text-lg font-bold text-primary"><?php echo e($course->modules->count()); ?></div>
                                         <div class="text-xs text-gray-500">Module</div>
                                     </div>
                                     <div class="text-center">
@@ -160,25 +161,25 @@
                                 </div>
 
                                 <!-- Teacher Info -->
-                                @if($course->teacher)
+                                <?php if($course->teacher): ?>
                                     <div class="mb-4 flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                                        <img src="https://randomuser.me/api/portraits/men/{{ $course->teacher->id % 50 }}.jpg" class="w-8 h-8 rounded-full object-cover">
+                                        <img src="https://randomuser.me/api/portraits/men/<?php echo e($course->teacher->id % 50); ?>.jpg" class="w-8 h-8 rounded-full object-cover">
                                         <div>
                                             <div class="text-xs text-gray-600">Giảng viên</div>
-                                            <div class="font-semibold text-sm text-gray-800">{{ substr($course->teacher->name, 0, 20) }}</div>
+                                            <div class="font-semibold text-sm text-gray-800"><?php echo e(substr($course->teacher->name, 0, 20)); ?></div>
                                         </div>
                                     </div>
-                                @endif
+                                <?php endif; ?>
 
                                 <!-- Price & Button -->
                                 <div class="flex items-center justify-between gap-3">
                                     <div>
                                         <span class="text-xs text-gray-500">Giá chỉ từ</span>
                                         <div class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-dark">
-                                            {{ number_format($course->subject->price ?? 0, 0, ',', '.') }}đ
+                                            <?php echo e(number_format($course->subject->price ?? 0, 0, ',', '.')); ?>đ
                                         </div>
                                     </div>
-                                    <a href="{{ route('courses.show', $course->id) }}" class="flex-1 text-center bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white py-2 rounded-lg font-bold transition transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 text-sm">
+                                    <a href="<?php echo e(route('courses.show', $course->id)); ?>" class="flex-1 text-center bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white py-2 rounded-lg font-bold transition transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 text-sm">
                                         <span>Xem</span>
                                         <i class="fas fa-arrow-right text-xs"></i>
                                     </a>
@@ -186,14 +187,14 @@
                             </div>
                         </div>
                     </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <div class="col-span-3 text-center py-12">
                         <p class="text-gray-600">Chưa có khóa học nào. Quay lại sau nhé!</p>
                     </div>
-                @endforelse
+                <?php endif; ?>
             </div>
             <div class="text-center mt-12">
-                <a href="{{ route('courses.index') }}" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all border-b-2 border-primary pb-1">
+                <a href="<?php echo e(route('courses.index')); ?>" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all border-b-2 border-primary pb-1">
                     Xem tất cả khóa học <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
@@ -208,18 +209,18 @@
             <p class="text-gray-600 mt-4">Những chuyên gia hàng đầu, cam kết truyền đạt kiến thức chất lượng cao</p>
         </div>
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            @forelse($teachers as $teacher)
-                @php
+            <?php $__empty_1 = true; $__currentLoopData = $teachers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $teacher): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php
                     preg_match('/\((.+)\)/', $teacher->name, $matches);
                     $field = $matches[1] ?? 'Giảng viên chuyên nghiệp';
-                @endphp
+                ?>
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition group">
                     <div class="relative overflow-hidden h-64 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
-                        <img src="https://randomuser.me/api/portraits/men/{{ $loop->index + 10 }}.jpg" alt="Teacher" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                        <img src="https://randomuser.me/api/portraits/men/<?php echo e($loop->index + 10); ?>.jpg" alt="Teacher" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                     </div>
                     <div class="p-6 text-center">
-                        <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $teacher->name }}</h3>
-                        <p class="text-primary font-semibold mb-3">{{ $field }}</p>
+                        <h3 class="text-xl font-bold text-gray-800 mb-1"><?php echo e($teacher->name); ?></h3>
+                        <p class="text-primary font-semibold mb-3"><?php echo e($field); ?></p>
                         <p class="text-gray-600 text-sm mb-4">Hơn 8 năm kinh nghiệm, đã đào tạo hơn 500+ học viên.</p>
                         <div class="flex justify-center gap-2">
                             <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
@@ -234,14 +235,14 @@
                         </div>
                     </div>
                 </div>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="col-span-4 text-center py-12 bg-white rounded-2xl shadow-md">
                     <p class="text-gray-600">Chưa có giảng viên nào được đăng ký.</p>
                 </div>
-            @endforelse
+            <?php endif; ?>
         </div>
         <div class="text-center mt-12">
-            <a href="{{ route('teachers') }}" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all border-b-2 border-primary pb-1">
+            <a href="<?php echo e(route('teachers')); ?>" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all border-b-2 border-primary pb-1">
                 Xem tất cả giảng viên <i class="fas fa-arrow-right"></i>
             </a>
         </div>
@@ -252,9 +253,9 @@
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" x-data="{
                 counters: {
-                    students: {{ $studentCount }},
-                    courses: {{ $courseCount }},
-                    teachers: {{ $teacherCount }},
+                    students: <?php echo e($studentCount); ?>,
+                    courses: <?php echo e($courseCount); ?>,
+                    teachers: <?php echo e($teacherCount); ?>,
                     satisfaction: 98
                 },
                 init() {
@@ -385,7 +386,7 @@
             <div class="relative z-10">
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Sẵn sàng để chinh phục tri thức?</h2>
                 <p class="text-xl text-blue-100 mb-8">Đăng ký ngay hôm nay để nhận ưu đãi đặc biệt cho học viên mới.</p>
-                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
+                <a href="<?php echo e(route('register')); ?>" class="inline-flex items-center gap-2 bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
                     <i class="fas fa-user-plus"></i> Đăng ký miễn phí
                 </a>
             </div>
@@ -406,4 +407,5 @@
             animation-delay: 2s;
         }
     </style>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\XXamp\htdocs\khaitriedu\resources\views/home.blade.php ENDPATH**/ ?>

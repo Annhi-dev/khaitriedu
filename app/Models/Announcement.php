@@ -13,7 +13,11 @@ class Announcement extends Model
 
     protected $fillable = ['created_by', 'course_id', 'title', 'message', 'is_pinned', 'published_at', 'expires_at', 'status'];
 
-    protected $dates = ['published_at', 'expires_at'];
+    protected $casts = [
+        'published_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'is_pinned' => 'boolean',
+    ];
 
     public function creator()
     {

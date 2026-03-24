@@ -12,29 +12,37 @@
 
 <div class="container mx-auto px-4 py-20">
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        @for($i = 1; $i <= 8; $i++)
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition group">
-            <div class="relative overflow-hidden h-64 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
-                <img src="https://randomuser.me/api/portraits/men/{{ rand(1,50) }}.jpg" alt="Teacher" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
-            </div>
-            <div class="p-6 text-center">
-                <h3 class="text-xl font-bold text-gray-800 mb-1">Giảng viên #{{ $i }}</h3>
-                <p class="text-primary font-semibold mb-3">Lập trình / Thiết kế</p>
-                <p class="text-gray-600 text-sm mb-4">Hơn 10 năm kinh nghiệm, đã dạy 5000+ học viên</p>
-                <div class="flex justify-center gap-2">
-                    <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
-                        <i class="fab fa-linkedin"></i>
-                    </a>
+        @forelse($teachers as $teacher)
+            @php
+                preg_match('/\((.+)\)/', $teacher->name, $matches);
+                $field = $matches[1] ?? 'Giảng viên chuyên nghiệp';
+            @endphp
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition group">
+                <div class="relative overflow-hidden h-64 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
+                    <img src="https://randomuser.me/api/portraits/men/{{ $loop->index + 10 }}.jpg" alt="Teacher" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                </div>
+                <div class="p-6 text-center">
+                    <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $teacher->name }}</h3>
+                    <p class="text-primary font-semibold mb-3">{{ $field }}</p>
+                    <p class="text-gray-600 text-sm mb-4">Hơn 8 năm kinh nghiệm, đã đào tạo hơn 500+ học viên.</p>
+                    <div class="flex justify-center gap-2">
+                        <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm hover:bg-primary hover:text-white transition">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-        @endfor
+        @empty
+            <div class="col-span-4 text-center py-12 bg-white rounded-2xl shadow-md">
+                <p class="text-gray-600">Chưa có giảng viên nào được đăng ký.</p>
+            </div>
+        @endforelse
     </div>
 </div>
 @endsection

@@ -15,16 +15,15 @@ Route::get('/', function () {
     if ($user) {
         return redirect()->route('dashboard');
     }
-
     $studentCount = User::where('role', 'hoc_vien')->count();
     $courseCount = App\Models\Course::count();
     $teacherCount = User::where('role', 'giang_vien')->count();
+    $teachers = User::where('role', 'giang_vien')->limit(6)->get();
     $courses = App\Models\Course::with('subject', 'teacher')
         ->orderBy('id', 'desc')
         ->limit(3)
         ->get();
-    return view('home', compact('studentCount', 'courseCount', 'teacherCount', 'courses'));
-})->name('home');
+    return view('home', compact('studentCount', 'courseCount', 'teacherCount', 'courses', 'teachers'));})->name('home');
 
 // Trang Khóa học
 Route::get('/courses', function () {
@@ -41,9 +40,7 @@ Route::get('/about', function () {
 })->name('about');
 
 // Trang Liên hệ
-Route::get('/contact', function () {
-    return view('pages.contact');
-})->name('contact');
+Route::get('/contact', function () {return view('pages.contact');})->name('contact');
 
 Route::post('/contact', function (Request $request) {
     $request->validate([
@@ -53,41 +50,36 @@ Route::post('/contact', function (Request $request) {
         'message' => 'required|string|min:10',
     ]);
     // Lưu vào database hoặc gửi email
-    Mail::raw("Từ: {$request->name} ({$request->email})\n\n{$request->message}", function($message) use ($request) {
-        $message->to('admin@khaitriedu.com')->subject("Liên hệ: {$request->subject}");
-    });
+    Mail::raw("Từ: {$request->name} ({$request->email})\n\n{$request->message}", function($message) use ($request) {$message->to('admin@khaitriedu.com')->subject("Liên hệ: {$request->subject}");});
     return back()->with('status', 'Tin nhắn đã được gửi thành công. Chúng tôi sẽ liên hệ lại trong sớm nhất.');
 })->name('contact.post');
 
 // Trang Blog
 Route::get('/blog', function () {
-    return view('pages.blog');
+    $posts = \App\Models\Announcement::where('status', 'published')
+        ->orderByDesc('published_at')
+        ->limit(6)
+        ->get();
+    return view('pages.blog', compact('posts'));
 })->name('blog');
 
 // Trang Giảng viên
 Route::get('/teachers', function () {
-    return view('pages.teachers');
+    $teachers = \App\Models\User::where('role', 'giang_vien')->get();
+    return view('pages.teachers', compact('teachers'));
 })->name('teachers');
 
 // Trang Tuyển dụng
-Route::get('/careers', function () {
-    return view('pages.careers');
-})->name('careers');
+Route::get('/careers', function () {return view('pages.careers');})->name('careers');
 
 // Trang Trung tâm trợ giúp
-Route::get('/help', function () {
-    return view('pages.help');
-})->name('help');
+Route::get('/help', function () {return view('pages.help');})->name('help');
 
 // Trang Điều khoản dịch vụ
-Route::get('/terms', function () {
-    return view('pages.terms');
-})->name('terms');
+Route::get('/terms', function () {return view('pages.terms');})->name('terms');
 
 // Trang Chính sách bảo mật
-Route::get('/privacy', function () {
-    return view('pages.privacy');
-})->name('privacy');
+Route::get('/privacy', function () {return view('pages.privacy');})->name('privacy');
 
 Route::get('/login', function () {return view('auth.login');})->name('login');
 
@@ -154,13 +146,9 @@ Route::post('/verify-email/resend', function (Request $request) {
     return response()->json(['message' => 'Mã OTP mới đã được gửi đến email của bạn.']);
 })->name('verify.email.resend');
 
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
+Route::get('/register', function () {return view('auth.register');})->name('register');
 
-Route::get('/forgot-password', function () {
-    return view('auth.password');
-})->name('password.request');
+Route::get('/forgot-password', function () {return view('auth.password');})->name('password.request');
 
 Route::post('/forgot-password', function (Request $request) {
     $request->validate(['email' => 'required|email']);
@@ -172,9 +160,7 @@ Route::post('/forgot-password', function (Request $request) {
     return redirect()->route('forgot.verify', ['email' => $request->email])->with('status', 'Mã OTP đã gửi đến email.');
 })->name('password.email');
 
-Route::get('/forgot-password/verify', function () {
-    return view('auth.forgot_verify');
-})->name('forgot.verify');
+Route::get('/forgot-password/verify', function () {return view('auth.forgot_verify');})->name('forgot.verify');
 
 Route::post('/forgot-password/verify', function (Request $request) {
     $request->validate(['email' => 'required|email', 'code' => 'required|string']);
@@ -191,9 +177,7 @@ Route::post('/forgot-password/verify', function (Request $request) {
     return redirect()->route('forgot.reset', ['email' => $request->email])->with('status', 'Mã OTP hợp lệ. Nhập mật khẩu mới.');
 })->name('forgot.verify.post');
 
-Route::get('/forgot-password/reset', function (Request $request) {
-    return view('auth.reset_password');
-})->name('forgot.reset');
+Route::get('/forgot-password/reset', function (Request $request) {return view('auth.reset_password');})->name('forgot.reset');
 
 Route::post('/forgot-password/reset', function (Request $request) {
     $request->validate([
@@ -287,9 +271,7 @@ Route::get('/admin/report', function () {
     return view('admin.report', compact('courseCount', 'subjectCount', 'studentCount', 'teacherCount', 'pendingEnrollments', 'user'));
 })->name('admin.report');
 
-Route::get('/apply-teacher', function () {
-    return view('pages.apply-teacher');
-})->name('apply-teacher');
+Route::get('/apply-teacher', function () {return view('pages.apply-teacher');})->name('apply-teacher');
 
 Route::post('/apply-teacher', function (Request $request) {
     $data = $request->validate([
@@ -861,11 +843,6 @@ Route::post('/teacher/grades', function (Request $request) {
     return back()->with('status', 'Điểm đã được cập nhật.');
 })->name('teacher.grades.update');
 
-Route::get('/logout', function () {
-    session()->forget(['user_id']);
-    return redirect()->route('home');
-})->name('logout');
+Route::get('/logout', function () {session()->forget(['user_id']);return redirect()->route('home');})->name('logout');
 
-Route::fallback(function () {
-    return redirect()->route('home');
-});
+Route::fallback(function () {return redirect()->route('home');});

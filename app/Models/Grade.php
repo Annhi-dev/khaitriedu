@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Grade extends Model
 {
-    protected $table = 'diem';
+    protected $table = 'diem_so';
 
     protected $fillable = ['enrollment_id', 'module_id', 'score', 'grade', 'feedback'];
 

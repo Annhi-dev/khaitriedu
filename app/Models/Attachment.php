@@ -9,7 +9,7 @@ class Attachment extends Model
 {
     use HasFactory;
 
-    protected $table = 'tep_dinh_kem';
+    protected $table = 'tai_lieu_dinh_kem';
 
     protected $fillable = ['lesson_id', 'quiz_id', 'filename', 'file_path', 'mime_type', 'file_size', 'description'];
 
