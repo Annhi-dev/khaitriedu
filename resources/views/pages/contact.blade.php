@@ -61,8 +61,8 @@
                     <a href="https://www.youtube.com/channel/UCPrE7RBNFZHZAxJzvCxvMSg" target="_blank" class="w-10 h-10 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary-dark transition">
                         <i class="fab fa-youtube"></i>
                     </a>
-                    <a href="https://zalo.me/84867852853" target="_blank" class="w-10 h-10 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary-dark transition">
-                        <i class="fab fa-comment-dots"></i>
+                    <a href="https://zalo.me/84867852853" target="_blank" class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center hover:bg-primary-dark transition">
+                        <img src="{{ asset('hinh/zalo.png') }}" alt="Zalo" class="w-6 h-6">
                     </a>
                 </div>
             </div>
