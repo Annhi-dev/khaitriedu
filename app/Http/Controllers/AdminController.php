@@ -8,40 +8,37 @@ use App\Models\Enrollment;
 use App\Models\Subject;
 use App\Models\TeacherApplication;
 use App\Models\User;
+use App\Services\AdminDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function dashboard(AdminDashboardService $dashboardService)
     {
-        [$user, $redirect] = $this->requireRole('admin');
+        [$user, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $courseCount = Course::count();
-        $subjectCount = Subject::count();
-        $studentCount = User::where('role', 'hoc_vien')->count();
-        $teacherCount = User::where('role', 'giang_vien')->count();
-        $newEnrollments = Enrollment::where('status', 'pending')->where('is_submitted', true)->count();
-        $pendingTeacherApplications = TeacherApplication::where('status', 'pending')->count();
-
-        return view('dashboard_admin', compact('user', 'courseCount', 'subjectCount', 'studentCount', 'teacherCount', 'newEnrollments', 'pendingTeacherApplications'));
+        return view('dashboard_admin', array_merge(
+            ['user' => $user],
+            $dashboardService->overview()
+        ));
     }
 
     public function report()
     {
-        [$user, $redirect] = $this->requireRole('admin');
+        [$user, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
         $courseCount = Course::count();
         $subjectCount = Subject::count();
-        $studentCount = User::where('role', 'hoc_vien')->count();
-        $teacherCount = User::where('role', 'giang_vien')->count();
+        $studentCount = User::where('role', User::ROLE_STUDENT)->count();
+        $teacherCount = User::where('role', User::ROLE_TEACHER)->count();
         $pendingEnrollments = Enrollment::where('status', 'pending')->where('is_submitted', true)->count();
 
         return view('admin.report', compact('courseCount', 'subjectCount', 'studentCount', 'teacherCount', 'pendingEnrollments', 'user'));
@@ -49,7 +46,7 @@ class AdminController extends Controller
 
     public function teacherApplications()
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -61,7 +58,7 @@ class AdminController extends Controller
 
     public function showTeacherApplication($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -76,7 +73,7 @@ class AdminController extends Controller
 
     public function reviewTeacherApplication(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -102,7 +99,8 @@ class AdminController extends Controller
                 'email' => $application->email,
                 'username' => explode('@', $application->email)[0] . '.' . rand(100, 999),
                 'password' => Hash::make('12345678'),
-                'role' => 'giang_vien',
+                'role' => User::ROLE_TEACHER,
+                'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
             ]);
         }
@@ -112,7 +110,7 @@ class AdminController extends Controller
 
     public function users()
     {
-        [$user, $redirect] = $this->requireRole('admin');
+        [$user, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -124,7 +122,7 @@ class AdminController extends Controller
 
     public function showUser($id)
     {
-        [$user, $redirect] = $this->requireRole('admin');
+        [$user, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -139,15 +137,15 @@ class AdminController extends Controller
 
     public function storeUser(Request $request)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:50|unique:users,username',
-            'email' => 'required|email|unique:users,email',
+            'username' => 'required|string|max:50|unique:nguoi_dung,username',
+            'email' => 'required|email|unique:nguoi_dung,email',
             'password' => 'required|min:6',
             'role' => 'required|in:admin,giang_vien,hoc_vien',
         ]);
@@ -158,6 +156,7 @@ class AdminController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
+            'status' => User::STATUS_ACTIVE,
             'email_verified_at' => Carbon::now(),
         ]);
 
@@ -166,7 +165,7 @@ class AdminController extends Controller
 
     public function updateUser(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -188,7 +187,7 @@ class AdminController extends Controller
 
     public function deleteUser($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -202,7 +201,7 @@ class AdminController extends Controller
 
     public function categories()
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -214,7 +213,7 @@ class AdminController extends Controller
 
     public function storeCategory(Request $request)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -245,7 +244,7 @@ class AdminController extends Controller
 
     public function updateCategory(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -281,7 +280,7 @@ class AdminController extends Controller
 
     public function deleteCategory($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -295,7 +294,7 @@ class AdminController extends Controller
 
     public function subjects()
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -308,7 +307,7 @@ class AdminController extends Controller
 
     public function showSubject($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -325,7 +324,7 @@ class AdminController extends Controller
 
     public function storeSubject(Request $request)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -356,7 +355,7 @@ class AdminController extends Controller
 
     public function updateSubject(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -392,7 +391,7 @@ class AdminController extends Controller
 
     public function deleteSubject($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -407,7 +406,7 @@ class AdminController extends Controller
 
     public function storeSubjectCourse(Request $request, $subjectId)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -433,7 +432,7 @@ class AdminController extends Controller
 
     public function courses()
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -446,7 +445,7 @@ class AdminController extends Controller
 
     public function showCourse($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -456,7 +455,7 @@ class AdminController extends Controller
             return redirect()->route('admin.courses')->with('error', 'Lớp học không tồn tại.');
         }
 
-        $teachers = User::where('role', 'giang_vien')->orderBy('name')->get();
+        $teachers = User::where('role', User::ROLE_TEACHER)->orderBy('name')->get();
         $subjects = Subject::with('category')->orderBy('name')->get();
 
         return view('admin.course.show', compact('course', 'teachers', 'subjects', 'current'));
@@ -464,7 +463,7 @@ class AdminController extends Controller
 
     public function storeCourse(Request $request)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -484,7 +483,7 @@ class AdminController extends Controller
 
     public function updateCourse(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -509,7 +508,7 @@ class AdminController extends Controller
 
     public function deleteCourse($id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -523,7 +522,7 @@ class AdminController extends Controller
 
     public function assignCourse(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -545,7 +544,7 @@ class AdminController extends Controller
 
     public function storeCourseModule(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -572,13 +571,13 @@ class AdminController extends Controller
 
     public function enrollments()
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
         $enrollments = Enrollment::with(['user', 'course.subject.category', 'subject.category', 'assignedTeacher'])->orderBy('id', 'desc')->get();
-        $teachers = User::where('role', 'giang_vien')->orderBy('name')->get();
+        $teachers = User::where('role', User::ROLE_TEACHER)->orderBy('name')->get();
         $courses = Course::with('subject')->orderBy('id', 'desc')->get();
 
         return view('admin.enrollments', compact('enrollments', 'teachers', 'courses', 'current'));
@@ -586,7 +585,7 @@ class AdminController extends Controller
 
     public function updateEnrollment(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole('admin');
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

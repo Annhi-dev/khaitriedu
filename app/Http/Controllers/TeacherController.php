@@ -30,9 +30,13 @@ class TeacherController extends Controller
 
         $courses = Course::where('teacher_id', $user->id)
             ->with(['subject.category', 'modules'])
-            ->withCount('enrollments')
+            ->withCount([
+                'enrollments as active_enrollments_count' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+            ])
             ->get();
+
         $enrollments = Enrollment::whereIn('course_id', $courses->pluck('id'))
+            ->whereIn('status', Enrollment::courseAccessStatuses())
             ->with(['user', 'course.subject'])
             ->orderByDesc('id')
             ->get();
@@ -49,7 +53,12 @@ class TeacherController extends Controller
         }
 
         $course = Course::where('teacher_id', $user->id)
-            ->with(['subject.category', 'modules', 'enrollments.user'])
+            ->with([
+                'subject.category',
+                'modules',
+                'enrollments' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments.user',
+            ])
             ->find($id);
 
         if (! $course) {

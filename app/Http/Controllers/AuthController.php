@@ -31,6 +31,10 @@ class AuthController extends Controller
             return back()->with('error', 'Tên đăng nhập/email hoặc mật khẩu không đúng.');
         }
 
+        if ($user->status !== User::STATUS_ACTIVE) {
+            return back()->with('error', 'Tài khoản của bạn hiện không thể đăng nhập. Vui lòng liên hệ quản trị viên.');
+        }
+
         session(['user_id' => $user->id]);
 
         return $this->redirectAfterLogin($user);
@@ -79,6 +83,7 @@ class AuthController extends Controller
             'phone' => $pending['phone'],
             'password' => Hash::make($pending['password']),
             'role' => $pending['role'],
+            'status' => User::STATUS_ACTIVE,
             'email_verified_at' => Carbon::now(),
         ]);
 
@@ -126,7 +131,7 @@ class AuthController extends Controller
 
         $current = $this->sessionUser();
 
-        if ($current && $current->role === 'admin') {
+        if ($current && $current->role === User::ROLE_ADMIN) {
             User::create([
                 'username' => $data['username'],
                 'name' => $data['name'],
@@ -134,6 +139,7 @@ class AuthController extends Controller
                 'phone' => $data['phone'],
                 'password' => Hash::make($data['password']),
                 'role' => $data['role'],
+                'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => Carbon::now(),
             ]);
 
@@ -230,11 +236,11 @@ class AuthController extends Controller
 
     private function redirectAfterLogin(User $user)
     {
-        if ($user->role === 'admin') {
+        if ($user->role === User::ROLE_ADMIN) {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'giang_vien') {
+        if ($user->role === User::ROLE_TEACHER) {
             return redirect()->route('teacher.dashboard');
         }
 

@@ -2,35 +2,99 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Enrollment extends Model
 {
-    protected $table = 'dang_ky';
-
     use HasFactory;
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_SCHEDULED = 'scheduled';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_COMPLETED = 'completed';
+    public const LEGACY_STATUS_CONFIRMED = 'confirmed';
+
+    protected $table = 'dang_ky';
+
     protected $fillable = [
-        'user_id', 
+        'user_id',
         'subject_id',
-        'course_id', 
-        'preferred_schedule', 
-        'assigned_teacher_id', 
-        'status', 
-        'note', 
+        'course_id',
+        'preferred_schedule',
+        'assigned_teacher_id',
+        'status',
+        'note',
         'schedule',
         'start_time',
         'end_time',
         'preferred_days',
         'is_submitted',
-        'submitted_at'
+        'submitted_at',
+        'reviewed_by',
+        'reviewed_at',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
+        'reviewed_at' => 'datetime',
         'is_submitted' => 'boolean',
     ];
+
+    public static function filterableStatuses(): array
+    {
+        return [
+            self::STATUS_PENDING,
+            self::STATUS_APPROVED,
+            self::STATUS_REJECTED,
+            self::STATUS_SCHEDULED,
+            self::STATUS_ACTIVE,
+            self::STATUS_COMPLETED,
+        ];
+    }
+
+    public static function courseAccessStatuses(): array
+    {
+        return [
+            self::LEGACY_STATUS_CONFIRMED,
+            self::STATUS_SCHEDULED,
+            self::STATUS_ACTIVE,
+            self::STATUS_COMPLETED,
+        ];
+    }
+
+    public function scopeSubmitted(Builder $query): Builder
+    {
+        return $query->where('is_submitted', true);
+    }
+
+    public function normalizedStatus(): string
+    {
+        return $this->status === self::LEGACY_STATUS_CONFIRMED
+            ? self::STATUS_SCHEDULED
+            : (string) $this->status;
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->normalizedStatus()) {
+            self::STATUS_PENDING => 'Chờ duyệt',
+            self::STATUS_APPROVED => 'Đã duyệt',
+            self::STATUS_REJECTED => 'Từ chối',
+            self::STATUS_SCHEDULED => 'Đã xếp lớp',
+            self::STATUS_ACTIVE => 'Đang học',
+            self::STATUS_COMPLETED => 'Hoàn thành',
+            default => ucfirst((string) $this->status),
+        };
+    }
+
+    public function hasCourseAccess(): bool
+    {
+        return in_array($this->status, self::courseAccessStatuses(), true);
+    }
 
     public function user()
     {
@@ -45,6 +109,11 @@ class Enrollment extends Model
     public function assignedTeacher()
     {
         return $this->belongsTo(User::class, 'assigned_teacher_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function subject()

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Subject;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 
 class HomeController extends Controller
 {
@@ -14,16 +15,22 @@ class HomeController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $studentCount = User::where('role', 'hoc_vien')->count();
-        $courseCount = Subject::count();
-        $teacherCount = User::where('role', 'giang_vien')->count();
-        $teachers = User::where('role', 'giang_vien')->limit(6)->get();
+        $studentCount = User::where('role', User::ROLE_STUDENT)->count();
+        $courseCount = Subject::visibleOnCatalog()->count();
+        $teacherCount = User::where('role', User::ROLE_TEACHER)->count();
+        $teachers = User::where('role', User::ROLE_TEACHER)->limit(6)->get();
         $courses = Subject::with('category')
             ->withCount(['courses', 'enrollments'])
+            ->visibleOnCatalog()
             ->orderBy('id', 'desc')
             ->limit(3)
             ->get();
-        $categories = Category::withCount('subjects')->orderBy('order')->get();
+        $categories = Category::active()
+            ->withCount([
+                'subjects as subjects_count' => fn (Builder $query) => $query->publiclyAvailable(),
+            ])
+            ->orderBy('order')
+            ->get();
 
         return view('home', compact('studentCount', 'courseCount', 'teacherCount', 'courses', 'teachers', 'categories'));
     }
@@ -36,11 +43,11 @@ class HomeController extends Controller
             return redirect()->route('login');
         }
 
-        if ($user->role === 'admin') {
+        if ($user->role === User::ROLE_ADMIN) {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'giang_vien') {
+        if ($user->role === User::ROLE_TEACHER) {
             return redirect()->route('teacher.dashboard');
         }
 

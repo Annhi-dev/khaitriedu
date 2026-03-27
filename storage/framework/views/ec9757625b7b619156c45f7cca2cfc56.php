@@ -31,7 +31,7 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <?php if($user && $user->role === 'admin'): ?>
                         <a href="<?php echo e(route('admin.dashboard')); ?>" class="nav-link text-gray-700 hover:text-primary transition font-medium">Dashboard</a>
-                        <a href="<?php echo e(route('admin.categories')); ?>" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý nhóm ngành</a>
+                        <a href="<?php echo e(route('admin.categories')); ?>" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý nhóm học</a>
                         <a href="<?php echo e(route('admin.subjects')); ?>" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý khóa học</a>
                         <a href="<?php echo e(route('admin.courses')); ?>" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý lớp học</a>
                         <a href="<?php echo e(route('admin.users')); ?>" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý người dùng</a>
@@ -66,7 +66,7 @@
                             <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-10">
                                 <?php if($user->role === 'admin'): ?>
                                     <a href="<?php echo e(route('admin.dashboard')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-tachometer-alt w-5 mr-2"></i>Admin Dashboard</a>
-                                    <a href="<?php echo e(route('admin.categories')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-list-alt w-5 mr-2"></i>Quản lý nhóm ngành</a>
+                                    <a href="<?php echo e(route('admin.categories')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-list-alt w-5 mr-2"></i>Quản lý nhóm học</a>
                                 <?php else: ?>
                                     <a href="<?php echo e(route('dashboard')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-tachometer-alt w-5 mr-2"></i>Dashboard</a>
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-book-open w-5 mr-2"></i>Đăng ký khóa học</a>
@@ -90,7 +90,7 @@
         <div x-show="mobileOpen" x-cloak class="md:hidden bg-white border-t px-4 py-3 space-y-2">
             <?php if($user && $user->role === 'admin'): ?>
                 <a href="<?php echo e(route('admin.dashboard')); ?>" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-tachometer-alt w-6 mr-2"></i>Admin Dashboard</a>
-                <a href="<?php echo e(route('admin.categories')); ?>" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-list-alt w-6 mr-2"></i>Quản lý nhóm ngành</a>
+                <a href="<?php echo e(route('admin.categories')); ?>" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-list-alt w-6 mr-2"></i>Quản lý nhóm học</a>
                 <a href="<?php echo e(route('admin.subjects')); ?>" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-book w-6 mr-2"></i>Quản lý khóa học</a>
                 <a href="<?php echo e(route('admin.courses')); ?>" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-graduation-cap w-6 mr-2"></i>Quản lý lớp học</a>
                 <a href="<?php echo e(route('admin.users')); ?>" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-users w-6 mr-2"></i>Quản lý người dùng</a>
@@ -215,4 +215,5 @@
         });
     </script>
 </body>
-</html><?php /**PATH D:\XXamp\htdocs\khaitriedu\resources\views/layouts/app.blade.php ENDPATH**/ ?>
+</html>
+<?php /**PATH D:\XXamp\htdocs\khaitriedu\resources\views/layouts/app.blade.php ENDPATH**/ ?>

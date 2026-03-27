@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Lớp học phụ trách')
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
@@ -7,7 +7,10 @@
       <h1 class="text-2xl font-bold text-primary-dark">Lớp học phụ trách</h1>
       <p class="text-gray-600">Danh sách các lớp nội bộ admin đã phân cho bạn giảng dạy.</p>
     </div>
-    <a href="{{ route('dashboard') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Quay lại dashboard</a>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ route('teacher.schedule-change-requests.index') }}" class="rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 transition">Yeu cau doi lich</a>
+      <a href="{{ route('dashboard') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Quay lai dashboard</a>
+    </div>
   </div>
 
   @if(session('status'))
@@ -26,10 +29,10 @@
             <h2 class="text-xl font-bold text-gray-900">{{ $course->title }}</h2>
             <p class="mt-1 text-sm text-gray-500">{{ $course->subject?->name ?? 'Chưa gắn khóa học' }}{{ $course->subject?->category ? ' - ' . $course->subject->category->name : '' }}</p>
           </div>
-          <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{{ $course->enrollments_count ?? 0 }} học viên</span>
+          <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{{ $course->active_enrollments_count ?? 0 }} học viên</span>
         </div>
         <div class="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
-          <p><strong>Lịch lớp:</strong> {{ $course->schedule ?: 'Chưa chốt' }}</p>
+          <p><strong>Lịch lớp:</strong> {{ $course->formattedSchedule() }}</p>
           <p><strong>Module:</strong> {{ $course->modules->count() }}</p>
         </div>
       </a>
@@ -43,7 +46,7 @@
   <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
     <div class="mb-4">
       <h2 class="text-xl font-bold text-gray-900">Học viên đang theo các lớp của bạn</h2>
-      <p class="text-gray-600">Xem nhanh thông tin xếp lớp và khung giờ học viên đã gửi cho admin.</p>
+      <p class="text-gray-600">Xem nhanh tình trạng xếp lớp và khung giờ học viên đã gửi cho admin.</p>
     </div>
 
     <div class="overflow-x-auto">
@@ -70,6 +73,14 @@
                 'Saturday' => 'T7',
                 'Sunday' => 'CN',
               ];
+              $normalizedStatus = $enrollment->normalizedStatus();
+              $statusClasses = match ($normalizedStatus) {
+                \App\Models\Enrollment::STATUS_SCHEDULED => 'bg-green-100 text-green-800',
+                \App\Models\Enrollment::STATUS_ACTIVE => 'bg-violet-100 text-violet-800',
+                \App\Models\Enrollment::STATUS_COMPLETED => 'bg-slate-100 text-slate-800',
+                \App\Models\Enrollment::STATUS_REJECTED => 'bg-red-100 text-red-800',
+                default => 'bg-yellow-100 text-yellow-800',
+              };
             @endphp
             <tr>
               <td class="border-b p-3 text-gray-700">{{ $enrollment->user?->name ?? 'N/A' }}</td>
@@ -84,8 +95,8 @@
                 @endif
               </td>
               <td class="border-b p-3">
-                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $enrollment->status === 'confirmed' ? 'bg-green-100 text-green-800' : ($enrollment->status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
-                  {{ $enrollment->status }}
+                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusClasses }}">
+                  {{ $enrollment->statusLabel() }}
                 </span>
               </td>
             </tr>

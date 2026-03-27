@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('title', 'Quản lý khóa học')
 @section('content')
 <div class="max-w-6xl mx-auto">
@@ -8,7 +8,7 @@
       <p class="text-gray-600">Đây là các khóa học học viên sẽ nhìn thấy và gửi yêu cầu đăng ký.</p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <a href="{{ route('admin.categories') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Nhóm ngành</a>
+      <a href="{{ route('admin.categories') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Nhóm học</a>
       <a href="{{ route('admin.courses') }}" class="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary-light/20 transition">Lớp học</a>
       <a href="{{ route('admin.dashboard') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Dashboard</a>
     </div>
@@ -22,7 +22,7 @@
     <form method="post" action="{{ route('admin.subjects.create') }}" enctype="multipart/form-data" class="mt-4 grid gap-4 lg:grid-cols-2">
       @csrf
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">Nhóm ngành</label>
+        <label class="mb-1 block text-sm font-medium text-gray-700">Nhóm học</label>
         <select name="category_id" class="w-full rounded-xl border border-gray-300 px-3 py-2.5">
           <option value="">Chọn nhóm ngành</option>
           @foreach($categories as $category)

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('title', 'Chi tiết người dùng')
 @section('content')
 <div class="max-w-3xl mx-auto">

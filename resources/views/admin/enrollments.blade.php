@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('title', 'Quản lý đăng ký khóa học')
 @section('content')
 <div class="max-w-7xl mx-auto">

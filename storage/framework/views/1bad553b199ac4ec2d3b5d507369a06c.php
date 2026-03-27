@@ -1,3 +1,5 @@
+
+
 <?php $__env->startSection('title', 'KhaiTriEdu - Học trực tuyến thông minh'); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -413,4 +415,5 @@
         }
     </style>
 <?php $__env->stopSection(); ?>
+
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\XXamp\htdocs\khaitriedu\resources\views/home.blade.php ENDPATH**/ ?>

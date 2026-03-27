@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Lịch học của tôi')
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
@@ -28,8 +28,8 @@
             <div class="mt-3 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
               <p><strong>Khóa học:</strong> {{ $enrollment->course->subject->name ?? 'Chưa xác định' }}</p>
               <p><strong>Giảng viên:</strong> {{ $enrollment->assignedTeacher->name ?? 'Chưa phân công' }}</p>
-              <p><strong>Lịch học:</strong> {{ $enrollment->schedule ?: 'Chưa có lịch cụ thể' }}</p>
-              <p><strong>Trạng thái:</strong> <span class="font-semibold text-green-700">Đã được xếp lớp</span></p>
+              <p><strong>Lịch học:</strong> {{ $enrollment->course->formattedSchedule() }}</p>
+              <p><strong>Trạng thái:</strong> <span class="font-semibold text-green-700">{{ $enrollment->statusLabel() }}</span></p>
             </div>
           </div>
           <div class="flex items-center gap-3">

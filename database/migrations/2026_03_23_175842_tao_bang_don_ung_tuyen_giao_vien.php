@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->text('experience')->nullable();
             $table->text('message')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('status')->default('pending');
+            $table->text('admin_note')->nullable();
+            $table->text('rejection_reason')->nullable();
             $table->timestamp('reviewed_at')->nullable();
             $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->timestamps();

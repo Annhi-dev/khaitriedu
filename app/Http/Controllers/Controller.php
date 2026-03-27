@@ -55,11 +55,11 @@ abstract class Controller extends BaseController
             return [$course, null, redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập lớp học.')];
         }
 
-        if ($user->role === 'admin') {
+        if ($user->role === User::ROLE_ADMIN) {
             return [$course, null, null];
         }
 
-        if ($user->role === 'giang_vien') {
+        if ($user->role === User::ROLE_TEACHER) {
             if ($course->teacher_id === $user->id) {
                 return [$course, null, null];
             }
@@ -67,11 +67,11 @@ abstract class Controller extends BaseController
             return [$course, null, redirect()->route('teacher.courses')->with('error', 'Bạn không có quyền truy cập lớp học này.')];
         }
 
-        if ($user->role === 'hoc_vien') {
+        if ($user->role === User::ROLE_STUDENT) {
             $enrollment = Enrollment::with('assignedTeacher')
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
-                ->where('status', 'confirmed')
+                ->whereIn('status', Enrollment::courseAccessStatuses())
                 ->latest('id')
                 ->first();
 

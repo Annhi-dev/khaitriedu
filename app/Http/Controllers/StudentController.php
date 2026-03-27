@@ -16,7 +16,7 @@ class StudentController extends Controller
         }
 
         $enrollments = Enrollment::where('user_id', $user->id)
-            ->where('status', 'confirmed')
+            ->whereIn('status', Enrollment::courseAccessStatuses())
             ->whereNotNull('course_id')
             ->with(['course.subject', 'assignedTeacher'])
             ->orderByDesc('id')

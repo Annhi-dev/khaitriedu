@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Chi tiết lớp học')
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
@@ -27,11 +27,16 @@
       </div>
       <div class="rounded-2xl bg-slate-50 px-5 py-4 text-sm text-gray-600 shadow-sm">
         <div><strong>Khóa học:</strong> {{ $course->subject?->name ?? 'Chưa gắn khóa học' }}</div>
-        <div class="mt-1"><strong>Nhóm ngành:</strong> {{ $course->subject?->category?->name ?? 'Chưa phân nhóm' }}</div>
-        <div class="mt-1"><strong>Lịch lớp:</strong> {{ $course->schedule ?: 'Chưa chốt' }}</div>
+        <div class="mt-1"><strong>Nhóm học:</strong> {{ $course->subject?->category?->name ?? 'Chưa phân nhóm' }}</div>
+        <div class="mt-1"><strong>Lịch lớp:</strong> {{ $course->formattedSchedule() }}</div>
       </div>
     </div>
   </section>
+
+  <div class="flex flex-wrap gap-3">
+    <a href="{{ route('teacher.schedule-change-requests.create', $course) }}" class="inline-flex items-center justify-center rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition">Gui yeu cau doi lich</a>
+    <a href="{{ route('teacher.schedule-change-requests.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Xem lich su yeu cau</a>
+  </div>
 
   <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
     <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -54,23 +59,23 @@
     </section>
 
     <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-      @php $confirmedEnrollments = $course->enrollments->where('status', 'confirmed'); @endphp
+      @php $activeEnrollments = $course->enrollments; @endphp
       <div class="mb-4 flex items-center justify-between">
         <h2 class="text-xl font-bold text-gray-900">Học viên đã được xếp lớp</h2>
-        <span class="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800">{{ $confirmedEnrollments->count() }} học viên</span>
+        <span class="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800">{{ $activeEnrollments->count() }} học viên</span>
       </div>
 
-      @if($confirmedEnrollments->isEmpty())
+      @if($activeEnrollments->isEmpty())
         <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-gray-500">
           Chưa có học viên nào được xếp vào lớp này.
         </div>
       @else
         <div class="space-y-4">
-          @foreach($confirmedEnrollments as $enrollment)
+          @foreach($activeEnrollments as $enrollment)
             <div class="rounded-2xl border border-gray-200 p-4">
               <div>
                 <div class="text-lg font-semibold text-gray-900">{{ $enrollment->user?->name }}</div>
-                <div class="text-sm text-gray-500">Lịch đã chốt: {{ $enrollment->schedule ?: $course->schedule ?: 'Chưa có' }}</div>
+                <div class="text-sm text-gray-500">{{ $enrollment->statusLabel() }} - Lịch đã chốt: {{ $enrollment->schedule ?: $course->formattedSchedule() }}</div>
               </div>
 
               <div class="mt-4 space-y-3">

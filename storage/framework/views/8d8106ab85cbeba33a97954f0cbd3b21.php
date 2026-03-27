@@ -11,6 +11,8 @@
         'Sunday' => 'Chủ nhật',
     ];
     $selectedDays = old('preferred_days', $userEnrollment ? (json_decode($userEnrollment->preferred_days, true) ?: []) : []);
+    $normalizedStatus = $userEnrollment?->normalizedStatus();
+    $hasCourseAccess = $userEnrollment?->hasCourseAccess();
 ?>
 <div class="max-w-5xl mx-auto">
   <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -34,9 +36,9 @@
 
   <div class="mb-6 grid gap-4 md:grid-cols-3">
     <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-      <div class="text-sm font-medium text-gray-500">Nhóm ngành</div>
+      <div class="text-sm font-medium text-gray-500">Nhóm học</div>
       <div class="mt-2 text-xl font-bold text-gray-900"><?php echo e($subject->category?->name ?? 'Chưa phân nhóm'); ?></div>
-      <p class="mt-2 text-sm text-gray-500">Bạn chọn khóa học theo nhóm ngành, admin sẽ xem lịch phù hợp để phân lớp.</p>
+      <p class="mt-2 text-sm text-gray-500">Bạn chọn khóa học theo nhóm học, admin sẽ xem lịch phù hợp để phân lớp.</p>
     </div>
     <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
       <div class="text-sm font-medium text-gray-500">Học phí tham khảo</div>
@@ -56,12 +58,14 @@
         <div>
           <div class="text-sm font-semibold uppercase tracking-wide text-blue-700">Trạng thái đăng ký</div>
           <div class="mt-2">
-            <?php if($userEnrollment->status === 'pending'): ?>
+            <?php if($normalizedStatus === \App\Models\Enrollment::STATUS_PENDING): ?>
               <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">Đang chờ admin duyệt</span>
-            <?php elseif($userEnrollment->status === 'confirmed'): ?>
-              <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">Đã được xếp lớp</span>
+            <?php elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED): ?>
+              <span class="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-800">Đã duyệt, chờ xếp lớp</span>
+            <?php elseif(in_array($normalizedStatus, [\App\Models\Enrollment::STATUS_SCHEDULED, \App\Models\Enrollment::STATUS_ACTIVE, \App\Models\Enrollment::STATUS_COMPLETED], true)): ?>
+              <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800"><?php echo e($userEnrollment->statusLabel()); ?></span>
             <?php else: ?>
-              <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Cần bổ sung lại thông tin</span>
+              <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Đăng ký bị từ chối</span>
             <?php endif; ?>
           </div>
           <?php if($userEnrollment->course): ?>
@@ -88,10 +92,18 @@
           <?php endif; ?>
         </div>
       </div>
-      <?php if($userEnrollment->status === 'rejected' && $userEnrollment->note): ?>
-        <div class="mt-4 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700">
-          <strong>Lý do cần cập nhật:</strong> <?php echo e($userEnrollment->note); ?>
+      <?php if($userEnrollment->note): ?>
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+          <strong><?php echo e($normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED ? 'Lý do từ chối' : 'Ghi chú từ admin'); ?>:</strong> <?php echo e($userEnrollment->note); ?>
 
+        </div>
+      <?php endif; ?>
+      <?php if($hasCourseAccess && $userEnrollment->course_id): ?>
+        <div class="mt-4">
+          <a href="<?php echo e(route('courses.show', $userEnrollment->course_id)); ?>" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-white hover:bg-primary-dark transition">
+            <i class="fas fa-graduation-cap"></i>
+            Vào lớp học nội bộ
+          </a>
         </div>
       <?php endif; ?>
     </div>
@@ -116,6 +128,10 @@
               Đăng nhập để đăng ký
             </a>
           </div>
+        </div>
+      <?php elseif($hasCourseAccess): ?>
+        <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800">
+          Bạn đã được admin xếp vào lớp học chính thức. Việc đổi lịch sẽ được xử lý ở các bước sau của hệ thống, nên biểu mẫu đăng ký tại đây đã được khóa lại.
         </div>
       <?php else: ?>
         <form method="post" action="<?php echo e(route('khoa-hoc.enroll', $subject->id)); ?>" class="mt-6 space-y-5">
@@ -170,10 +186,10 @@ unset($__errorArgs, $__bag); ?>
           <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-white hover:bg-primary-dark transition">
             <i class="fas fa-paper-plane text-sm"></i>
             <?php if($userEnrollment): ?>
-              <?php if($userEnrollment->status === 'rejected'): ?>
+              <?php if($normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED): ?>
                 Gửi lại yêu cầu đăng ký
-              <?php elseif($userEnrollment->status === 'confirmed'): ?>
-                Cập nhật khung giờ mong muốn
+              <?php elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED): ?>
+                Cập nhật thời gian mong muốn
               <?php else: ?>
                 Cập nhật yêu cầu đăng ký
               <?php endif; ?>
@@ -190,7 +206,7 @@ unset($__errorArgs, $__bag); ?>
         <h3 class="text-lg font-semibold text-gray-900">Admin sẽ xử lý như thế nào?</h3>
         <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-600">
           <li>1. Tiếp nhận khóa học bạn chọn và khung giờ mong muốn.</li>
-          <li>2. Đối chiếu các lớp hiện có hoặc mở lớp mới nếu cần.</li>
+          <li>2. Duyệt đăng ký trước khi xếp bạn vào lớp học nội bộ phù hợp.</li>
           <li>3. Phân giảng viên, chốt lịch và thông báo lại cho bạn.</li>
         </ul>
       </div>

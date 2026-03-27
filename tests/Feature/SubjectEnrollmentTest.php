@@ -54,11 +54,11 @@ class SubjectEnrollmentTest extends TestCase
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => null,
-            'status' => 'pending',
+            'status' => Enrollment::STATUS_PENDING,
         ]);
     }
 
-    public function test_student_without_confirmed_class_is_redirected_from_internal_class_page(): void
+    public function test_student_without_scheduled_class_is_redirected_from_internal_class_page(): void
     {
         $student = User::factory()->create([
             'role' => 'hoc_vien',
@@ -75,7 +75,7 @@ class SubjectEnrollmentTest extends TestCase
         $response->assertSessionHas('error');
     }
 
-    public function test_confirmed_student_can_open_internal_class_page(): void
+    public function test_scheduled_student_can_open_internal_class_page(): void
     {
         $student = User::factory()->create([
             'role' => 'hoc_vien',
@@ -88,7 +88,7 @@ class SubjectEnrollmentTest extends TestCase
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
-            'status' => 'confirmed',
+            'status' => Enrollment::STATUS_SCHEDULED,
             'is_submitted' => true,
         ]);
 
@@ -101,7 +101,7 @@ class SubjectEnrollmentTest extends TestCase
         $response->assertSee('Lộ trình trong lớp học');
     }
 
-    public function test_admin_must_choose_class_before_confirming_enrollment(): void
+    public function test_admin_must_choose_class_before_scheduling_enrollment(): void
     {
         $admin = User::factory()->create([
             'role' => 'admin',
@@ -115,30 +115,32 @@ class SubjectEnrollmentTest extends TestCase
         $enrollment = Enrollment::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => 'pending',
+            'status' => Enrollment::STATUS_PENDING,
             'is_submitted' => true,
         ]);
 
         $response = $this
+            ->from(route('admin.enrollments.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
-            ->post(route('admin.enrollments.update', $enrollment->id), [
-                'status' => 'confirmed',
+            ->post(route('admin.enrollments.review', $enrollment), [
+                'action' => 'schedule',
                 'course_id' => '',
                 'assigned_teacher_id' => '',
                 'schedule' => '',
                 'note' => '',
             ]);
 
-        $response->assertSessionHas('error');
+        $response->assertRedirect(route('admin.enrollments.show', $enrollment));
+        $response->assertSessionHasErrors('course_id');
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => 'pending',
+            'status' => Enrollment::STATUS_PENDING,
             'course_id' => null,
         ]);
     }
 
-    public function test_admin_confirmation_defaults_teacher_and_schedule_from_selected_class(): void
+    public function test_admin_scheduling_defaults_teacher_and_schedule_from_selected_class(): void
     {
         $admin = User::factory()->create([
             'role' => 'admin',
@@ -156,21 +158,21 @@ class SubjectEnrollmentTest extends TestCase
         $enrollment = Enrollment::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => 'pending',
+            'status' => Enrollment::STATUS_PENDING,
             'is_submitted' => true,
         ]);
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
-            ->post(route('admin.enrollments.update', $enrollment->id), [
-                'status' => 'confirmed',
+            ->post(route('admin.enrollments.review', $enrollment), [
+                'action' => 'schedule',
                 'course_id' => $course->id,
                 'assigned_teacher_id' => '',
                 'schedule' => '',
                 'note' => '',
             ]);
 
-        $response->assertRedirect(route('admin.enrollments'));
+        $response->assertRedirect(route('admin.enrollments.show', $enrollment));
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
@@ -178,7 +180,7 @@ class SubjectEnrollmentTest extends TestCase
             'course_id' => $course->id,
             'assigned_teacher_id' => $teacher->id,
             'schedule' => 'T2-T4-T6, 18:00-20:00',
-            'status' => 'confirmed',
+            'status' => Enrollment::STATUS_SCHEDULED,
         ]);
     }
 
@@ -188,12 +190,14 @@ class SubjectEnrollmentTest extends TestCase
             'name' => 'Ngoại ngữ - Tin học',
             'slug' => 'ngoai-ngu-tin-hoc',
             'order' => 1,
+            'status' => Category::STATUS_ACTIVE,
         ]);
 
         $subject = Subject::create([
             'name' => 'Tin học văn phòng',
             'category_id' => $category->id,
             'price' => 1500000,
+            'status' => Subject::STATUS_OPEN,
         ]);
 
         return [$category, $subject];

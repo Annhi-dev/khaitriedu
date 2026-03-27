@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,16 +9,19 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_TEACHER = 'giang_vien';
+    public const ROLE_STUDENT = 'hoc_vien';
+
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+    public const STATUS_LOCKED = 'locked';
+
     protected $table = 'nguoi_dung';
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'username',
@@ -27,30 +29,46 @@ class User extends Authenticatable
         'phone',
         'password',
         'role',
+        'status',
         'email_verified_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function scopeStudents($query)
+    {
+        return $query->where('role', self::ROLE_STUDENT);
+    }
+
+    public function scopeTeachers($query)
+    {
+        return $query->where('role', self::ROLE_TEACHER);
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->status === self::STATUS_LOCKED;
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            self::STATUS_ACTIVE => 'Hoat dong',
+            self::STATUS_INACTIVE => 'Tam dung',
+            self::STATUS_LOCKED => 'Da khoa',
+            default => ucfirst((string) $this->status),
+        };
     }
 
     public function enrollments()
@@ -71,5 +89,10 @@ class User extends Authenticatable
     public function taughtCourses()
     {
         return $this->hasMany(Course::class, 'teacher_id');
+    }
+
+    public function scheduleChangeRequests()
+    {
+        return $this->hasMany(ScheduleChangeRequest::class, 'teacher_id');
     }
 }

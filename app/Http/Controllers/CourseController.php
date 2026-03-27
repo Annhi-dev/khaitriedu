@@ -25,16 +25,17 @@ class CourseController extends Controller
         $categorySlug = $request->query('category');
         $query = Subject::with('category')
             ->withCount(['courses', 'enrollments'])
+            ->visibleOnCatalog()
             ->orderBy('id', 'desc');
 
         if ($categorySlug) {
             $query->whereHas('category', function ($categoryQuery) use ($categorySlug) {
-                $categoryQuery->where('slug', $categorySlug);
+                $categoryQuery->active()->where('slug', $categorySlug);
             });
         }
 
         $courses = $query->paginate(12)->withQueryString();
-        $categories = Category::orderBy('order')->get();
+        $categories = Category::active()->orderBy('order')->get();
 
         return view('pages.courses', compact('courses', 'user', 'categories'));
     }
@@ -47,6 +48,11 @@ class CourseController extends Controller
         if ($redirect) {
             return $redirect;
         }
+
+        $course->setRelation(
+            'modules',
+            $course->modules->where('status', Module::STATUS_PUBLISHED)->values()
+        );
 
         $reviews = $course->reviews->sortByDesc('created_at')->values();
         $review = $user && $user->role === 'hoc_vien' ? $reviews->firstWhere('user_id', $user->id) : null;
@@ -63,7 +69,10 @@ class CourseController extends Controller
             return $redirect;
         }
 
-        $module = Module::with('lessons')->where('course_id', $course->id)->find($module);
+        $module = Module::with('lessons')
+            ->where('course_id', $course->id)
+            ->where('status', Module::STATUS_PUBLISHED)
+            ->find($module);
 
         if (! $module) {
             return redirect()->route('courses.show', $course->id)->with('error', 'Bài học không tồn tại.');
@@ -190,11 +199,11 @@ class CourseController extends Controller
 
         $enrollment = Enrollment::where('user_id', $user->id)
             ->where('course_id', $id)
-            ->where('status', 'confirmed')
+            ->whereIn('status', Enrollment::courseAccessStatuses())
             ->first();
 
         if (! $enrollment) {
-            return back()->with('error', 'Bạn chưa hoàn thành lớp học này.');
+            return back()->with('error', 'Bạn chưa được xếp vào lớp học này.');
         }
 
         $data = $request->validate([
@@ -215,8 +224,8 @@ class CourseController extends Controller
         $user = $this->sessionUser();
         $subject = Subject::with(['category', 'courses.teacher'])->find($id);
 
-        if (! $subject) {
-            return redirect()->route('courses.index')->with('error', 'Khóa học không tồn tại.');
+        if (! $subject || ($subject->category && ! $subject->category->isActive())) {
+            return redirect()->route('courses.index')->with('error', 'Khóa học không tồn tại hoặc đang tạm ẩn.');
         }
 
         $userEnrollment = $user && $user->role === 'hoc_vien'
@@ -259,18 +268,26 @@ class CourseController extends Controller
         ];
 
         if ($existing) {
-            if ($existing->status === 'rejected') {
-                $payload['status'] = 'pending';
+            if ($existing->hasCourseAccess()) {
+                return back()->with('error', 'Bạn đã được xếp lớp cho khóa học này. Nếu cần đổi lịch, vui lòng liên hệ admin.');
+            }
+
+            if (in_array($existing->normalizedStatus(), [Enrollment::STATUS_REJECTED, Enrollment::STATUS_PENDING], true)) {
+                $payload['status'] = Enrollment::STATUS_PENDING;
                 $payload['course_id'] = null;
                 $payload['assigned_teacher_id'] = null;
                 $payload['schedule'] = null;
+                $payload['reviewed_by'] = null;
+                $payload['reviewed_at'] = null;
+            } elseif ($existing->normalizedStatus() === Enrollment::STATUS_APPROVED) {
+                $payload['status'] = Enrollment::STATUS_APPROVED;
             } else {
                 $payload['status'] = $existing->status;
             }
 
             $existing->update($payload);
 
-            return back()->with('status', 'Yêu cầu đăng ký khóa học đã được cập nhật. Admin sẽ xem lại và xếp lớp phù hợp.');
+            return back()->with('status', 'Yêu cầu đăng ký khóa học đã được cập nhật. Admin sẽ xem lại và sắp xếp lớp phù hợp.');
         }
 
         Enrollment::create([
@@ -282,7 +299,7 @@ class CourseController extends Controller
             'preferred_days' => json_encode($data['preferred_days']),
             'is_submitted' => true,
             'submitted_at' => Carbon::now(),
-            'status' => 'pending',
+            'status' => Enrollment::STATUS_PENDING,
         ]);
 
         return back()->with('status', 'Đăng ký khóa học đã gửi. Admin sẽ xem lịch mong muốn và xếp bạn vào lớp phù hợp.');
@@ -297,7 +314,8 @@ class CourseController extends Controller
     {
         return Quiz::with('questions.options')
             ->whereHas('lesson.module', function ($query) use ($course) {
-                $query->where('course_id', $course->id);
+                $query->where('course_id', $course->id)
+                    ->where('status', Module::STATUS_PUBLISHED);
             })
             ->find($quizId);
     }

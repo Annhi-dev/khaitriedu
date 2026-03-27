@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CourseController;
@@ -8,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TeacherScheduleChangeRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'home'])->name('home');
@@ -81,57 +81,12 @@ Route::prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/courses', [TeacherController::class, 'courses'])->name('courses');
     Route::get('/courses/{id}', [TeacherController::class, 'showCourse'])->name('course.show');
     Route::post('/grades', [TeacherController::class, 'updateGrades'])->name('grades.update');
+    Route::get('/schedule-change-requests', [TeacherScheduleChangeRequestController::class, 'index'])->name('schedule-change-requests.index');
+    Route::get('/courses/{course}/schedule-change-requests/create', [TeacherScheduleChangeRequestController::class, 'create'])->name('schedule-change-requests.create');
+    Route::post('/courses/{course}/schedule-change-requests', [TeacherScheduleChangeRequestController::class, 'store'])->name('schedule-change-requests.store');
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('/report', [AdminController::class, 'report'])->name('report');
-
-    Route::prefix('teacher-applications')->group(function () {
-        Route::get('/', [AdminController::class, 'teacherApplications'])->name('teacher-applications');
-        Route::get('/{id}', [AdminController::class, 'showTeacherApplication'])->name('teacher-applications.show');
-        Route::post('/{id}/review', [AdminController::class, 'reviewTeacherApplication'])->name('teacher-applications.review');
-    });
-
-    Route::prefix('users')->group(function () {
-        Route::get('/', [AdminController::class, 'users'])->name('users');
-        Route::get('/{id}', [AdminController::class, 'showUser'])->name('user.show');
-        Route::post('/', [AdminController::class, 'storeUser'])->name('users.create');
-        Route::post('/{id}/update', [AdminController::class, 'updateUser'])->name('users.update');
-        Route::post('/{id}/delete', [AdminController::class, 'deleteUser'])->name('users.delete');
-    });
-
-    Route::prefix('categories')->group(function () {
-        Route::get('/', [AdminController::class, 'categories'])->name('categories');
-        Route::post('/', [AdminController::class, 'storeCategory'])->name('categories.create');
-        Route::post('/{id}/update', [AdminController::class, 'updateCategory'])->name('categories.update');
-        Route::post('/{id}/delete', [AdminController::class, 'deleteCategory'])->name('categories.delete');
-    });
-
-    Route::prefix('subjects')->group(function () {
-        Route::get('/', [AdminController::class, 'subjects'])->name('subjects');
-        Route::get('/{id}', [AdminController::class, 'showSubject'])->name('subject.show');
-        Route::post('/', [AdminController::class, 'storeSubject'])->name('subjects.create');
-        Route::post('/{id}/update', [AdminController::class, 'updateSubject'])->name('subjects.update');
-        Route::post('/{id}/delete', [AdminController::class, 'deleteSubject'])->name('subjects.delete');
-        Route::post('/{subject_id}/courses', [AdminController::class, 'storeSubjectCourse'])->name('subject.courses.create');
-    });
-
-    Route::prefix('courses')->group(function () {
-        Route::get('/', [AdminController::class, 'courses'])->name('courses');
-        Route::get('/{id}', [AdminController::class, 'showCourse'])->name('course.show');
-        Route::post('/', [AdminController::class, 'storeCourse'])->name('courses.create');
-        Route::post('/{id}/update', [AdminController::class, 'updateCourse'])->name('courses.update');
-        Route::post('/{id}/delete', [AdminController::class, 'deleteCourse'])->name('courses.delete');
-        Route::post('/{id}/assign', [AdminController::class, 'assignCourse'])->name('courses.assign');
-        Route::post('/{id}/modules', [AdminController::class, 'storeCourseModule'])->name('courses.modules.create');
-    });
-
-    Route::prefix('enrollments')->group(function () {
-        Route::get('/', [AdminController::class, 'enrollments'])->name('enrollments');
-        Route::post('/{id}/update', [AdminController::class, 'updateEnrollment'])->name('enrollments.update');
-    });
-});
+Route::prefix('admin')->name('admin.')->middleware('admin')->group(base_path('routes/admin.php'));
 
 Route::get('/logout', [HomeController::class, 'logout'])->name('logout');
 Route::fallback([HomeController::class, 'fallback']);
