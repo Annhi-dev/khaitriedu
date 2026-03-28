@@ -37,6 +37,7 @@
                 ['label' => 'Học viên', 'icon' => 'fas fa-user-graduate', 'route' => 'admin.students.index', 'active' => request()->routeIs('admin.students.*')],
                 ['label' => 'Giảng viên', 'icon' => 'fas fa-chalkboard-user', 'route' => 'admin.teachers.index', 'active' => request()->routeIs('admin.teachers.*')],
                 ['label' => 'Tài khoản hệ thống', 'icon' => 'fas fa-users-gear', 'route' => 'admin.users', 'active' => request()->routeIs('admin.users*') || request()->routeIs('admin.user.*')],
+                ['label' => 'Ứng tuyển giảng viên', 'icon' => 'fas fa-file-signature', 'route' => 'admin.teacher-applications', 'active' => request()->routeIs('admin.teacher-applications*')],
             ],
         ],
         [
@@ -45,14 +46,18 @@
                 ['label' => 'Nhóm học', 'icon' => 'fas fa-layer-group', 'route' => 'admin.categories', 'active' => request()->routeIs('admin.categories*')],
                 ['label' => 'Khóa học', 'icon' => 'fas fa-book-open', 'route' => 'admin.subjects', 'active' => request()->routeIs('admin.subjects*') || request()->routeIs('admin.subject.*')],
                 ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
-                ['label' => 'Đăng ký học', 'icon' => 'fas fa-clipboard-check', 'route' => 'admin.enrollments', 'active' => request()->routeIs('admin.enrollments*')],
-                ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
+                ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
+                ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
+                ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
+                ['label' => 'Nguyện vọng slot', 'icon' => 'fas fa-list-check', 'route' => 'admin.slot-registrations.index', 'active' => request()->routeIs('admin.slot-registrations.*')],
+                ['label' => 'Theo dõi theo slot', 'icon' => 'fas fa-chart-simple', 'route' => 'admin.slot-tracking.index', 'active' => request()->routeIs('admin.slot-tracking.*')],
             ],
         ],
         [
             'label' => 'Vận hành',
             'items' => [
-                ['label' => 'Ứng tuyển giảng viên', 'icon' => 'fas fa-file-signature', 'route' => 'admin.teacher-applications', 'active' => request()->routeIs('admin.teacher-applications*')],
+                ['label' => 'Đăng ký học', 'icon' => 'fas fa-clipboard-check', 'route' => 'admin.enrollments', 'active' => request()->routeIs('admin.enrollments*')],
+                ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
                 ['label' => 'Yêu cầu đổi lịch', 'icon' => 'fas fa-calendar-rotate', 'route' => 'admin.schedule-change-requests.index', 'active' => request()->routeIs('admin.schedule-change-requests.*')],
             ],
         ],
@@ -60,7 +65,6 @@
 @endphp
 <div x-data="{ sidebarOpen: false }" class="relative min-h-screen">
     <div class="lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
-        <!-- Sidebar Desktop -->
         <aside class="hidden lg:block bg-white border-r border-slate-200 shadow-sm h-screen sticky top-0 overflow-y-auto">
             <div class="px-6 py-6 border-b border-slate-100">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
@@ -81,16 +85,31 @@
                             @foreach ($section['items'] as $item)
                                 @php
                                     $active = $item['active'];
+                                    $isPlaceholder = empty($item['route']);
                                     $classes = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200';
-                                    $classes .= $active ? ' bg-cyan-50 text-cyan-700' : ' text-slate-600 hover:bg-slate-50 hover:text-cyan-600';
+                                    $classes .= $active
+                                        ? ' bg-cyan-50 text-cyan-700'
+                                        : ($isPlaceholder ? ' text-slate-400 bg-slate-50/80 cursor-not-allowed' : ' text-slate-600 hover:bg-slate-50 hover:text-cyan-600');
                                 @endphp
-                                <a href="{{ route($item['route']) }}" class="{{ $classes }}">
-                                    <i class="{{ $item['icon'] }} w-5 text-sm {{ $active ? 'text-cyan-600' : 'text-slate-400' }}"></i>
-                                    <span>{{ $item['label'] }}</span>
-                                    @if ($active)
-                                        <span class="ml-auto h-2 w-2 rounded-full bg-cyan-500"></span>
-                                    @endif
-                                </a>
+                                @if ($isPlaceholder)
+                                    <div class="{{ $classes }}">
+                                        <i class="{{ $item['icon'] }} w-5 text-sm text-slate-300"></i>
+                                        <span>{{ $item['label'] }}</span>
+                                        @if (! empty($item['badge']))
+                                            <span class="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $item['badge'] }}</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <a href="{{ route($item['route']) }}" class="{{ $classes }}">
+                                        <i class="{{ $item['icon'] }} w-5 text-sm {{ $active ? 'text-cyan-600' : 'text-slate-400' }}"></i>
+                                        <span>{{ $item['label'] }}</span>
+                                        @if (! empty($item['badge']))
+                                            <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $item['badge'] }}</span>
+                                        @elseif ($active)
+                                            <span class="ml-auto h-2 w-2 rounded-full bg-cyan-500"></span>
+                                        @endif
+                                    </a>
+                                @endif
                             @endforeach
                         </div>
                     </div>
@@ -98,9 +117,7 @@
             </nav>
         </aside>
 
-        <!-- Main content -->
         <div class="min-w-0">
-            <!-- Topbar -->
             <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -113,11 +130,9 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="relative">
-                            <button class="p-2 rounded-full hover:bg-slate-100">
-                                <i class="fas fa-bell text-slate-500"></i>
-                            </button>
-                        </div>
+                        <button class="p-2 rounded-full hover:bg-slate-100">
+                            <i class="fas fa-bell text-slate-500"></i>
+                        </button>
                         <div class="flex items-center gap-2">
                             <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
                                 <span class="text-sm font-semibold">{{ substr($adminUser?->name ?? 'A', 0, 1) }}</span>
@@ -131,7 +146,6 @@
                 </div>
             </header>
 
-            <!-- Breadcrumb (optional) -->
             @if (!request()->routeIs('admin.dashboard'))
                 <div class="px-4 py-2 text-sm text-slate-500 bg-slate-50 border-b border-slate-200">
                     <div class="container mx-auto">
@@ -142,24 +156,20 @@
                 </div>
             @endif
 
-            <!-- Flash messages -->
             <div class="px-4 py-4 sm:px-6 lg:px-8">
                 @include('components.admin.alert', ['session' => session()])
             </div>
 
-            <!-- Main content -->
             <main class="px-4 pb-10 sm:px-6 lg:px-8">
                 @yield('content')
             </main>
 
-            <!-- Footer -->
             <footer class="border-t border-slate-200 py-4 text-center text-xs text-slate-400">
                 &copy; {{ date('Y') }} KhaiTriEdu Admin Console
             </footer>
         </div>
     </div>
 
-    <!-- Mobile sidebar -->
     <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50 bg-black/30 lg:hidden" @click="sidebarOpen = false"></div>
     <aside x-show="sidebarOpen" x-cloak class="fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-slate-200 shadow-lg lg:hidden overflow-y-auto">
         <div class="flex items-center justify-between p-4 border-b">
@@ -174,11 +184,27 @@
                     <p class="text-xs font-semibold uppercase text-slate-400">{{ $section['label'] }}</p>
                     <div class="mt-2 space-y-1">
                         @foreach ($section['items'] as $item)
-                            @php $active = $item['active']; @endphp
-                            <a href="{{ route($item['route']) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {{ $active ? 'bg-cyan-50 text-cyan-700' : 'text-slate-600 hover:bg-slate-50' }}">
-                                <i class="{{ $item['icon'] }} w-5"></i>
-                                <span>{{ $item['label'] }}</span>
-                            </a>
+                            @php
+                                $active = $item['active'];
+                                $isPlaceholder = empty($item['route']);
+                            @endphp
+                            @if ($isPlaceholder)
+                                <div class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 bg-slate-50/80 cursor-not-allowed">
+                                    <i class="{{ $item['icon'] }} w-5"></i>
+                                    <span>{{ $item['label'] }}</span>
+                                    @if (! empty($item['badge']))
+                                        <span class="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $item['badge'] }}</span>
+                                    @endif
+                                </div>
+                            @else
+                                <a href="{{ route($item['route']) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {{ $active ? 'bg-cyan-50 text-cyan-700' : 'text-slate-600 hover:bg-slate-50' }}">
+                                    <i class="{{ $item['icon'] }} w-5"></i>
+                                    <span>{{ $item['label'] }}</span>
+                                    @if (! empty($item['badge']))
+                                        <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $item['badge'] }}</span>
+                                    @endif
+                                </a>
+                            @endif
                         @endforeach
                     </div>
                 </div>

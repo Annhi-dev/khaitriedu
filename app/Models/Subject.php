@@ -115,6 +115,16 @@ class Subject extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function timeSlots()
+    {
+        return $this->hasMany(CourseTimeSlot::class);
+    }
+
+    public function slotRegistrations()
+    {
+        return $this->hasMany(SlotRegistration::class);
+    }
+
     public function getImageUrlAttribute(): ?string
     {
         return $this->image ? asset('storage/' . $this->image) : null;

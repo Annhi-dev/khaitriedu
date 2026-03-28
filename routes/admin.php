@@ -3,10 +3,15 @@
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EnrollmentController;
+use App\Http\Controllers\Admin\CourseTimeSlotController;
 use App\Http\Controllers\Admin\ModuleController;
+use App\Http\Controllers\Admin\ModuleOverviewController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\ScheduleChangeRequestController;
 use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\SlotRegistrationController;
+use App\Http\Controllers\Admin\SlotTrackingController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\StudyGroupController;
 use App\Http\Controllers\Admin\SubjectController;
@@ -97,6 +102,35 @@ Route::prefix('courses')->group(function () {
     Route::post('/{course}/update', [CourseController::class, 'update'])->name('courses.update');
     Route::post('/{course}/delete', [CourseController::class, 'destroy'])->name('courses.delete');
     Route::post('/{course}/assign', [CourseController::class, 'assign'])->name('courses.assign');
+});
+
+Route::prefix('modules')->name('modules.')->group(function () {
+    Route::get('/', [ModuleOverviewController::class, 'index'])->name('index');
+});
+
+Route::prefix('rooms')->name('rooms.')->group(function () {
+    Route::get('/', [RoomController::class, 'index'])->name('index');
+    Route::get('/create', [RoomController::class, 'create'])->name('create');
+    Route::post('/', [RoomController::class, 'store'])->name('store');
+    Route::get('/{room}/edit', [RoomController::class, 'edit'])->name('edit');
+    Route::post('/{room}/update', [RoomController::class, 'update'])->name('update');
+});
+
+Route::prefix('course-time-slots')->name('course-time-slots.')->group(function () {
+    Route::get('/', [CourseTimeSlotController::class, 'index'])->name('index');
+    Route::get('/create', [CourseTimeSlotController::class, 'create'])->name('create');
+    Route::post('/', [CourseTimeSlotController::class, 'store'])->name('store');
+    Route::get('/{courseTimeSlot}/edit', [CourseTimeSlotController::class, 'edit'])->name('edit');
+    Route::post('/{courseTimeSlot}/update', [CourseTimeSlotController::class, 'update'])->name('update');
+});
+
+Route::prefix('slot-registrations')->name('slot-registrations.')->group(function () {
+    Route::get('/', [SlotRegistrationController::class, 'index'])->name('index');
+    Route::get('/{slotRegistration}', [SlotRegistrationController::class, 'show'])->name('show');
+});
+
+Route::prefix('slot-tracking')->name('slot-tracking.')->group(function () {
+    Route::get('/', [SlotTrackingController::class, 'index'])->name('index');
 });
 
 Route::prefix('enrollments')->group(function () {

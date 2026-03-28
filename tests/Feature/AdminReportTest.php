@@ -200,7 +200,7 @@ class AdminReportTest extends TestCase
                 && $quality['reviewedCourseCount'] === 1;
         });
         $response->assertViewHas('availability', function (array $availability) {
-            return $availability['attendance']['available'] === false
+            return $availability['attendance']['available'] === true
                 && $availability['payments']['available'] === false;
         });
         $response->assertViewHas('topCourses', function ($topCourses) use ($subject) {

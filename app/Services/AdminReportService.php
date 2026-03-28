@@ -92,14 +92,21 @@ class AdminReportService
 
     protected function availability(): array
     {
+        $attendanceAvailable = $this->hasAnyTable(['attendance', 'attendances', 'diem_danh', 'attendance_records']);
+        $paymentsAvailable = $this->hasAnyTable(['payments', 'payment_transactions', 'thanh_toan', 'hoa_don']);
+
         return [
             'attendance' => [
-                'available' => $this->hasAnyTable(['attendance', 'attendances', 'diem_danh', 'attendance_records']),
-                'message' => 'He thong hien chua co bang diem danh de tinh ty le chuyen can.',
+                'available' => $attendanceAvailable,
+                'message' => $attendanceAvailable
+                    ? 'He thong da co bang diem danh, san sang mo rong bao cao chuyen can.'
+                    : 'He thong hien chua co bang diem danh de tinh ty le chuyen can.',
             ],
             'payments' => [
-                'available' => $this->hasAnyTable(['payments', 'payment_transactions', 'thanh_toan', 'hoa_don']),
-                'message' => 'He thong hien chua co du lieu thanh toan/doanh thu de tong hop.',
+                'available' => $paymentsAvailable,
+                'message' => $paymentsAvailable
+                    ? 'He thong da co du lieu thanh toan/doanh thu de mo rong bao cao tai chinh.'
+                    : 'He thong hien chua co du lieu thanh toan/doanh thu de tong hop.',
             ],
         ];
     }
