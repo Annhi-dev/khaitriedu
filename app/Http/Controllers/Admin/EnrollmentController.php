@@ -20,7 +20,7 @@ class EnrollmentController extends Controller
 
         $filters = $request->only(['search', 'status']);
         $enrollments = $enrollmentService->paginateEnrollments($filters);
-        $statusOptions = Enrollment::filterableStatuses();
+        $statusOptions = Enrollment::statusOptions();
 
         return view('admin.enrollments.index', compact('current', 'filters', 'enrollments', 'statusOptions'));
     }

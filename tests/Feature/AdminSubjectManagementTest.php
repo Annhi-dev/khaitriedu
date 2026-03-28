@@ -90,6 +90,39 @@ class AdminSubjectManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_create_public_course_and_return_to_study_group_detail(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $category = Category::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'slug' => 'ngoai-ngu-tin-hoc',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.subjects.create'), [
+                'name' => 'Tin hoc ung dung van phong',
+                'description' => 'Khoa hoc moi duoc tao ngay tu nhom hoc',
+                'category_id' => $category->id,
+                'return_to_category_id' => $category->id,
+                'price' => 1950000,
+                'duration' => 42,
+                'status' => Subject::STATUS_OPEN,
+            ]);
+
+        $subject = Subject::where('name', 'Tin hoc ung dung van phong')->first();
+
+        $response->assertRedirect(route('admin.categories.show', $category));
+        $this->assertDatabaseHas('mon_hoc', [
+            'id' => $subject->id,
+            'category_id' => $category->id,
+            'price' => 1950000,
+            'duration' => 42,
+            'status' => Subject::STATUS_OPEN,
+        ]);
+    }
+
     public function test_admin_can_update_public_course(): void
     {
         $admin = User::factory()->admin()->create();

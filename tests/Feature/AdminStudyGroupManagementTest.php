@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Course;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -158,6 +159,129 @@ class AdminStudyGroupManagementTest extends TestCase
         $response->assertSee($category->name);
         $response->assertSee('Tieng Anh giao tiep');
         $response->assertSee('Giao tiep');
+    }
+
+    public function test_study_group_detail_shows_only_actual_courses_of_that_group(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $category = Category::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'slug' => 'ngoai-ngu-tin-hoc',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+        $subject = Subject::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'price' => 1500000,
+            'category_id' => $category->id,
+        ]);
+        $course = Course::create([
+            'subject_id' => $subject->id,
+            'title' => 'Tin hoc van phong',
+            'description' => 'Khoa hoc thuoc nhom dang xem',
+        ]);
+
+        $otherCategory = Category::create([
+            'name' => 'Dao tao nghe',
+            'slug' => 'dao-tao-nghe',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+        $otherSubject = Subject::create([
+            'name' => 'Dao tao nghe',
+            'price' => 1800000,
+            'category_id' => $otherCategory->id,
+        ]);
+        $otherCourse = Course::create([
+            'subject_id' => $otherSubject->id,
+            'title' => 'Ke toan doanh nghiep',
+            'description' => 'Khoa hoc thuoc nhom khac',
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.categories.show', $category));
+
+        $response->assertOk();
+        $response->assertSee('Danh sách khóa học trong nhóm');
+        $response->assertSee($course->title);
+        $response->assertDontSee($otherCourse->title);
+    }
+
+    public function test_admin_can_open_course_management_from_study_group_context(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $category = Category::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'slug' => 'ngoai-ngu-tin-hoc',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+        $subject = Subject::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'price' => 1500000,
+            'category_id' => $category->id,
+        ]);
+        $course = Course::create([
+            'subject_id' => $subject->id,
+            'title' => 'Anh van thieu nhi',
+        ]);
+
+        $otherCategory = Category::create([
+            'name' => 'Dao tao dai han',
+            'slug' => 'dao-tao-dai-han',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+        $otherSubject = Subject::create([
+            'name' => 'Dao tao dai han',
+            'price' => 2000000,
+            'category_id' => $otherCategory->id,
+        ]);
+        $otherCourse = Course::create([
+            'subject_id' => $otherSubject->id,
+            'title' => 'Lien thong dai hoc',
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.courses', [
+                'subject_id' => $subject->id,
+                'return_to_category_id' => $category->id,
+            ]));
+
+        $response->assertOk();
+        $response->assertSee('Khóa học trong nhóm ' . $category->name);
+        $response->assertSee($course->title);
+        $response->assertDontSee($otherCourse->title);
+    }
+
+    public function test_admin_can_create_course_directly_from_study_group_context(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $category = Category::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'slug' => 'ngoai-ngu-tin-hoc',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+        $subject = Subject::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'price' => 1500000,
+            'category_id' => $category->id,
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.courses.create'), [
+                'subject_id' => $subject->id,
+                'title' => 'Tin hoc van phong',
+                'description' => 'Khoa hoc moi trong nhom hoc',
+                'schedule' => 'T2-T4-T6',
+                'return_to_category_id' => $category->id,
+            ]);
+
+        $response->assertRedirect(route('admin.categories.show', $category));
+        $this->assertDatabaseHas('khoa_hoc', [
+            'subject_id' => $subject->id,
+            'title' => 'Tin hoc van phong',
+            'schedule' => 'T2-T4-T6',
+        ]);
     }
 
     public function test_admin_delete_route_deactivates_but_does_not_hard_delete_group_with_dependencies(): void

@@ -5,6 +5,10 @@
     $statusClasses = $category->status === \App\Models\Category::STATUS_ACTIVE
         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
         : 'border-amber-200 bg-amber-50 text-amber-700';
+    $createCourseUrl = $category->defaultSubject
+        ? route('admin.courses', ['subject_id' => $category->defaultSubject->id, 'return_to_category_id' => $category->id])
+        : route('admin.subjects.create-page', ['category_id' => $category->id, 'return_to_category_id' => $category->id]);
+    $courseFlowReady = $category->defaultSubject !== null;
 @endphp
 <div class="space-y-6">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -22,6 +26,7 @@
         </div>
         <div class="flex flex-wrap items-center gap-3">
             <a href="{{ route('admin.categories') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Danh sách nhóm học</a>
+            <a href="{{ $createCourseUrl }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Tạo khóa học mới</a>
             <a href="{{ route('admin.categories.edit', $category) }}" class="inline-flex items-center justify-center rounded-2xl border border-cyan-200 px-4 py-2.5 text-sm font-medium text-cyan-700 hover:bg-cyan-50">Sửa thông tin</a>
             @if ($category->status === \App\Models\Category::STATUS_ACTIVE)
                 <form method="post" action="{{ route('admin.categories.deactivate', $category) }}" onsubmit="return confirm('Ngừng hoạt động nhóm học này?');">
@@ -72,12 +77,16 @@
                 <h2 class="text-lg font-semibold text-slate-900">Thống kê nhanh</h2>
                 <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học public</p>
-                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $category->subjects_count }}</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học thực tế</p>
+                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $category->courses_count }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Số khóa học đang thuộc nhóm học này.</p>
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                        <p class="text-xs uppercase tracking-wide text-slate-400">Lớp học nội bộ</p>
-                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $category->courses_count }}</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Luồng tạo khóa học</p>
+                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $courseFlowReady ? 'Sẵn sàng' : 'Cần khởi tạo' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            {{ $courseFlowReady ? 'Bạn có thể tạo khóa học mới trực tiếp từ nhóm này.' : 'Nhóm này cần tạo khung khóa gốc trước khi thêm khóa học.' }}
+                        </p>
                     </div>
                 </div>
             </section>
@@ -96,32 +105,52 @@
     </div>
 
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">Khóa học bên trong nhóm</h2>
-                <p class="text-sm text-slate-500">Hiển thị các khóa học public đang nằm trong nhóm học này để admin đi tiếp sang phase quản lý khóa học.</p>
+                <h2 class="text-lg font-semibold text-slate-900">Danh sách khóa học trong nhóm</h2>
+                <p class="text-sm text-slate-500">Mỗi dòng bên dưới là một khóa học thực tế đang nằm trong nhóm học này. Nếu nhóm chưa có khóa nào, hệ thống sẽ hiển thị khung hiện có để bạn tiếp tục tạo mới.</p>
             </div>
-            <a href="{{ route('admin.subjects') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Mở quản lý khóa học</a>
+            <a href="{{ $createCourseUrl }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Tạo khóa học mới</a>
         </div>
 
         <div class="mt-5 grid gap-4">
-            @forelse ($subjects as $subject)
-                <div class="rounded-2xl border border-slate-200 px-4 py-4">
-                    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-slate-900">{{ $subject->name }}</p>
-                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ $subject->description ?: 'Chưa có mô tả cho khóa học này.' }}</p>
-                            <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                                <span>Giá tham khảo: {{ number_format((float) $subject->price, 0, ',', '.') }} đ</span>
-                                <span>{{ $subject->courses_count }} lớp học nội bộ</span>
+            @if ($courses->isNotEmpty())
+                @foreach ($courses as $course)
+                    <div class="rounded-2xl border border-slate-200 px-4 py-4">
+                        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-900">{{ $course->title }}</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $course->description ?: 'Chưa có mô tả cho khóa học này.' }}</p>
+                                <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                                    <span>Thuộc khung: {{ $course->subject?->name ?? 'Chưa gắn' }}</span>
+                                    <span>Giảng viên: {{ $course->teacher?->name ?? 'Chưa phân công' }}</span>
+                                    <span>Lịch: {{ $course->formattedSchedule() }}</span>
+                                    <span>{{ $course->enrollments_count ?? 0 }} học viên đã xếp</span>
+                                </div>
                             </div>
+                            <a href="{{ route('admin.course.show', $course) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Xem khóa học</a>
                         </div>
-                        <a href="{{ route('admin.subject.show', $subject->id) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Xem khóa học</a>
                     </div>
-                </div>
-            @empty
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nhóm học này chưa có khóa học public nào được liên kết.</div>
-            @endforelse
+                @endforeach
+            @else
+                @forelse ($subjects as $subject)
+                    <div class="rounded-2xl border border-slate-200 px-4 py-4">
+                        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-900">{{ $subject->name }}</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $subject->description ?: 'Đây là khung đang được dùng để khởi tạo khóa học cho nhóm này.' }}</p>
+                                <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                                    <span>{{ $subject->courses_count }} khóa học đang gắn phía dưới</span>
+                                    <span>{{ $subject->statusLabel() }}</span>
+                                </div>
+                            </div>
+                            <a href="{{ route('admin.subject.show', $subject) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Xem khung hiện có</a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nhóm học này chưa có khóa học nào được liên kết.</div>
+                @endforelse
+            @endif
         </div>
     </section>
 </div>

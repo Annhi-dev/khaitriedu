@@ -21,6 +21,7 @@ class StoreSubjectRequest extends FormRequest
             'duration' => $this->filled('duration') ? (int) $this->input('duration') : null,
             'status' => $this->input('status', Subject::STATUS_OPEN),
             'category_id' => $this->filled('category_id') ? (int) $this->input('category_id') : null,
+            'return_to_category_id' => $this->filled('return_to_category_id') ? (int) $this->input('return_to_category_id') : null,
         ]);
     }
 
@@ -38,6 +39,7 @@ class StoreSubjectRequest extends FormRequest
                 Subject::STATUS_ARCHIVED,
             ])],
             'category_id' => ['nullable', 'exists:danh_muc,id'],
+            'return_to_category_id' => ['nullable', 'exists:danh_muc,id'],
             'image' => ['nullable', 'image', 'max:2048'],
         ];
     }

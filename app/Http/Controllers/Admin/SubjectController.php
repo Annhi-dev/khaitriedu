@@ -26,7 +26,7 @@ class SubjectController extends Controller
         return view('admin.subject.index', compact('current', 'filters', 'subjects', 'categories'));
     }
 
-    public function create(AdminSubjectService $subjectService)
+    public function create(Request $request, AdminSubjectService $subjectService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
@@ -34,8 +34,20 @@ class SubjectController extends Controller
         }
 
         $categories = $subjectService->getCategories();
+        $selectedCategory = null;
+        $returnToCategoryId = null;
 
-        return view('admin.subject.create', compact('current', 'categories'));
+        if ($request->filled('category_id')) {
+            $selectedCategory = $categories->firstWhere('id', (int) $request->query('category_id'));
+
+            if ($selectedCategory) {
+                $selectedCategory->loadCount(['subjects', 'courses']);
+            }
+
+            $returnToCategoryId = $selectedCategory?->id;
+        }
+
+        return view('admin.subject.create', compact('current', 'categories', 'selectedCategory', 'returnToCategoryId'));
     }
 
     public function store(StoreSubjectRequest $request, AdminSubjectService $subjectService)
@@ -45,7 +57,13 @@ class SubjectController extends Controller
             return $redirect;
         }
 
-        $subject = $subjectService->createSubject($request->validated(), $request->file('image'));
+        $validated = $request->validated();
+        $subject = $subjectService->createSubject($validated, $request->file('image'));
+        $returnToCategoryId = (int) ($validated['return_to_category_id'] ?? 0);
+
+        if ($returnToCategoryId > 0 && (int) $subject->category_id === $returnToCategoryId) {
+            return redirect()->route('admin.categories.show', $returnToCategoryId)->with('status', 'Đã tạo khóa học mới trong nhóm học.');
+        }
 
         return redirect()->route('admin.subject.show', $subject)->with('status', 'Khóa học đã được tạo thành công.');
     }

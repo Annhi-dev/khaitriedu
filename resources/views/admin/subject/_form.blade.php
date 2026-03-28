@@ -1,7 +1,13 @@
 @php
     $subject = $subject ?? null;
+    $selectedCategory = $selectedCategory ?? null;
     $statusValue = old('status', $subject->status ?? \App\Models\Subject::STATUS_OPEN);
+    $selectedCategoryId = (string) old('category_id', $subject->category_id ?? $selectedCategory?->id ?? request('category_id', ''));
+    $returnToCategoryId = old('return_to_category_id', $returnToCategoryId ?? null);
 @endphp
+@if ($returnToCategoryId)
+    <input type="hidden" name="return_to_category_id" value="{{ $returnToCategoryId }}" />
+@endif
 <div class="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,1fr)]">
     <div class="space-y-6">
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -18,9 +24,12 @@
                     <select id="category_id" name="category_id" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
                         <option value="">Chưa gắn nhóm học</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" @selected((string) old('category_id', $subject->category_id ?? '') === (string) $category->id)>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" @selected($selectedCategoryId === (string) $category->id)>{{ $category->name }}</option>
                         @endforeach
                     </select>
+                    @if ($selectedCategory)
+                        <p class="mt-2 text-xs text-cyan-600">Đang tạo khóa học trong nhóm {{ $selectedCategory->name }}.</p>
+                    @endif
                     @error('category_id')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 

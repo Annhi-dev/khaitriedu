@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Course;
 use App\Models\Subject;
 use App\Models\User;
@@ -10,17 +11,58 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $courses = Course::with(['subject.category', 'teacher'])->withCount('enrollments')->orderBy('id', 'desc')->get();
-        $subjects = Subject::with('category')->orderBy('name')->get();
+        $selectedSubject = null;
+        $selectedCategory = null;
+        $returnToCategoryId = $request->filled('return_to_category_id')
+            ? (int) $request->query('return_to_category_id')
+            : null;
 
-        return view('admin.courses', compact('courses', 'subjects', 'current'));
+        if ($request->filled('subject_id')) {
+            $selectedSubject = Subject::with('category')->find((int) $request->query('subject_id'));
+            $selectedCategory = $selectedSubject?->category;
+        }
+
+        if (! $selectedCategory && $returnToCategoryId) {
+            $selectedCategory = Category::find($returnToCategoryId);
+        }
+
+        $subjectsQuery = Subject::with('category')->orderBy('name');
+
+        if ($selectedCategory) {
+            $subjectsQuery->where('category_id', $selectedCategory->id);
+        }
+
+        $subjects = $subjectsQuery->get();
+
+        if ($selectedSubject && ! $subjects->contains('id', $selectedSubject->id)) {
+            $subjects = $subjects->prepend($selectedSubject);
+        }
+
+        $coursesQuery = Course::with(['subject.category', 'teacher'])
+            ->withCount('enrollments')
+            ->orderBy('title');
+
+        if ($selectedCategory) {
+            $coursesQuery->whereHas('subject', fn ($query) => $query->where('category_id', $selectedCategory->id));
+        }
+
+        $courses = $coursesQuery->get();
+
+        return view('admin.courses', compact(
+            'courses',
+            'subjects',
+            'current',
+            'selectedSubject',
+            'selectedCategory',
+            'returnToCategoryId',
+        ));
     }
 
     public function show(Course $course)
@@ -50,11 +92,25 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'teacher_id' => 'nullable|exists:nguoi_dung,id',
             'schedule' => 'nullable|string|max:255',
+            'return_to_category_id' => 'nullable|exists:danh_muc,id',
         ]);
 
-        Course::create($data);
+        Course::create([
+            'subject_id' => $data['subject_id'],
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'teacher_id' => $data['teacher_id'] ?? null,
+            'schedule' => $data['schedule'] ?? null,
+        ]);
 
-        return redirect()->route('admin.courses')->with('status', 'Lớp học đã được thêm.');
+        $subject = Subject::with('category')->find($data['subject_id']);
+        $returnToCategoryId = (int) ($data['return_to_category_id'] ?? 0);
+
+        if ($returnToCategoryId > 0 && (int) ($subject?->category_id ?? 0) === $returnToCategoryId) {
+            return redirect()->route('admin.categories.show', $returnToCategoryId)->with('status', 'Khóa học đã được thêm vào nhóm học.');
+        }
+
+        return redirect()->route('admin.courses')->with('status', 'Khóa học đã được thêm.');
     }
 
     public function update(Request $request, Course $course)
@@ -74,7 +130,7 @@ class CourseController extends Controller
 
         $course->update($data);
 
-        return redirect()->route('admin.course.show', $course)->with('status', 'Lớp học đã được cập nhật.');
+        return redirect()->route('admin.course.show', $course)->with('status', 'Khóa học đã được cập nhật.');
     }
 
     public function destroy(Course $course)
@@ -86,7 +142,7 @@ class CourseController extends Controller
 
         $course->delete();
 
-        return redirect()->route('admin.courses')->with('status', 'Lớp học đã xóa.');
+        return redirect()->route('admin.courses')->with('status', 'Khóa học đã xóa.');
     }
 
     public function assign(Request $request, Course $course)
@@ -103,7 +159,7 @@ class CourseController extends Controller
 
         $course->update($data);
 
-        return redirect()->route('admin.courses')->with('status', 'Lớp học đã cập nhật giảng viên và lịch.');
+        return redirect()->route('admin.courses')->with('status', 'Khóa học đã cập nhật giảng viên và lịch.');
     }
 
     public function storeSubjectCourse(Request $request, Subject $subject)
@@ -124,6 +180,6 @@ class CourseController extends Controller
             'description' => $data['description'],
         ]);
 
-        return redirect()->route('admin.subjects')->with('status', 'Lớp học đã thêm.');
+        return redirect()->route('admin.subjects')->with('status', 'Khóa học đã thêm.');
     }
 }

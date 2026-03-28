@@ -15,6 +15,7 @@ class AdminStudyGroupService
         $status = trim((string) ($filters['status'] ?? ''));
 
         return Category::query()
+            ->with('defaultSubject')
             ->withCount(['subjects', 'courses'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
@@ -46,15 +47,21 @@ class AdminStudyGroupService
 
     public function getStudyGroupDetail(Category $category): array
     {
-        $category->loadCount(['subjects', 'courses']);
+        $category->load(['defaultSubject'])->loadCount(['subjects', 'courses']);
         $subjects = $category->subjects()
             ->withCount('courses')
             ->orderBy('name')
+            ->get();
+        $courses = $category->courses()
+            ->with(['teacher', 'subject'])
+            ->withCount('enrollments')
+            ->orderBy('title')
             ->get();
 
         return [
             'category' => $category,
             'subjects' => $subjects,
+            'courses' => $courses,
         ];
     }
 

@@ -77,6 +77,11 @@ class Category extends Model
         return $this->hasMany(Subject::class);
     }
 
+    public function defaultSubject()
+    {
+        return $this->hasOne(Subject::class)->oldestOfMany();
+    }
+
     public function courses()
     {
         return $this->hasManyThrough(Course::class, Subject::class);

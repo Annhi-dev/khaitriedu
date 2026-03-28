@@ -5,14 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Quản trị hệ thống') - KhaiTriEdu</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .transition-smooth { transition: all 0.2s ease-in-out; }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out; }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-800" style="font-family: 'Manrope', sans-serif;">
+<body class="bg-slate-50 font-sans antialiased text-slate-800">
 @php
     $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
@@ -37,7 +44,7 @@
             'items' => [
                 ['label' => 'Nhóm học', 'icon' => 'fas fa-layer-group', 'route' => 'admin.categories', 'active' => request()->routeIs('admin.categories*')],
                 ['label' => 'Khóa học', 'icon' => 'fas fa-book-open', 'route' => 'admin.subjects', 'active' => request()->routeIs('admin.subjects*') || request()->routeIs('admin.subject.*')],
-                ['label' => 'Lớp học và module', 'icon' => 'fas fa-people-group', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
+                ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
                 ['label' => 'Đăng ký học', 'icon' => 'fas fa-clipboard-check', 'route' => 'admin.enrollments', 'active' => request()->routeIs('admin.enrollments*')],
                 ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
             ],
@@ -51,162 +58,133 @@
         ],
     ];
 @endphp
-<div class="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.15),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]" x-data="{ sidebarOpen: false }">
-    <div class="absolute inset-x-0 top-0 h-64 bg-[linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(15,118,110,0.82))]"></div>
-    <div class="relative min-h-screen lg:grid lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside class="hidden min-h-screen border-r border-white/10 bg-slate-950 text-slate-100 lg:flex lg:flex-col">
-            <div class="border-b border-white/10 px-7 py-7">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-4">
-                    <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-300/20">
-                        <i class="fas fa-shield-halved text-lg"></i>
+<div x-data="{ sidebarOpen: false }" class="relative min-h-screen">
+    <div class="lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+        <!-- Sidebar Desktop -->
+        <aside class="hidden lg:block bg-white border-r border-slate-200 shadow-sm h-screen sticky top-0 overflow-y-auto">
+            <div class="px-6 py-6 border-b border-slate-100">
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-cyan-100 flex items-center justify-center text-cyan-700">
+                        <i class="fas fa-shield-halved"></i>
                     </div>
                     <div>
-                        <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-300/80">Enterprise Admin</p>
-                        <h1 class="mt-1 text-xl font-extrabold text-white">KhaiTriEdu</h1>
-                        <p class="mt-1 text-sm text-slate-400">Điều phối đào tạo tập trung</p>
+                        <h1 class="text-lg font-bold text-slate-800">KhaiTriEdu</h1>
+                        <p class="text-xs text-slate-500">Admin Console</p>
                     </div>
                 </a>
             </div>
-            <div class="flex-1 overflow-y-auto px-4 py-6">
+            <nav class="px-4 py-6 space-y-6">
                 @foreach ($menuSections as $section)
-                    <div class="mb-6 last:mb-0">
-                        <p class="px-3 text-[11px] uppercase tracking-[0.3em] text-slate-500">{{ $section['label'] }}</p>
-                        <nav class="mt-3 space-y-1.5">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-3">{{ $section['label'] }}</p>
+                        <div class="mt-2 space-y-1">
                             @foreach ($section['items'] as $item)
                                 @php
-                                    $classes = 'group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition';
-                                    $classes .= $item['active']
-                                        ? ' bg-white/10 text-white ring-1 ring-white/10 shadow-[0_10px_30px_rgba(2,6,23,0.25)]'
-                                        : ' text-slate-300 hover:bg-white/5 hover:text-white';
+                                    $active = $item['active'];
+                                    $classes = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200';
+                                    $classes .= $active ? ' bg-cyan-50 text-cyan-700' : ' text-slate-600 hover:bg-slate-50 hover:text-cyan-600';
                                 @endphp
                                 <a href="{{ route($item['route']) }}" class="{{ $classes }}">
-                                    <span class="flex items-center gap-3">
-                                        <span class="flex h-10 w-10 items-center justify-center rounded-2xl {{ $item['active'] ? 'bg-cyan-400/15 text-cyan-300' : 'bg-white/5 text-slate-400 group-hover:text-cyan-300' }}">
-                                            <i class="{{ $item['icon'] }} text-sm"></i>
-                                        </span>
-                                        <span>{{ $item['label'] }}</span>
-                                    </span>
-                                    @if ($item['active'])
-                                        <span class="h-2.5 w-2.5 rounded-full bg-cyan-300"></span>
+                                    <i class="{{ $item['icon'] }} w-5 text-sm {{ $active ? 'text-cyan-600' : 'text-slate-400' }}"></i>
+                                    <span>{{ $item['label'] }}</span>
+                                    @if ($active)
+                                        <span class="ml-auto h-2 w-2 rounded-full bg-cyan-500"></span>
                                     @endif
                                 </a>
                             @endforeach
-                        </nav>
+                        </div>
                     </div>
                 @endforeach
-            </div>
-            <div class="border-t border-white/10 px-6 py-6">
-                <div class="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-                    <p class="font-semibold text-white">Nguyên tắc vận hành</p>
-                    <p class="mt-2 leading-6">Mọi quyết định quan trọng như duyệt học viên, xếp lớp và đổi lịch đều phải đi qua admin để giữ chất lượng đào tạo ổn định.</p>
-                </div>
-            </div>
+            </nav>
         </aside>
 
+        <!-- Main content -->
         <div class="min-w-0">
-            <header class="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
-                <div class="overflow-hidden rounded-[32px] border border-white/50 bg-white/75 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-                    <div class="flex flex-col gap-4 border-b border-slate-200/80 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                        <div class="flex items-center gap-3">
-                            <button @click="sidebarOpen = true" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 lg:hidden">
-                                <i class="fas fa-bars"></i>
-                            </button>
-                            <div>
-                                <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Admin Workspace</p>
-                                <h2 class="mt-1 text-2xl font-extrabold text-slate-950">{{ $pageTitle }}</h2>
-                            </div>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <div class="rounded-2xl bg-slate-950 px-4 py-3 text-sm text-slate-200 shadow-lg shadow-slate-950/10">
-                                <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400">Phiên đăng nhập</p>
-                                <p class="mt-1 font-semibold text-white">{{ $adminUser?->name ?? 'Admin' }}</p>
-                            </div>
-                            <a href="{{ route('logout') }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                                <i class="fas fa-right-from-bracket"></i>
-                                <span>Đăng xuất</span>
-                            </a>
+            <!-- Topbar -->
+            <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-lg hover:bg-slate-100">
+                            <i class="fas fa-bars text-slate-600"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-xl font-semibold text-slate-800">{{ $pageTitle }}</h2>
+                            <p class="text-xs text-slate-500">Chào mừng trở lại, {{ $adminUser?->name ?? 'Admin' }}</p>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-3 px-4 py-3 text-sm text-slate-500 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <a href="{{ route('admin.dashboard') }}" class="font-semibold text-slate-700 hover:text-slate-950">Admin</a>
-                            @unless (request()->routeIs('admin.dashboard'))
-                                <span>/</span>
-                                <span class="text-slate-600">{{ $pageTitle }}</span>
-                            @endunless
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <button class="p-2 rounded-full hover:bg-slate-100">
+                                <i class="fas fa-bell text-slate-500"></i>
+                            </button>
                         </div>
-                        <p class="text-xs uppercase tracking-[0.25em] text-slate-400">{{ now()->format('d/m/Y H:i') }}</p>
+                        <div class="flex items-center gap-2">
+                            <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
+                                <span class="text-sm font-semibold">{{ substr($adminUser?->name ?? 'A', 0, 1) }}</span>
+                            </div>
+                            <span class="hidden sm:inline text-sm font-medium text-slate-700">{{ $adminUser?->name ?? 'Admin' }}</span>
+                            <a href="{{ route('logout') }}" class="ml-2 p-2 rounded-lg hover:bg-slate-100">
+                                <i class="fas fa-sign-out-alt text-slate-500"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <main class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                <div class="space-y-4">
-                    @if (session('status'))
-                        <div class="rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800 shadow-sm">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-circle-check mt-0.5"></i>
-                                <span>{{ session('status') }}</span>
-                            </div>
-                        </div>
-                    @endif
-                    @if (session('error'))
-                        <div class="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800 shadow-sm">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-circle-exclamation mt-0.5"></i>
-                                <span>{{ session('error') }}</span>
-                            </div>
-                        </div>
-                    @endif
-                    @if (session('warning'))
-                        <div class="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 shadow-sm">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-triangle-exclamation mt-0.5"></i>
-                                <span>{{ session('warning') }}</span>
-                            </div>
-                        </div>
-                    @endif
+            <!-- Breadcrumb (optional) -->
+            @if (!request()->routeIs('admin.dashboard'))
+                <div class="px-4 py-2 text-sm text-slate-500 bg-slate-50 border-b border-slate-200">
+                    <div class="container mx-auto">
+                        <a href="{{ route('admin.dashboard') }}" class="hover:text-cyan-600">Admin</a>
+                        <span class="mx-1">/</span>
+                        <span class="text-slate-800">{{ $pageTitle }}</span>
+                    </div>
                 </div>
-                <div class="mt-6">
-                    @yield('content')
-                </div>
-                <footer class="mt-8 px-1 text-xs uppercase tracking-[0.25em] text-slate-400">
-                    KhaiTriEdu Admin Console
-                </footer>
-            </main>
-        </div>
+            @endif
 
-        <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-40 bg-slate-950/50 lg:hidden"></div>
-        <aside x-show="sidebarOpen" x-cloak class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto bg-slate-950 px-4 py-5 text-slate-100 shadow-2xl lg:hidden">
-            <div class="mb-6 flex items-center justify-between">
-                <div>
-                    <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-300/80">Enterprise Admin</p>
-                    <h2 class="mt-1 text-lg font-extrabold">KhaiTriEdu</h2>
-                </div>
-                <button @click="sidebarOpen = false" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 text-slate-300">
-                    <i class="fas fa-xmark"></i>
-                </button>
+            <!-- Flash messages -->
+            <div class="px-4 py-4 sm:px-6 lg:px-8">
+                @include('components.admin.alert', ['session' => session()])
             </div>
+
+            <!-- Main content -->
+            <main class="px-4 pb-10 sm:px-6 lg:px-8">
+                @yield('content')
+            </main>
+
+            <!-- Footer -->
+            <footer class="border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+                &copy; {{ date('Y') }} KhaiTriEdu Admin Console
+            </footer>
+        </div>
+    </div>
+
+    <!-- Mobile sidebar -->
+    <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50 bg-black/30 lg:hidden" @click="sidebarOpen = false"></div>
+    <aside x-show="sidebarOpen" x-cloak class="fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-slate-200 shadow-lg lg:hidden overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b">
+            <h2 class="text-lg font-bold text-slate-800">KhaiTriEdu</h2>
+            <button @click="sidebarOpen = false" class="p-2 rounded-lg hover:bg-slate-100">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="p-4 space-y-6">
             @foreach ($menuSections as $section)
-                <div class="mb-6 last:mb-0">
-                    <p class="px-3 text-[11px] uppercase tracking-[0.3em] text-slate-500">{{ $section['label'] }}</p>
-                    <nav class="mt-3 space-y-1.5">
+                <div>
+                    <p class="text-xs font-semibold uppercase text-slate-400">{{ $section['label'] }}</p>
+                    <div class="mt-2 space-y-1">
                         @foreach ($section['items'] as $item)
-                            <a href="{{ route($item['route']) }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold {{ $item['active'] ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
-                                <span class="flex h-10 w-10 items-center justify-center rounded-2xl {{ $item['active'] ? 'bg-cyan-400/15 text-cyan-300' : 'bg-white/5 text-slate-400' }}">
-                                    <i class="{{ $item['icon'] }} text-sm"></i>
-                                </span>
+                            @php $active = $item['active']; @endphp
+                            <a href="{{ route($item['route']) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {{ $active ? 'bg-cyan-50 text-cyan-700' : 'text-slate-600 hover:bg-slate-50' }}">
+                                <i class="{{ $item['icon'] }} w-5"></i>
                                 <span>{{ $item['label'] }}</span>
                             </a>
                         @endforeach
-                    </nav>
+                    </div>
                 </div>
             @endforeach
-        </aside>
-    </div>
+        </nav>
+    </aside>
 </div>
-<style>
-    [x-cloak] { display: none !important; }
-</style>
 </body>
 </html>

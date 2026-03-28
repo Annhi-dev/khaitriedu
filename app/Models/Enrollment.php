@@ -46,13 +46,18 @@ class Enrollment extends Model
 
     public static function filterableStatuses(): array
     {
+        return array_keys(self::statusOptions());
+    }
+
+    public static function statusOptions(): array
+    {
         return [
-            self::STATUS_PENDING,
-            self::STATUS_APPROVED,
-            self::STATUS_REJECTED,
-            self::STATUS_SCHEDULED,
-            self::STATUS_ACTIVE,
-            self::STATUS_COMPLETED,
+            self::STATUS_PENDING => 'Chờ duyệt',
+            self::STATUS_APPROVED => 'Đã duyệt',
+            self::STATUS_REJECTED => 'Từ chối',
+            self::STATUS_SCHEDULED => 'Đã xếp lớp',
+            self::STATUS_ACTIVE => 'Đang học',
+            self::STATUS_COMPLETED => 'Hoàn thành',
         ];
     }
 
@@ -80,15 +85,7 @@ class Enrollment extends Model
 
     public function statusLabel(): string
     {
-        return match ($this->normalizedStatus()) {
-            self::STATUS_PENDING => 'Chờ duyệt',
-            self::STATUS_APPROVED => 'Đã duyệt',
-            self::STATUS_REJECTED => 'Từ chối',
-            self::STATUS_SCHEDULED => 'Đã xếp lớp',
-            self::STATUS_ACTIVE => 'Đang học',
-            self::STATUS_COMPLETED => 'Hoàn thành',
-            default => ucfirst((string) $this->status),
-        };
+        return self::statusOptions()[$this->normalizedStatus()] ?? ucfirst((string) $this->status);
     }
 
     public function hasCourseAccess(): bool

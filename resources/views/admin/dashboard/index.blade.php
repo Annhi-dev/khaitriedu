@@ -1,231 +1,145 @@
 @extends('layouts.admin')
-@section('title', 'Dashboard Admin')
+@section('title', 'Dashboard')
+
 @section('content')
-<div class="space-y-6">
-    <section class="overflow-hidden rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,_rgba(15,23,42,0.98),_rgba(8,47,73,0.92),_rgba(15,118,110,0.82))] p-6 text-white shadow-[0_30px_120px_rgba(15,23,42,0.28)] lg:p-8">
-        <div class="grid gap-6 xl:grid-cols-[1.3fr_0.7fr] xl:items-end">
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-cyan-600 to-cyan-500 rounded-3xl p-6 text-white shadow-lg">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <p class="text-xs uppercase tracking-[0.4em] text-cyan-200/80">Dashboard Admin</p>
-                <h1 class="mt-3 text-3xl font-extrabold leading-tight lg:text-4xl">Trung tâm điều phối đào tạo và phê duyệt vận hành</h1>
-                <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-200/85">
-                    Admin là điểm kiểm soát trung tâm của KhaiTriEdu. Từ màn hình này, bạn có thể nhìn nhanh các hàng chờ cần xử lý, lớp học đang vận hành và các tác vụ cần chốt trong ngày.
+                <p class="text-sm uppercase tracking-wider opacity-80">Dashboard Admin</p>
+                <h1 class="text-3xl font-bold mt-1">Trung tâm điều phối đào tạo</h1>
+                <p class="mt-2 text-cyan-100 max-w-2xl">
+                    Quản lý học viên, giảng viên, khóa học và các yêu cầu vận hành.
                 </p>
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="{{ route('admin.enrollments') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 transition hover:bg-cyan-50">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span>Xử lý đăng ký học</span>
-                    </a>
-                    <a href="{{ route('admin.teacher-applications') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
-                        <i class="fas fa-file-signature"></i>
-                        <span>Duyệt hồ sơ giảng viên</span>
-                    </a>
-                    <a href="{{ route('admin.schedules.queue') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
-                        <i class="fas fa-calendar-days"></i>
-                        <span>Hàng chờ xếp lịch</span>
-                    </a>
-                </div>
             </div>
-            <div class="grid gap-4 rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-                <div>
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-300">Người phụ trách</p>
-                    <p class="mt-2 text-xl font-bold">{{ $user->name }}</p>
-                    <p class="mt-1 text-sm text-slate-300">Admin đang đăng nhập</p>
-                </div>
-                <div class="grid grid-cols-2 gap-3 text-sm">
-                    <div class="rounded-2xl bg-white/10 px-4 py-4">
-                        <p class="text-slate-300">Khóa học public</p>
-                        <p class="mt-2 text-2xl font-extrabold">{{ $subjectCount }}</p>
-                    </div>
-                    <div class="rounded-2xl bg-white/10 px-4 py-4">
-                        <p class="text-slate-300">Lớp đang hoạt động</p>
-                        <p class="mt-2 text-2xl font-extrabold">{{ $activeClassCount }}</p>
-                    </div>
-                </div>
+            <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+                <p class="text-xs uppercase">Xin chào</p>
+                <p class="text-xl font-bold">{{ $user->name }}</p>
+                <p class="text-xs mt-1">Admin đang đăng nhập</p>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <article class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold text-slate-500">Tổng học viên</p>
-                    <p class="mt-3 text-3xl font-extrabold text-slate-950">{{ $studentCount }}</p>
-                </div>
-                <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-cyan-50 text-cyan-700">
-                    <i class="fas fa-user-graduate text-xl"></i>
-                </div>
-            </div>
-        </article>
-        <article class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold text-slate-500">Tổng giảng viên</p>
-                    <p class="mt-3 text-3xl font-extrabold text-slate-950">{{ $teacherCount }}</p>
-                </div>
-                <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-700">
-                    <i class="fas fa-chalkboard-user text-xl"></i>
-                </div>
-            </div>
-        </article>
-        <article class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold text-slate-500">Đơn ứng tuyển chờ duyệt</p>
-                    <p class="mt-3 text-3xl font-extrabold text-slate-950">{{ $pendingTeacherApplications }}</p>
-                </div>
-                <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-amber-50 text-amber-700">
-                    <i class="fas fa-file-signature text-xl"></i>
-                </div>
-            </div>
-        </article>
-        <article class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold text-slate-500">Đăng ký học chờ xử lý</p>
-                    <p class="mt-3 text-3xl font-extrabold text-slate-950">{{ $pendingEnrollments }}</p>
-                </div>
-                <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-rose-50 text-rose-700">
-                    <i class="fas fa-clipboard-check text-xl"></i>
-                </div>
-            </div>
-        </article>
-        <article class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold text-slate-500">Lớp đang mở</p>
-                    <p class="mt-3 text-3xl font-extrabold text-slate-950">{{ $activeClassCount }}</p>
-                </div>
-                <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-sky-50 text-sky-700">
-                    <i class="fas fa-people-group text-xl"></i>
-                </div>
-            </div>
-        </article>
-        <article class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold text-slate-500">Yêu cầu đổi lịch chờ duyệt</p>
-                    <p class="mt-3 text-3xl font-extrabold text-slate-950">{{ $pendingScheduleChangeRequests }}</p>
-                </div>
-                <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-violet-50 text-violet-700">
-                    <i class="fas fa-calendar-rotate text-xl"></i>
-                </div>
-            </div>
-        </article>
-    </section>
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <x-admin.stat-card label="Học viên" value="{{ $studentCount }}" icon="fas fa-user-graduate" color="cyan" trend="tổng số" />
+        <x-admin.stat-card label="Giảng viên" value="{{ $teacherCount }}" icon="fas fa-chalkboard-user" color="emerald" />
+        <x-admin.stat-card label="Đơn ứng tuyển chờ" value="{{ $pendingTeacherApplications }}" icon="fas fa-file-signature" color="amber" />
+        <x-admin.stat-card label="Đăng ký chờ xử lý" value="{{ $pendingEnrollments }}" icon="fas fa-clipboard-check" color="rose" />
+        <x-admin.stat-card label="Lớp đang hoạt động" value="{{ $activeClassCount }}" icon="fas fa-people-group" color="violet" />
+        <x-admin.stat-card label="Yêu cầu đổi lịch" value="{{ $pendingScheduleChangeRequests }}" icon="fas fa-calendar-rotate" color="slate" />
+    </div>
 
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <article class="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Recent Pipeline</p>
-                    <h2 class="mt-2 text-xl font-extrabold text-slate-950">Đăng ký học gần đây</h2>
-                </div>
-                <a href="{{ route('admin.enrollments') }}" class="text-sm font-bold text-cyan-700 hover:text-cyan-900">Mở toàn bộ</a>
+    <!-- Quick actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="{{ route('admin.enrollments') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
+            <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                <i class="fas fa-clipboard-list text-xl"></i>
             </div>
-            <div class="mt-4 overflow-hidden rounded-3xl border border-slate-200">
-                @if ($recentEnrollments->count())
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 text-sm">
-                            <thead class="bg-slate-50 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                                <tr>
-                                    <th class="px-4 py-4">Học viên</th>
-                                    <th class="px-4 py-4">Khóa học</th>
-                                    <th class="px-4 py-4">Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 bg-white">
-                                @foreach ($recentEnrollments as $enrollment)
-                                    <tr>
-                                        <td class="px-4 py-4">
-                                            <p class="font-semibold text-slate-900">{{ $enrollment->user?->name ?? 'Chưa có dữ liệu' }}</p>
-                                            <p class="mt-1 text-xs text-slate-500">{{ $enrollment->user?->email ?? 'Không có email' }}</p>
-                                        </td>
-                                        <td class="px-4 py-4 text-slate-600">
-                                            {{ $enrollment->subject?->name ?? $enrollment->course?->subject?->name ?? 'Chưa xác định' }}
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ $enrollment->statusLabel() }}</span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="px-6 py-12 text-center text-sm text-slate-500">Chưa có đăng ký mới cần hiển thị.</div>
-                @endif
-            </div>
-        </article>
-
-        <div class="space-y-6">
-            <article class="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Pending Items</p>
-                        <h2 class="mt-2 text-xl font-extrabold text-slate-950">Ứng tuyển giảng viên</h2>
-                    </div>
-                    <a href="{{ route('admin.teacher-applications') }}" class="text-sm font-bold text-cyan-700 hover:text-cyan-900">Xem tất cả</a>
-                </div>
-                <div class="mt-4 space-y-3">
-                    @forelse ($pendingTeacherApplicationsList as $application)
-                        <a href="{{ route('admin.teacher-applications.show', $application) }}" class="block rounded-3xl border border-slate-200 px-4 py-4 transition hover:border-cyan-200 hover:bg-cyan-50/40">
-                            <p class="font-semibold text-slate-900">{{ $application->name }}</p>
-                            <p class="mt-1 text-sm text-slate-500">{{ $application->email }}</p>
-                            <p class="mt-2 text-xs uppercase tracking-[0.2em] text-amber-600">Đang chờ duyệt</p>
-                        </a>
-                    @empty
-                        <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Không có hồ sơ chờ duyệt.</div>
-                    @endforelse
-                </div>
-            </article>
-
-            <article class="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Operational Alerts</p>
-                        <h2 class="mt-2 text-xl font-extrabold text-slate-950">Yêu cầu đổi lịch</h2>
-                    </div>
-                    <a href="{{ route('admin.schedule-change-requests.index') }}" class="text-sm font-bold text-cyan-700 hover:text-cyan-900">Mở hàng chờ</a>
-                </div>
-                <div class="mt-4 space-y-3">
-                    @forelse ($pendingScheduleRequestsList as $request)
-                        <a href="{{ route('admin.schedule-change-requests.show', $request) }}" class="block rounded-3xl border border-slate-200 px-4 py-4 transition hover:border-cyan-200 hover:bg-cyan-50/40">
-                            <p class="font-semibold text-slate-900">{{ $request->course?->title ?? 'Lớp học' }}</p>
-                            <p class="mt-1 text-sm text-slate-500">{{ $request->teacher?->name ?? 'Chưa rõ giảng viên' }}</p>
-                            <p class="mt-2 text-xs text-slate-500">{{ \Illuminate\Support\Str::limit($request->reason, 90) }}</p>
-                        </a>
-                    @empty
-                        <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Không có yêu cầu đổi lịch chờ duyệt.</div>
-                    @endforelse
-                </div>
-            </article>
-        </div>
-    </section>
-
-    <section class="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Classroom Watch</p>
-                <h2 class="mt-2 text-xl font-extrabold text-slate-950">Lớp học mới cập nhật</h2>
+                <p class="font-semibold">Xử lý đăng ký học</p>
+                <p class="text-sm text-slate-500">{{ $pendingEnrollments }} đăng ký chờ</p>
             </div>
-            <a href="{{ route('admin.courses') }}" class="text-sm font-bold text-cyan-700 hover:text-cyan-900">Quản lý lớp học</a>
+        </a>
+        <a href="{{ route('admin.teacher-applications') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <i class="fas fa-file-signature text-xl"></i>
+            </div>
+            <div>
+                <p class="font-semibold">Duyệt giảng viên</p>
+                <p class="text-sm text-slate-500">{{ $pendingTeacherApplications }} hồ sơ chờ</p>
+            </div>
+        </a>
+        <a href="{{ route('admin.schedules.queue') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
+            <div class="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                <i class="fas fa-calendar-week text-xl"></i>
+            </div>
+            <div>
+                <p class="font-semibold">Hàng chờ xếp lịch</p>
+                <p class="text-sm text-slate-500">Chờ xếp lớp</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent enrollments -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="font-semibold text-slate-800">Đăng ký học gần đây</h2>
+                <a href="{{ route('admin.enrollments') }}" class="text-sm text-cyan-600 hover:underline">Xem tất cả</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Học viên</th>
+                            <th class="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Khóa học</th>
+                            <th class="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($recentEnrollments as $enrollment)
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-5 py-3">
+                                    <p class="font-medium text-slate-800">{{ $enrollment->user?->name ?? 'N/A' }}</p>
+                                    <p class="text-xs text-slate-500">{{ $enrollment->user?->email }}</p>
+                                </td>
+                                <td class="px-5 py-3">{{ $enrollment->subject?->name ?? 'Chưa xác định' }}</td>
+                                <td class="px-5 py-3">
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">{{ $enrollment->statusLabel() }}</span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="3" class="px-5 py-8 text-center text-slate-500">Chưa có đăng ký mới</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="mt-5 grid gap-4 lg:grid-cols-3">
-            @forelse ($recentCourses as $course)
-                <article class="rounded-[28px] border border-slate-200 bg-slate-50/70 p-5">
-                    <p class="text-xs uppercase tracking-[0.2em] text-slate-400">{{ $course->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>
-                    <h3 class="mt-2 text-lg font-extrabold text-slate-950">{{ $course->title }}</h3>
-                    <div class="mt-4 space-y-2 text-sm text-slate-600">
-                        <p>Khóa học: {{ $course->subject?->name ?? 'Chưa gắn khóa học' }}</p>
+
+        <!-- Pending teacher applications -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="font-semibold text-slate-800">Ứng tuyển giảng viên chờ duyệt</h2>
+                <a href="{{ route('admin.teacher-applications') }}" class="text-sm text-cyan-600 hover:underline">Xem tất cả</a>
+            </div>
+            <div class="divide-y divide-slate-100">
+                @forelse($pendingTeacherApplicationsList as $application)
+                    <a href="{{ route('admin.teacher-applications.show', $application) }}" class="block p-5 hover:bg-slate-50 transition">
+                        <p class="font-medium text-slate-800">{{ $application->name }}</p>
+                        <p class="text-sm text-slate-500">{{ $application->email }}</p>
+                        <p class="text-xs text-amber-600 mt-1">Chờ duyệt</p>
+                    </a>
+                @empty
+                    <div class="p-8 text-center text-slate-500">Không có hồ sơ chờ duyệt</div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent courses -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+            <h2 class="font-semibold text-slate-800">Lớp học mới cập nhật</h2>
+            <a href="{{ route('admin.courses') }}" class="text-sm text-cyan-600 hover:underline">Quản lý lớp học</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-5">
+            @forelse($recentCourses as $course)
+                <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md transition">
+                    <p class="text-xs text-slate-500 uppercase">{{ $course->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>
+                    <p class="font-semibold text-slate-800 mt-1">{{ $course->title }}</p>
+                    <div class="mt-3 text-sm text-slate-600">
+                        <p>Khóa học: {{ $course->subject?->name ?? 'N/A' }}</p>
                         <p>Giảng viên: {{ $course->teacher?->name ?? 'Chưa phân công' }}</p>
                         <p>Lịch: {{ $course->formattedSchedule() }}</p>
                     </div>
-                </article>
+                </div>
             @empty
-                <div class="rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 lg:col-span-3">Chưa có lớp học nào để hiển thị.</div>
+                <div class="col-span-3 text-center py-8 text-slate-500">Chưa có lớp học nào</div>
             @endforelse
         </div>
-    </section>
+    </div>
 </div>
 @endsection
