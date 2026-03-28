@@ -61,6 +61,11 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function attendanceRecords()
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
     public function teacher()
     {
         return $this->belongsTo(User::class, 'teacher_id');

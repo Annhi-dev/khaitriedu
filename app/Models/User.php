@@ -86,6 +86,16 @@ class User extends Authenticatable
         return $this->hasManyThrough(Grade::class, Enrollment::class);
     }
 
+    public function attendanceRecords()
+    {
+        return $this->hasMany(AttendanceRecord::class, 'student_id');
+    }
+
+    public function recordedAttendances()
+    {
+        return $this->hasMany(AttendanceRecord::class, 'teacher_id');
+    }
+
     public function taughtCourses()
     {
         return $this->hasMany(Course::class, 'teacher_id');
