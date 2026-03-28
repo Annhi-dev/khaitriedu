@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewTeacherApplicationRequest;
 use App\Models\TeacherApplication;
 use App\Models\User;
 use App\Services\AdminTeacherApplicationService;
 use Illuminate\Http\Request;
 
-class AdminTeacherApplicationController extends Controller
+class TeacherApplicationController extends Controller
 {
     public function index(Request $request, AdminTeacherApplicationService $applicationService)
     {
@@ -20,7 +21,7 @@ class AdminTeacherApplicationController extends Controller
         $filters = $request->only(['search', 'status']);
         $applications = $applicationService->paginateApplications($filters);
 
-        return view('admin.teacher_applications', compact('applications', 'current', 'filters'));
+        return view('admin.teacher_applications.index', compact('applications', 'current', 'filters'));
     }
 
     public function show(TeacherApplication $teacherApplication, AdminTeacherApplicationService $applicationService)
@@ -33,7 +34,7 @@ class AdminTeacherApplicationController extends Controller
         $teacherApplication->load('reviewer');
         $relatedUser = $applicationService->resolveRelatedUser($teacherApplication);
 
-        return view('admin.teacher_application_show', [
+        return view('admin.teacher_applications.show', [
             'application' => $teacherApplication,
             'current' => $current,
             'relatedUser' => $relatedUser,

@@ -51,7 +51,7 @@ class HomeController extends Controller
             return redirect()->route('teacher.dashboard');
         }
 
-        return view('dashboard', compact('user'));
+        return redirect()->route('student.dashboard');
     }
 
     public function logout()

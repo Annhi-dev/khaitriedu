@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ScheduleEnrollmentRequest;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Services\AdminScheduleService;
 use Illuminate\Http\Request;
 
-class AdminScheduleController extends Controller
+class ScheduleController extends Controller
 {
     public function index(Request $request, AdminScheduleService $scheduleService)
     {

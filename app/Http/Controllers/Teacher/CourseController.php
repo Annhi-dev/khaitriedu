@@ -1,25 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Teacher;
 
+use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Grade;
 use Illuminate\Http\Request;
 
-class TeacherController extends Controller
+class CourseController extends Controller
 {
-    public function dashboard()
-    {
-        [$user, $redirect] = $this->requireRole('giang_vien');
-
-        if ($redirect) {
-            return $redirect;
-        }
-
-        return redirect()->route('teacher.courses');
-    }
-
     public function courses()
     {
         [$user, $redirect] = $this->requireRole('giang_vien');

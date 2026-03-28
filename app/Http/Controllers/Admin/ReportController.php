@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReportFilterRequest;
 use App\Models\User;
 use App\Services\AdminReportService;
 
-class AdminReportController extends Controller
+class ReportController extends Controller
 {
     public function index(ReportFilterRequest $request, AdminReportService $reportService)
     {
@@ -15,7 +16,7 @@ class AdminReportController extends Controller
             return $redirect;
         }
 
-        return view('admin.report', array_merge(
+        return view('admin.reports.index', array_merge(
             ['current' => $current],
             $reportService->build($request->validated())
         ));

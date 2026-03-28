@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreStudentRequest;
 use App\Http\Requests\Admin\UpdateStudentRequest;
 use App\Models\User;
 use App\Services\AdminStudentService;
 use Illuminate\Http\Request;
 
-class AdminStudentController extends Controller
+class StudentController extends Controller
 {
     public function index(Request $request, AdminStudentService $studentService)
     {

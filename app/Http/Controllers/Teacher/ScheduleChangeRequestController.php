@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Teacher;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\StoreTeacherScheduleChangeRequest;
 use App\Models\Course;
 use App\Models\User;
 use App\Services\TeacherScheduleChangeRequestService;
 use Illuminate\Http\Request;
 
-class TeacherScheduleChangeRequestController extends Controller
+class ScheduleChangeRequestController extends Controller
 {
     public function index(Request $request, TeacherScheduleChangeRequestService $service)
     {

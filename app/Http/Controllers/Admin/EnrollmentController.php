@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewEnrollmentRequest;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Services\AdminEnrollmentService;
 use Illuminate\Http\Request;
 
-class AdminEnrollmentController extends Controller
+class EnrollmentController extends Controller
 {
     public function index(Request $request, AdminEnrollmentService $enrollmentService)
     {

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSubjectRequest;
 use App\Http\Requests\Admin\UpdateSubjectRequest;
 use App\Models\Subject;
@@ -9,7 +10,7 @@ use App\Models\User;
 use App\Services\AdminSubjectService;
 use Illuminate\Http\Request;
 
-class AdminSubjectController extends Controller
+class SubjectController extends Controller
 {
     public function index(Request $request, AdminSubjectService $subjectService)
     {

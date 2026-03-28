@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCourseModuleRequest;
 use App\Http\Requests\Admin\UpdateCourseModuleRequest;
 use App\Models\Course;
@@ -10,7 +11,7 @@ use App\Models\User;
 use App\Services\AdminCourseModuleService;
 use Illuminate\Http\Request;
 
-class AdminCourseModuleController extends Controller
+class ModuleController extends Controller
 {
     public function index(Course $course, AdminCourseModuleService $moduleService)
     {

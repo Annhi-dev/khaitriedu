@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewScheduleChangeRequest;
 use App\Models\ScheduleChangeRequest;
 use App\Models\User;
 use App\Services\AdminScheduleChangeRequestService;
 use Illuminate\Http\Request;
 
-class AdminScheduleChangeRequestController extends Controller
+class ScheduleChangeRequestController extends Controller
 {
     public function index(Request $request, AdminScheduleChangeRequestService $service)
     {

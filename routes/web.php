@@ -1,13 +1,9 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicPageController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\TeacherController;
-use App\Http\Controllers\TeacherScheduleChangeRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'home'])->name('home');
@@ -44,26 +40,6 @@ Route::get('/privacy', [PublicPageController::class, 'privacy'])->name('privacy'
 Route::get('/apply-teacher', [PublicPageController::class, 'showApplyTeacher'])->name('apply-teacher');
 Route::post('/apply-teacher', [PublicPageController::class, 'submitTeacherApplication'])->name('apply-teacher.post');
 
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-
-Route::prefix('verify-email')->group(function () {
-    Route::get('/', [AuthController::class, 'showVerifyEmail'])->name('verify.email');
-    Route::post('/', [AuthController::class, 'verifyEmail'])->name('verify.email.post');
-    Route::post('/resend', [AuthController::class, 'resendVerifyEmail'])->name('verify.email.resend');
-});
-
-Route::prefix('forgot-password')->group(function () {
-    Route::get('/', [AuthController::class, 'showForgotPassword'])->name('password.request');
-    Route::post('/', [AuthController::class, 'sendResetOtp'])->name('password.email');
-    Route::get('/verify', [AuthController::class, 'showForgotVerify'])->name('forgot.verify');
-    Route::post('/verify', [AuthController::class, 'verifyForgotOtp'])->name('forgot.verify.post');
-    Route::get('/reset', [AuthController::class, 'showForgotReset'])->name('forgot.reset');
-    Route::post('/reset', [AuthController::class, 'resetPassword'])->name('forgot.reset.post');
-});
-
 Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
 
 Route::prefix('certificates')->name('certificates.')->group(function () {
@@ -71,22 +47,9 @@ Route::prefix('certificates')->name('certificates.')->group(function () {
     Route::get('/{id}', [CertificateController::class, 'show'])->name('show');
 });
 
-Route::prefix('student')->name('student.')->group(function () {
-    Route::get('/schedule', [StudentController::class, 'schedule'])->name('schedule');
-    Route::get('/grades', [StudentController::class, 'grades'])->name('grades');
-});
-
-Route::prefix('teacher')->name('teacher.')->group(function () {
-    Route::get('/', [TeacherController::class, 'dashboard'])->name('dashboard');
-    Route::get('/courses', [TeacherController::class, 'courses'])->name('courses');
-    Route::get('/courses/{id}', [TeacherController::class, 'showCourse'])->name('course.show');
-    Route::post('/grades', [TeacherController::class, 'updateGrades'])->name('grades.update');
-    Route::get('/schedule-change-requests', [TeacherScheduleChangeRequestController::class, 'index'])->name('schedule-change-requests.index');
-    Route::get('/courses/{course}/schedule-change-requests/create', [TeacherScheduleChangeRequestController::class, 'create'])->name('schedule-change-requests.create');
-    Route::post('/courses/{course}/schedule-change-requests', [TeacherScheduleChangeRequestController::class, 'store'])->name('schedule-change-requests.store');
-});
-
+require base_path('routes/auth.php');
+Route::prefix('student')->name('student.')->middleware('student')->group(base_path('routes/student.php'));
+Route::prefix('teacher')->name('teacher.')->middleware('teacher')->group(base_path('routes/teacher.php'));
 Route::prefix('admin')->name('admin.')->middleware('admin')->group(base_path('routes/admin.php'));
 
-Route::get('/logout', [HomeController::class, 'logout'])->name('logout');
 Route::fallback([HomeController::class, 'fallback']);

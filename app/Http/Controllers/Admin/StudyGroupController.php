@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreStudyGroupRequest;
 use App\Http\Requests\Admin\UpdateStudyGroupRequest;
 use App\Models\Category;
@@ -9,7 +10,7 @@ use App\Models\User;
 use App\Services\AdminStudyGroupService;
 use Illuminate\Http\Request;
 
-class AdminStudyGroupController extends Controller
+class StudyGroupController extends Controller
 {
     public function index(Request $request, AdminStudyGroupService $studyGroupService)
     {
