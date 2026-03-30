@@ -13,9 +13,9 @@ class PublicPageController extends Controller
 {
     public function about()
     {
-        $studentCount = User::where('role', 'hoc_vien')->count();
+        $studentCount = User::students()->count();
         $courseCount = Subject::count();
-        $teacherCount = User::where('role', 'giang_vien')->count();
+        $teacherCount = User::teachers()->count();
 
         return view('pages.about', compact('studentCount', 'courseCount', 'teacherCount'));
     }
@@ -53,7 +53,7 @@ class PublicPageController extends Controller
 
     public function teachers()
     {
-        $teachers = User::where('role', 'giang_vien')->get();
+        $teachers = User::teachers()->get();
 
         return view('pages.teachers', compact('teachers'));
     }

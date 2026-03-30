@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\ScheduleChangeRequest;
 use App\Models\TeacherApplication;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,7 +46,7 @@ class AdminTeacherService
             'email' => $data['email'],
             'phone' => $data['phone'] ?: null,
             'password' => Hash::make($data['password']),
-            'role' => User::ROLE_TEACHER,
+            'role_id' => Role::idByName(User::ROLE_TEACHER),
             'status' => $data['status'],
             'email_verified_at' => now(),
         ]);
@@ -65,7 +66,7 @@ class AdminTeacherService
             $teacher->password = Hash::make($data['password']);
         }
 
-        $teacher->role = User::ROLE_TEACHER;
+        $teacher->role_id = Role::idByName(User::ROLE_TEACHER);
         $teacher->save();
 
         return $teacher;

@@ -59,7 +59,7 @@ class StoreCourseTimeSlotRequest extends FormRequest
 
             if ($this->filled('teacher_id')) {
                 $teacher = User::find((int) $this->input('teacher_id'));
-                if (! $teacher || $teacher->role !== User::ROLE_TEACHER) {
+                if (! $teacher || ! $teacher->isTeacher()) {
                     $validator->errors()->add('teacher_id', 'Giang vien duoc chon khong hop le.');
                 }
             }

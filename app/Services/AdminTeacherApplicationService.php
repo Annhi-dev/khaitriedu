@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\TeacherApplication;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -68,7 +69,7 @@ class AdminTeacherApplicationService
                 'phone' => $application->phone,
                 'username' => $this->generateUniqueUsername($application->email),
                 'password' => Hash::make('12345678'),
-                'role' => User::ROLE_TEACHER,
+                'role_id' => Role::idByName(User::ROLE_TEACHER),
                 'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
             ]);
@@ -77,7 +78,7 @@ class AdminTeacherApplicationService
         $user->fill([
             'name' => $application->name,
             'phone' => $application->phone,
-            'role' => User::ROLE_TEACHER,
+            'role_id' => Role::idByName(User::ROLE_TEACHER),
             'status' => User::STATUS_ACTIVE,
         ]);
 

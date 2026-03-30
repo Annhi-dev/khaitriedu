@@ -67,7 +67,7 @@ class AdminTeacherApplicationReviewTest extends TestCase
         ]);
         $this->assertDatabaseHas('nguoi_dung', [
             'email' => 'ungvienmoi@example.com',
-            'role' => User::ROLE_TEACHER,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
             'status' => User::STATUS_ACTIVE,
         ]);
     }
@@ -96,7 +96,7 @@ class AdminTeacherApplicationReviewTest extends TestCase
         $this->assertDatabaseHas('nguoi_dung', [
             'id' => $existingUser->id,
             'email' => 'upgrade@example.com',
-            'role' => User::ROLE_TEACHER,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
             'status' => User::STATUS_ACTIVE,
         ]);
     }
@@ -125,7 +125,7 @@ class AdminTeacherApplicationReviewTest extends TestCase
         ]);
         $this->assertDatabaseMissing('nguoi_dung', [
             'email' => 'reject@example.com',
-            'role' => User::ROLE_TEACHER,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
         ]);
     }
 

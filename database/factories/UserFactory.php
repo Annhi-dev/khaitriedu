@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +22,7 @@ class UserFactory extends Factory
             'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->phoneNumber(),
-            'role' => User::ROLE_STUDENT,
+            'role_id' => Role::idByName(User::ROLE_STUDENT),
             'status' => User::STATUS_ACTIVE,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -39,21 +40,21 @@ class UserFactory extends Factory
     public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => User::ROLE_ADMIN,
+            'role_id' => Role::idByName(User::ROLE_ADMIN),
         ]);
     }
 
     public function teacher(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => User::ROLE_TEACHER,
+            'role_id' => Role::idByName(User::ROLE_TEACHER),
         ]);
     }
 
     public function student(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => User::ROLE_STUDENT,
+            'role_id' => Role::idByName(User::ROLE_STUDENT),
         ]);
     }
 

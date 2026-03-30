@@ -4,16 +4,24 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\OtpHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            return $this->redirectAfterLogin(Auth::user());
+        }
+
         return view('auth.login');
     }
 
@@ -24,11 +32,22 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Rate limiting: max 5 attempts per minute per IP
+        $throttleKey = 'login:' . Str::lower($request->input('login')) . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()->with('error', "Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau {$seconds} giây.");
+        }
+
         $user = User::where('email', $request->login)
             ->orWhere('username', $request->login)
             ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($throttleKey, 60);
+
             return back()->with('error', 'Tên đăng nhập/email hoặc mật khẩu không đúng.');
         }
 
@@ -36,7 +55,14 @@ class AuthController extends Controller
             return back()->with('error', 'Tài khoản của bạn hiện không thể đăng nhập. Vui lòng liên hệ quản trị viên.');
         }
 
-        session(['user_id' => $user->id]);
+        // Clear rate limiter on successful login
+        RateLimiter::clear($throttleKey);
+
+        // Use Laravel Auth Guard — handles session securely
+        Auth::login($user);
+
+        // Regenerate session ID to prevent session fixation attacks
+        $request->session()->regenerate();
 
         return $this->redirectAfterLogin($user);
     }
@@ -82,8 +108,8 @@ class AuthController extends Controller
             'name' => $pending['name'],
             'email' => $pending['email'],
             'phone' => $pending['phone'],
-            'password' => Hash::make($pending['password']),
-            'role' => $pending['role'],
+            'password' => $pending['password_hash'],
+            'role_id' => $pending['role_id'],
             'status' => User::STATUS_ACTIVE,
             'email_verified_at' => Carbon::now(),
         ]);
@@ -112,34 +138,45 @@ class AuthController extends Controller
 
     public function showRegister()
     {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
         return view('auth.register');
     }
 
     public function register(Request $request)
     {
-        $data = $request->validate([
+        $currentUser = Auth::user();
+        $isAdminCreating = $currentUser && $currentUser->isAdmin();
+
+        // Only admin can assign roles. Public registration is always hoc_vien.
+        $rules = [
             'username' => 'required|string|max:50',
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|min:6',
-            'role' => 'required|in:admin,giang_vien,hoc_vien',
-        ]);
+        ];
+
+        if ($isAdminCreating) {
+            $rules['role'] = 'required|in:admin,teacher,student';
+        }
+
+        $data = $request->validate($rules);
 
         if (User::where('username', $data['username'])->exists() || User::where('email', $data['email'])->exists()) {
             return back()->withErrors(['email' => 'Tên đăng nhập hoặc email đã tồn tại.'])->withInput();
         }
 
-        $current = $this->sessionUser();
-
-        if ($current && $current->role === User::ROLE_ADMIN) {
+        if ($isAdminCreating) {
             User::create([
                 'username' => $data['username'],
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => Hash::make($data['password']),
-                'role' => $data['role'],
+                'role_id' => Role::idByName($data['role']),
                 'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => Carbon::now(),
             ]);
@@ -147,13 +184,14 @@ class AuthController extends Controller
             return redirect()->route('admin.users')->with('status', 'Người dùng đã được tạo và kích hoạt ngay lập tức.');
         }
 
+        // Public registration: always student, hash password before storing in session
         session(['pending_user' => [
             'username' => $data['username'],
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'],
-            'password' => $data['password'],
-            'role' => $data['role'],
+            'password_hash' => Hash::make($data['password']),
+            'role_id' => Role::idByName(User::ROLE_STUDENT),
         ]]);
 
         OtpHelper::sendOtp($data['email'], 'register');
@@ -237,11 +275,11 @@ class AuthController extends Controller
 
     private function redirectAfterLogin(User $user)
     {
-        if ($user->role === User::ROLE_ADMIN) {
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === User::ROLE_TEACHER) {
+        if ($user->isTeacher()) {
             return redirect()->route('teacher.dashboard');
         }
 

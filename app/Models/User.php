@@ -4,15 +4,18 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    // ─── Role Constants (English, matching roles table) ──
     public const ROLE_ADMIN = 'admin';
-    public const ROLE_TEACHER = 'giang_vien';
-    public const ROLE_STUDENT = 'hoc_vien';
+    public const ROLE_TEACHER = 'teacher';
+    public const ROLE_STUDENT = 'student';
 
+    // ─── Status Constants ────────────────────────────────
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
     public const STATUS_LOCKED = 'locked';
@@ -28,7 +31,7 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
-        'role',
+        'role_id',
         'status',
         'email_verified_at',
     ];
@@ -46,16 +49,71 @@ class User extends Authenticatable
         ];
     }
 
+    // ─── Role Relationship ───────────────────────────────
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    // ─── Role Helpers ────────────────────────────────────
+    /**
+     * Check if user has one of the given roles.
+     *
+     * Usage: $user->hasRole('admin') or $user->hasRole('admin', 'teacher')
+     */
+    public function hasRole(string ...$roles): bool
+    {
+        return $this->role && in_array($this->role->name, $roles, true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(self::ROLE_ADMIN);
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->hasRole(self::ROLE_TEACHER);
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->hasRole(self::ROLE_STUDENT);
+    }
+
+    /**
+     * Get role name as string (for display/backward compat).
+     */
+    public function getRoleName(): string
+    {
+        return $this->role?->name ?? 'unknown';
+    }
+
+    /**
+     * Get human-readable role label.
+     */
+    public function roleLabel(): string
+    {
+        return match ($this->role?->name) {
+            self::ROLE_ADMIN => 'Admin',
+            self::ROLE_TEACHER => 'Giảng viên',
+            self::ROLE_STUDENT => 'Học viên',
+            default => ucfirst($this->role?->name ?? 'Unknown'),
+        };
+    }
+
+    // ─── Scopes ──────────────────────────────────────────
     public function scopeStudents($query)
     {
-        return $query->where('role', self::ROLE_STUDENT);
+        return $query->whereHas('role', fn ($q) => $q->where('name', self::ROLE_STUDENT));
     }
 
     public function scopeTeachers($query)
     {
-        return $query->where('role', self::ROLE_TEACHER);
+        return $query->whereHas('role', fn ($q) => $q->where('name', self::ROLE_TEACHER));
     }
 
+    // ─── Status Helpers ──────────────────────────────────
     public function isLocked(): bool
     {
         return $this->status === self::STATUS_LOCKED;
@@ -71,6 +129,7 @@ class User extends Authenticatable
         };
     }
 
+    // ─── Relationships ───────────────────────────────────
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);

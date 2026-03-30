@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -49,7 +50,7 @@ class UserController extends Controller
             'username' => 'required|string|max:50|unique:nguoi_dung,username',
             'email' => 'required|email|unique:nguoi_dung,email',
             'password' => 'required|min:6',
-            'role' => 'required|in:admin,giang_vien,hoc_vien',
+            'role' => 'required|in:admin,teacher,student',
         ]);
 
         User::create([
@@ -57,7 +58,7 @@ class UserController extends Controller
             'username' => $data['username'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role' => $data['role'],
+            'role_id' => Role::idByName($data['role']),
             'status' => User::STATUS_ACTIVE,
             'email_verified_at' => Carbon::now(),
         ]);
@@ -79,10 +80,12 @@ class UserController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'role' => 'required|in:admin,giang_vien,hoc_vien',
+            'role' => 'required|in:admin,teacher,student',
         ]);
 
-        $user->update($data);
+        $user->name = $data['name'];
+        $user->role_id = Role::idByName($data['role']);
+        $user->save();
 
         return redirect()->route('admin.users')->with('status', 'Cập nhật người dùng thành công.');
     }

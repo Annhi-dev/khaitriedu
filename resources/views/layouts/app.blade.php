@@ -20,7 +20,7 @@
     <nav class="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50 shadow-sm" x-data="{ mobileOpen: false }">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                @php $user = session('user_id') ? \App\Models\User::find(session('user_id')) : null; @endphp
+                @php $user = Auth::user(); @endphp
                 <!-- Logo + icon -->
                 <a href="{{ route('home') }}" class="flex items-center space-x-2">
                     <img src="{{ asset('hinh/LOGO.png') }}" alt="KhaiTriEdu Logo" class="h-10 w-auto" />
@@ -29,7 +29,7 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
-                    @if($user && $user->role === 'admin')
+                    @if($user && $user->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Dashboard</a>
                         <a href="{{ route('admin.categories') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý nhóm học</a>
                         <a href="{{ route('admin.subjects') }}" class="nav-link text-gray-700 hover:text-primary transition font-medium">Quản lý khóa học</a>
@@ -63,7 +63,7 @@
                                 <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
                             </button>
                             <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-10">
-                                @if($user->role === 'admin')
+                                @if($user->isAdmin())
                                     <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-tachometer-alt w-5 mr-2"></i>Admin Dashboard</a>
                                     <a href="{{ route('admin.categories') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-list-alt w-5 mr-2"></i>Quản lý nhóm học</a>
                                 @else
@@ -72,7 +72,10 @@
                                 @endif
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-user-circle w-5 mr-2"></i>Thông tin cá nhân</a>
                                 <hr class="my-1 border-gray-200">
-                                <a href="{{ route('logout') }}" class="block px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition"><i class="fas fa-sign-out-alt w-5 mr-2"></i>Đăng xuất</a>
+                                <form method="POST" action="{{ route('logout') }}" class="block">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition"><i class="fas fa-sign-out-alt w-5 mr-2"></i>Đăng xuất</button>
+                                </form>
                             </div>
                         </div>
                     @endif
@@ -87,7 +90,7 @@
 
         <!-- Mobile menu -->
         <div x-show="mobileOpen" x-cloak class="md:hidden bg-white border-t px-4 py-3 space-y-2">
-            @if($user && $user->role === 'admin')
+            @if($user && $user->isAdmin())
                 <a href="{{ route('admin.dashboard') }}" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-tachometer-alt w-6 mr-2"></i>Admin Dashboard</a>
                 <a href="{{ route('admin.categories') }}" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-list-alt w-6 mr-2"></i>Quản lý nhóm học</a>
                 <a href="{{ route('admin.subjects') }}" class="block nav-link py-2 text-gray-700 hover:text-primary"><i class="fas fa-book w-6 mr-2"></i>Quản lý khóa học</a>
@@ -111,13 +114,16 @@
                         <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold mr-2">{{ substr($user->name, 0, 1) }}</div>
                         {{ $user->name }}
                     </div>
-                    @if($user->role === 'admin')
+                    @if($user->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-tachometer-alt w-6 mr-2"></i>Admin Dashboard</a>
                     @else
                         <a href="{{ route('dashboard') }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-tachometer-alt w-6 mr-2"></i>Dashboard</a>
                     @endif
                     <a href="#" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-user-circle w-6 mr-2"></i>Thông tin cá nhân</a>
-                    <a href="{{ route('logout') }}" class="block py-2 text-sm text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt w-6 mr-2"></i>Đăng xuất</a>
+                    <form method="POST" action="{{ route('logout') }}" class="block">
+                        @csrf
+                        <button type="submit" class="w-full text-left py-2 text-sm text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt w-6 mr-2"></i>Đăng xuất</button>
+                    </form>
                 </div>
             @endif
         </div>

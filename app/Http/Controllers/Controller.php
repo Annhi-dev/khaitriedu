@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Auth;
 
 abstract class Controller extends BaseController
 {
@@ -15,14 +16,14 @@ abstract class Controller extends BaseController
 
     protected function sessionUser(): ?User
     {
-        return User::find(session('user_id'));
+        return Auth::user();
     }
 
     protected function requireRole(?string $role = null): array
     {
         $user = $this->sessionUser();
 
-        if (! $user || ($role !== null && $user->role !== $role)) {
+        if (! $user || ($role !== null && ! $user->hasRole($role))) {
             return [null, redirect()->route('login')];
         }
 
@@ -55,11 +56,11 @@ abstract class Controller extends BaseController
             return [$course, null, redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập lớp học.')];
         }
 
-        if ($user->role === User::ROLE_ADMIN) {
+        if ($user->isAdmin()) {
             return [$course, null, null];
         }
 
-        if ($user->role === User::ROLE_TEACHER) {
+        if ($user->isTeacher()) {
             if ($course->teacher_id === $user->id) {
                 return [$course, null, null];
             }
@@ -67,7 +68,7 @@ abstract class Controller extends BaseController
             return [$course, null, redirect()->route('teacher.courses')->with('error', 'Bạn không có quyền truy cập lớp học này.')];
         }
 
-        if ($user->role === User::ROLE_STUDENT) {
+        if ($user->isStudent()) {
             $enrollment = Enrollment::with('assignedTeacher')
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)

@@ -119,7 +119,7 @@
       <h2 class="text-2xl font-bold text-gray-900">Đăng ký khóa học</h2>
       <p class="mt-2 text-sm text-gray-600">Điền thời gian bạn có thể học. Admin sẽ căn cứ vào thông tin này để sắp xếp lớp học thích hợp.</p>
 
-      @if(!$user || $user->role !== 'hoc_vien')
+      @if(!$user || !$user->isStudent())
         <div class="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-800">
           Bạn cần đăng nhập bằng tài khoản học viên trước khi gửi yêu cầu đăng ký.
           <div class="mt-4">

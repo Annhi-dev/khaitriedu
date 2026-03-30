@@ -22,7 +22,7 @@
                         Nền tảng học tập trực tuyến hàng đầu Việt Nam, mang đến trải nghiệm học tập chất lượng cao với đội ngũ giảng viên giàu kinh nghiệm.
                     </p>
                     <div class="flex flex-wrap gap-4 justify-center lg:justify-start">
-                        @if(!session('user_id'))
+                        @if(!Auth::check())
                             <a href="{{ route('register') }}" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-rocket"></i> Bắt đầu học ngay
                             </a>

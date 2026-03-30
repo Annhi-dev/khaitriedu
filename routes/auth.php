@@ -24,4 +24,4 @@ Route::prefix('forgot-password')->group(function () {
     Route::post('/reset', [AuthController::class, 'resetPassword'])->name('forgot.reset.post');
 });
 
-Route::get('/logout', [HomeController::class, 'logout'])->name('logout');
+Route::post('/logout', [HomeController::class, 'logout'])->name('logout');

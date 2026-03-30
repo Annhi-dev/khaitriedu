@@ -1,17 +1,17 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', $course->title)
 @section('content')
 @php
   $backUrl = route('dashboard');
   $backLabel = 'Quay lại dashboard';
 
-  if (($user->role ?? null) === 'giang_vien') {
+  if ($user && $user->isTeacher()) {
       $backUrl = route('teacher.courses');
       $backLabel = 'Quay lại lớp học phụ trách';
-  } elseif (($user->role ?? null) === 'admin') {
+  } elseif ($user && $user->isAdmin()) {
       $backUrl = route('admin.courses');
       $backLabel = 'Quay lại quản lý lớp học';
-  } elseif (($user->role ?? null) === 'hoc_vien') {
+  } elseif ($user && $user->isStudent()) {
       $backUrl = route('student.schedule');
       $backLabel = 'Quay lại lịch học';
   }
@@ -73,7 +73,7 @@
       </div>
     </div>
 
-    @if(($user->role ?? null) === 'hoc_vien' && $enrollment)
+    @if($user && $user->isStudent() && $enrollment)
       <div class="mt-6 rounded-2xl border border-primary/20 bg-primary-light/10 p-5">
         <h2 class="text-lg font-semibold text-primary-dark">Thông tin xếp lớp của bạn</h2>
         <div class="mt-3 grid gap-4 md:grid-cols-3 text-sm text-gray-700">
@@ -152,7 +152,7 @@
     @endforelse
   </section>
 
-  @if(($user->role ?? null) === 'hoc_vien' && $enrollment)
+  @if($user && $user->isStudent() && $enrollment)
     <section class="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
       <div>
         <h2 class="text-2xl font-bold text-gray-900">Đánh giá lớp học</h2>

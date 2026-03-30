@@ -6,19 +6,21 @@ use App\Models\Category;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
     public function home()
     {
-        if ($this->sessionUser()) {
+        if (Auth::check()) {
             return redirect()->route('dashboard');
         }
 
-        $studentCount = User::where('role', User::ROLE_STUDENT)->count();
+        $studentCount = User::students()->count();
         $courseCount = Subject::visibleOnCatalog()->count();
-        $teacherCount = User::where('role', User::ROLE_TEACHER)->count();
-        $teachers = User::where('role', User::ROLE_TEACHER)->limit(6)->get();
+        $teacherCount = User::teachers()->count();
+        $teachers = User::teachers()->limit(6)->get();
         $courses = Subject::with('category')
             ->withCount(['courses', 'enrollments'])
             ->visibleOnCatalog()
@@ -37,26 +39,29 @@ class HomeController extends Controller
 
     public function dashboard()
     {
-        $user = $this->sessionUser();
+        $user = Auth::user();
 
         if (! $user) {
             return redirect()->route('login');
         }
 
-        if ($user->role === User::ROLE_ADMIN) {
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === User::ROLE_TEACHER) {
+        if ($user->isTeacher()) {
             return redirect()->route('teacher.dashboard');
         }
 
         return redirect()->route('student.dashboard');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->forget(['user_id']);
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect()->route('home');
     }
@@ -66,3 +71,4 @@ class HomeController extends Controller
         return redirect()->route('home');
     }
 }
+

@@ -55,7 +55,7 @@ class CourseController extends Controller
         );
 
         $reviews = $course->reviews->sortByDesc('created_at')->values();
-        $review = $user && $user->role === 'hoc_vien' ? $reviews->firstWhere('user_id', $user->id) : null;
+        $review = $user && $user->isStudent() ? $reviews->firstWhere('user_id', $user->id) : null;
 
         return view('courses.show', compact('course', 'user', 'enrollment', 'review', 'reviews'));
     }
@@ -84,7 +84,7 @@ class CourseController extends Controller
             return redirect()->route('courses.show', $course->id)->with('error', 'Bài học không tồn tại.');
         }
 
-        if ($user && $user->role === 'hoc_vien' && $enrollment) {
+        if ($user && $user->isStudent() && $enrollment) {
             LessonProgress::updateOrCreate(
                 ['user_id' => $user->id, 'lesson_id' => $lesson->id],
                 ['started_at' => now(), 'is_completed' => true, 'completed_at' => now(), 'time_spent' => 300]
@@ -121,7 +121,7 @@ class CourseController extends Controller
             return $redirect;
         }
 
-        if ($user->role !== 'hoc_vien' || ! $enrollment) {
+        if (! $user->isStudent() || ! $enrollment) {
             return redirect()->route('courses.show', $course->id)->with('error', 'Chỉ học viên đã được xếp lớp mới có thể nộp quiz.');
         }
 
@@ -193,7 +193,7 @@ class CourseController extends Controller
     {
         $user = $this->sessionUser();
 
-        if (! $user || $user->role !== 'hoc_vien') {
+        if (! $user || ! $user->isStudent()) {
             return redirect()->route('login');
         }
 
@@ -228,7 +228,7 @@ class CourseController extends Controller
             return redirect()->route('courses.index')->with('error', 'Khóa học không tồn tại hoặc đang tạm ẩn.');
         }
 
-        $userEnrollment = $user && $user->role === 'hoc_vien'
+        $userEnrollment = $user && $user->isStudent()
             ? $this->findSubjectEnrollment($user->id, $subject->id, ['assignedTeacher', 'course'])
             : null;
 
@@ -239,7 +239,7 @@ class CourseController extends Controller
     {
         $user = $this->sessionUser();
 
-        if (! $user || $user->role !== 'hoc_vien') {
+        if (! $user || ! $user->isStudent()) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập bằng tài khoản học viên.');
         }
 

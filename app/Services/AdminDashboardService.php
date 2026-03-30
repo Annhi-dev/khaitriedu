@@ -57,8 +57,8 @@ class AdminDashboardService
         $infrastructureWarnings = $this->infrastructureWarnings($infrastructureChecks);
 
         return [
-            'studentCount' => User::where('role', User::ROLE_STUDENT)->count(),
-            'teacherCount' => User::where('role', User::ROLE_TEACHER)->count(),
+            'studentCount' => User::students()->count(),
+            'teacherCount' => User::teachers()->count(),
             'pendingTeacherApplications' => TeacherApplication::where('status', TeacherApplication::STATUS_PENDING)->count(),
             'subjectCount' => Subject::count(),
             'groupCount' => Category::count(),

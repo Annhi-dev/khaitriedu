@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Announcement;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -24,7 +25,7 @@ class DatabaseSeeder extends Seeder
                 'username' => 'admin',
                 'phone' => '0900000001',
                 'password' => bcrypt('123456'),
-                'role' => 'admin',
+                'role_id' => Role::idByName('admin'),
             ]
         );
 
@@ -35,7 +36,7 @@ class DatabaseSeeder extends Seeder
                 'username' => 'admin2',
                 'phone' => '0900000002',
                 'password' => bcrypt('123456'),
-                'role' => 'admin',
+                'role_id' => Role::idByName('admin'),
             ]
         );
 
@@ -56,7 +57,7 @@ class DatabaseSeeder extends Seeder
                     'username' => "gv{$i}",
                     'phone' => '09000001' . str_pad($i, 2, '0', STR_PAD_LEFT),
                     'password' => bcrypt('123456'),
-                    'role' => 'giang_vien',
+                    'role_id' => Role::idByName('teacher'),
                 ]
             );
         }
@@ -69,7 +70,7 @@ class DatabaseSeeder extends Seeder
                     'username' => "hv{$i}",
                     'phone' => '09000002' . str_pad($i, 2, '0', STR_PAD_LEFT),
                     'password' => bcrypt('123456'),
-                    'role' => 'hoc_vien',
+                    'role_id' => Role::idByName('student'),
                 ]
             );
         }

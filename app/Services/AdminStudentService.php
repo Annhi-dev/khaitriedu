@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Enrollment;
 use App\Models\Grade;
 use App\Models\Review;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,7 +45,7 @@ class AdminStudentService
             'email' => $data['email'],
             'phone' => $data['phone'] ?: null,
             'password' => Hash::make($data['password']),
-            'role' => User::ROLE_STUDENT,
+            'role_id' => Role::idByName(User::ROLE_STUDENT),
             'status' => $data['status'],
             'email_verified_at' => now(),
         ]);
@@ -64,7 +65,7 @@ class AdminStudentService
             $student->password = Hash::make($data['password']);
         }
 
-        $student->role = User::ROLE_STUDENT;
+        $student->role_id = Role::idByName(User::ROLE_STUDENT);
         $student->save();
 
         return $student;

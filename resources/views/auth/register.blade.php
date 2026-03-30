@@ -42,7 +42,7 @@
                 <input type="password" name="password" required
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition">
             </div>
-            <input type="hidden" name="role" value="hoc_vien">
+            {{-- Role is automatically assigned as 'student' by the controller --}}
 
             <div class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
                 Sau khi đăng ký bạn phải xác minh email bằng mã OTP gửi đến email.

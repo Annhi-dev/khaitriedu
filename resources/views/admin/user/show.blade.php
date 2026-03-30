@@ -27,9 +27,9 @@
       <div class="mb-3">
         <label class="block text-sm font-medium">Role</label>
         <select name="role" required class="w-full border rounded-md px-3 py-2">
-          <option value="hoc_vien" @if($target->role=='hoc_vien') selected @endif>Học viên</option>
-          <option value="giang_vien" @if($target->role=='giang_vien') selected @endif>Giảng viên</option>
-          <option value="admin" @if($target->role=='admin') selected @endif>Admin</option>
+          <option value="student" @if($target->getRoleName()=='student') selected @endif>Học viên</option>
+          <option value="teacher" @if($target->getRoleName()=='teacher') selected @endif>Giảng viên</option>
+          <option value="admin" @if($target->getRoleName()=='admin') selected @endif>Admin</option>
         </select>
       </div>
       <button type="submit" class="btn bg-blue-600 text-white rounded-xl px-3 py-2">Cập nhật</button>

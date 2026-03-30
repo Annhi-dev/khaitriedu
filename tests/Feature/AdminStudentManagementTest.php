@@ -89,7 +89,7 @@ class AdminStudentManagementTest extends TestCase
         $response->assertRedirect(route('admin.students.show', $student));
         $this->assertDatabaseHas('nguoi_dung', [
             'email' => 'hocvienmoi@example.com',
-            'role' => User::ROLE_STUDENT,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_STUDENT),
             'status' => User::STATUS_ACTIVE,
         ]);
     }

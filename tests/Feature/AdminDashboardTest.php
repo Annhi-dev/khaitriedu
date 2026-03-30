@@ -23,13 +23,13 @@ class AdminDashboardTest extends TestCase
     public function test_admin_can_access_admin_dashboard(): void
     {
         $admin = User::factory()->create([
-            'role' => User::ROLE_ADMIN,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_ADMIN),
         ]);
         $teacher = User::factory()->create([
-            'role' => User::ROLE_TEACHER,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
         ]);
         $student = User::factory()->create([
-            'role' => User::ROLE_STUDENT,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_STUDENT),
         ]);
         $category = Category::create([
             'name' => 'Ngoại ngữ - Tin học',
@@ -135,7 +135,7 @@ class AdminDashboardTest extends TestCase
     public function test_student_is_blocked_from_admin_dashboard(): void
     {
         $student = User::factory()->create([
-            'role' => User::ROLE_STUDENT,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_STUDENT),
         ]);
 
         $response = $this
@@ -149,7 +149,7 @@ class AdminDashboardTest extends TestCase
     public function test_teacher_is_blocked_from_admin_dashboard(): void
     {
         $teacher = User::factory()->create([
-            'role' => User::ROLE_TEACHER,
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
         ]);
 
         $response = $this

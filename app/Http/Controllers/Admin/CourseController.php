@@ -73,7 +73,7 @@ class CourseController extends Controller
         }
 
         $course->load(['subject.category', 'teacher', 'modules'])->loadCount('enrollments');
-        $teachers = User::where('role', User::ROLE_TEACHER)->orderBy('name')->get();
+        $teachers = User::teachers()->orderBy('name')->get();
         $subjects = Subject::with('category')->orderBy('name')->get();
 
         return view('admin.course.show', compact('course', 'teachers', 'subjects', 'current'));

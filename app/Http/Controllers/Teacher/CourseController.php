@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Grade;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
     public function courses()
     {
-        [$user, $redirect] = $this->requireRole('giang_vien');
+        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -36,7 +37,7 @@ class CourseController extends Controller
 
     public function showCourse($id)
     {
-        [$user, $redirect] = $this->requireRole('giang_vien');
+        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -66,7 +67,7 @@ class CourseController extends Controller
 
     public function updateGrades(Request $request)
     {
-        [$user, $redirect] = $this->requireRole('giang_vien');
+        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;

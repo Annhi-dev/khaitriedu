@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +18,7 @@ class SubjectEnrollmentTest extends TestCase
     public function test_subject_show_page_loads_for_students(): void
     {
         $student = User::factory()->create([
-            'role' => 'hoc_vien',
+            'role_id' => Role::idByName('student'),
         ]);
 
         [$category, $subject] = $this->createCatalogSubject();
@@ -34,7 +35,7 @@ class SubjectEnrollmentTest extends TestCase
     public function test_student_can_submit_subject_enrollment_without_preassigned_course(): void
     {
         $student = User::factory()->create([
-            'role' => 'hoc_vien',
+            'role_id' => Role::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
@@ -61,7 +62,7 @@ class SubjectEnrollmentTest extends TestCase
     public function test_student_without_scheduled_class_is_redirected_from_internal_class_page(): void
     {
         $student = User::factory()->create([
-            'role' => 'hoc_vien',
+            'role_id' => Role::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
@@ -78,7 +79,7 @@ class SubjectEnrollmentTest extends TestCase
     public function test_scheduled_student_can_open_internal_class_page(): void
     {
         $student = User::factory()->create([
-            'role' => 'hoc_vien',
+            'role_id' => Role::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
@@ -104,10 +105,10 @@ class SubjectEnrollmentTest extends TestCase
     public function test_admin_must_choose_class_before_scheduling_enrollment(): void
     {
         $admin = User::factory()->create([
-            'role' => 'admin',
+            'role_id' => Role::idByName('admin'),
         ]);
         $student = User::factory()->create([
-            'role' => 'hoc_vien',
+            'role_id' => Role::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
@@ -143,13 +144,13 @@ class SubjectEnrollmentTest extends TestCase
     public function test_admin_scheduling_defaults_teacher_and_schedule_from_selected_class(): void
     {
         $admin = User::factory()->create([
-            'role' => 'admin',
+            'role_id' => Role::idByName('admin'),
         ]);
         $student = User::factory()->create([
-            'role' => 'hoc_vien',
+            'role_id' => Role::idByName('student'),
         ]);
         $teacher = User::factory()->create([
-            'role' => 'giang_vien',
+            'role_id' => Role::idByName('teacher'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();

@@ -31,7 +31,7 @@
         <div class="mb-2"><input name="username" placeholder="Tên đăng nhập" required class="w-full border rounded-md px-3 py-2" /></div>
         <div class="mb-2"><input name="email" placeholder="Email" type="email" required class="w-full border rounded-md px-3 py-2" /></div>
         <div class="mb-2"><input name="password" placeholder="Mật khẩu" type="password" required class="w-full border rounded-md px-3 py-2" /></div>
-        <div class="mb-2"><select name="role" required class="w-full border rounded-md px-3 py-2"><option value="hoc_vien">Học viên</option><option value="giang_vien">Giảng viên</option><option value="admin">Admin</option></select></div>
+        <div class="mb-2"><select name="role" required class="w-full border rounded-md px-3 py-2"><option value="student">Học viên</option><option value="teacher">Giảng viên</option><option value="admin">Admin</option></select></div>
         <button class="btn bg-primary text-white rounded-xl px-3 py-2">Tạo người dùng</button>
       </form>
     </div>
@@ -48,7 +48,7 @@
               <td class="border p-2">{{ $u->id }}</td>
               <td class="border p-2">{{ $u->name }}</td>
               <td class="border p-2">{{ $u->email }}</td>
-              <td class="border p-2">{{ ucfirst(str_replace('_', ' ', $u->role)) }}</td>
+              <td class="border p-2">{{ $u->roleLabel() }}</td>
               <td class="border p-2 flex gap-1">
                 <a href="{{ route('admin.user.show', $u->id) }}" class="px-2 py-1 text-xs bg-blue-500 text-white rounded">Sửa</a>
                 <form method="post" action="{{ route('admin.users.delete', $u->id) }}" onsubmit="return confirm('Xóa người dùng?');">
