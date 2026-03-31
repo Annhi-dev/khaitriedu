@@ -145,7 +145,14 @@
 
                 <div>
                     <label class="text-sm font-medium text-slate-700">Lịch học chính thức</label>
-                    <input type="text" name="schedule" value="{{ old('schedule', $enrollment->schedule) }}" placeholder="Ví dụ: T2 - T4 - T6, 18:00 - 20:00" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                    <select name="schedule" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                        <option value="">-- Chọn lịch học --</option>
+                        <option value="Tối T2-T4-T6, 18:00 - 20:30" @selected(old('schedule', $enrollment->schedule) === 'Tối T2-T4-T6, 18:00 - 20:30')>Tối T2-T4-T6, 18:00 - 20:30</option>
+                        <option value="Tối T3-T5-T7, 18:00 - 20:30" @selected(old('schedule', $enrollment->schedule) === 'Tối T3-T5-T7, 18:00 - 20:30')>Tối T3-T5-T7, 18:00 - 20:30</option>
+                        <option value="Sáng T7-CN, 08:30 - 11:30" @selected(old('schedule', $enrollment->schedule) === 'Sáng T7-CN, 08:30 - 11:30')>Sáng T7-CN, 08:30 - 11:30</option>
+                        <option value="Chiều T7-CN, 14:00 - 17:00" @selected(old('schedule', $enrollment->schedule) === 'Chiều T7-CN, 14:00 - 17:00')>Chiều T7-CN, 14:00 - 17:00</option>
+                        <option value="Linh hoạt (Thỏa thuận)" @selected(old('schedule', $enrollment->schedule) === 'Linh hoạt (Thỏa thuận)')>Linh hoạt (Thỏa thuận)</option>
+                    </select>
                     @error('schedule')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 

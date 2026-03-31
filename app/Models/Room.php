@@ -47,4 +47,9 @@ class Room extends Model
     {
         return $this->hasMany(CourseTimeSlot::class);
     }
+
+    public function classRooms()
+    {
+        return $this->hasMany(ClassRoom::class, 'room_id');
+    }
 }

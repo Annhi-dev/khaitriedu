@@ -98,6 +98,12 @@
                         <a href="{{ route('courses.index') }}" class="nav-item {{ request()->routeIs('courses.index') ? 'active' : '' }}">
                             <i class="fas fa-search nav-icon"></i> Khám phá
                         </a>
+                        <a href="{{ route('student.enroll.index') }}" class="nav-item {{ request()->routeIs('student.enroll.index') || request()->routeIs('student.enroll.select') ? 'active' : '' }}">
+                            <i class="fas fa-search-plus nav-icon"></i> Đăng ký lớp
+                        </a>
+                        <a href="{{ route('student.enroll.my-classes') }}" class="nav-item {{ request()->routeIs('student.enroll.my-classes') ? 'active' : '' }}">
+                            <i class="fas fa-calendar-check nav-icon"></i> Lớp của tôi (Thực tế)
+                        </a>
                         <a href="{{ route('student.schedule') }}" class="nav-item {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
                             <i class="fas fa-calendar-alt nav-icon"></i> Lịch học
                         </a>

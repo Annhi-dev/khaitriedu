@@ -54,10 +54,12 @@ class CourseController extends Controller
         }
 
         $courses = $coursesQuery->get();
+        $categories = Category::orderBy('name')->get();
 
         return view('admin.courses', compact(
             'courses',
             'subjects',
+            'categories',
             'current',
             'selectedSubject',
             'selectedCategory',
@@ -149,6 +151,22 @@ class CourseController extends Controller
         return redirect()->route('admin.courses')->with('status', 'Khóa học đã xóa.');
     }
 
+    public function apiBaseCourse($id)
+    {
+        // Must allow anonymous or just admin? The requirement did not specify auth, 
+        // but it'll be hit by the admin form.
+        $subject = \App\Models\Subject::findOrFail($id);
+        
+        $totalClasses = \App\Models\Course::where('subject_id', $subject->id)->count();
+
+        return response()->json([
+            'name' => $subject->name,
+            'price' => $subject->price ?? 0,
+            'capacity' => 30, // Default capacity
+            'total_classes' => $totalClasses
+        ]);
+    }
+
     public function assign(Request $request, Course $course)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
@@ -177,15 +195,19 @@ class CourseController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
+            'teacher_id' => 'nullable|exists:nguoi_dung,id',
+            'schedule' => 'nullable|string|max:255',
         ]);
 
         Course::create([
             'subject_id' => $subject->id,
             'title' => $data['title'],
-            'description' => $data['description'],
+            'description' => $data['description'] ?? null,
             'price' => $data['price'] ?? 0,
+            'teacher_id' => $data['teacher_id'] ?? null,
+            'schedule' => $data['schedule'] ?? null,
         ]);
 
-        return redirect()->route('admin.subjects')->with('status', 'Khóa học đã thêm.');
+        return back()->with('status', 'Khóa học thực tế đã được thêm vào khóa gốc.');
     }
 }

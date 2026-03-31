@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EnrollmentController;
 use App\Http\Controllers\Admin\CourseTimeSlotController;
+use App\Http\Controllers\Admin\ClassRoomController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\ModuleOverviewController;
 use App\Http\Controllers\Admin\ReportController;
@@ -151,4 +152,48 @@ Route::prefix('schedule-change-requests')->name('schedule-change-requests.')->gr
     Route::get('/', [ScheduleChangeRequestController::class, 'index'])->name('index');
     Route::get('/{scheduleChangeRequest}', [ScheduleChangeRequestController::class, 'show'])->name('show');
     Route::post('/{scheduleChangeRequest}/review', [ScheduleChangeRequestController::class, 'review'])->name('review');
+});
+
+// ─── API: Auto-fill subject data for course creation form ────────────────────
+Route::get('/api/subjects/{id}', function ($id) {
+    $subject = \App\Models\Subject::findOrFail($id);
+    
+    // Auto calculate the next batch number
+    $courses = \App\Models\Course::where('subject_id', $id)->get(['title']);
+    $maxBatch = (int) date('y') - 1; // start slightly before current year e.g. 25 in 2026
+    
+    foreach ($courses as $c) {
+        if (preg_match('/Khóa\s+(\d+)/iu', $c->title, $m)) {
+            $b = (int) $m[1];
+            if ($b > $maxBatch) {
+                $maxBatch = $b;
+            }
+        }
+    }
+
+    return response()->json([
+        'id'          => $subject->id,
+        'name'        => $subject->name,
+        'description' => $subject->description,
+        'price'       => $subject->price,
+        'next_batch'  => $maxBatch + 1,
+        'schedule'    => null,
+    ]);
+})->name('api.subjects.show');
+
+// ─── API: Lấy danh sách môn học theo nhóm học (cho dropdown 2 cấp) ────────────
+Route::get('/api/categories/{id}/subjects', function ($id) {
+    $subjects = \App\Models\Subject::where('category_id', $id)
+        ->orderBy('name')
+        ->get(['id', 'name', 'price']);
+    return response()->json($subjects);
+})->name('api.categories.subjects');
+
+// ─── Lớp học (lop_hoc) ───────────────────────────────────────────────────────
+Route::prefix('classes')->name('classes.')->group(function () {
+    Route::get('/', [ClassRoomController::class, 'index'])->name('index');
+    Route::get('/create', [ClassRoomController::class, 'create'])->name('create');
+    Route::post('/', [ClassRoomController::class, 'store'])->name('store');
+    Route::get('/{class}', [ClassRoomController::class, 'show'])->name('show');
+    Route::post('/{class}/delete', [ClassRoomController::class, 'destroy'])->name('delete');
 });

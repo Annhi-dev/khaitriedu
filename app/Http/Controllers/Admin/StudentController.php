@@ -114,7 +114,7 @@ class StudentController extends Controller
 
     protected function resolveStudent(User $student): User
     {
-        abort_if($student->role !== User::ROLE_STUDENT, 404);
+        abort_if(! $student->isStudent(), 404);
 
         return $student;
     }

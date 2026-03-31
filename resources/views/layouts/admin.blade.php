@@ -65,8 +65,9 @@
             'label' => 'Quản lý đào tạo',
             'items' => [
                 ['label' => 'Nhóm học', 'icon' => 'fas fa-layer-group', 'route' => 'admin.categories', 'active' => request()->routeIs('admin.categories*')],
-                ['label' => 'Khóa học', 'icon' => 'fas fa-book-open', 'route' => 'admin.subjects', 'active' => request()->routeIs('admin.subjects*') || request()->routeIs('admin.subject.*')],
-                ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
+
+                ['label' => 'Khóa học', 'icon' => 'fas fa-laptop-code', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
+                ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.classes.index', 'active' => request()->routeIs('admin.classes.*')],
                 ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
                 ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
                 ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
@@ -163,9 +164,12 @@
                                 <span class="text-sm font-semibold">{{ substr($adminUser?->name ?? 'A', 0, 1) }}</span>
                             </div>
                             <span class="hidden sm:inline text-sm font-medium text-slate-700">{{ $adminUser?->name ?? 'Admin' }}</span>
-                            <a href="{{ route('logout') }}" class="ml-2 p-2 rounded-lg hover:bg-slate-100">
-                                <i class="fas fa-sign-out-alt text-slate-500"></i>
-                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="inline">
+                                @csrf
+                                <button type="submit" class="ml-2 p-2 rounded-lg hover:bg-slate-100 hover:bg-red-50 cursor-pointer" title="Đăng xuất">
+                                    <i class="fas fa-sign-out-alt text-slate-500 hover:text-red-500"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

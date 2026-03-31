@@ -121,14 +121,24 @@ class Subject extends Model
         return $this->hasMany(Course::class);
     }
 
-    public function modules()
+    public function users()
     {
-        return $this->hasManyThrough(Module::class, Course::class, 'subject_id', 'course_id');
+        return $this->belongsToMany(User::class, 'dang_ky', 'subject_id', 'user_id');
+    }
+
+    public function classRooms()
+    {
+        return $this->hasMany(ClassRoom::class, 'subject_id');
     }
 
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    public function modules()
+    {
+        return $this->hasManyThrough(Module::class, Course::class, 'subject_id', 'course_id');
     }
 
     public function timeSlots()

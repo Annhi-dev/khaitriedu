@@ -114,7 +114,7 @@ class TeacherController extends Controller
 
     protected function resolveTeacher(User $teacher): User
     {
-        abort_if($teacher->role !== User::ROLE_TEACHER, 404);
+        abort_if(! $teacher->isTeacher(), 404);
 
         return $teacher;
     }

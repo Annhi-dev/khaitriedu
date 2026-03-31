@@ -117,4 +117,9 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Subject::class);
     }
+
+    public function classRoom()
+    {
+        return $this->belongsTo(ClassRoom::class, 'lop_hoc_id');
+    }
 }

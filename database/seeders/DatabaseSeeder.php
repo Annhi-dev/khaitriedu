@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -123,20 +124,26 @@ class DatabaseSeeder extends Seeder
                 'order' => 0,
             ]);
 
-            $subject = \App\Models\Subject::create([
-                'name' => $categoryName,
-                'description' => 'Môn học thuộc ' . $categoryName,
-                'category_id' => $category->id,
-                'price' => 0,
-            ]);
-
             foreach ($courses as $courseTitle) {
+                $subjectPrice = rand(15, 60) * 100000; // 1,500,000 to 6,000,000
+                $subject = \App\Models\Subject::create([
+                    'name' => $courseTitle,
+                    'description' => 'Chương trình đào tạo chuẩn kỹ năng ' . $courseTitle,
+                    'category_id' => $category->id,
+                    'price' => $subjectPrice,
+                    'duration' => rand(1, 6), // 1-6 months
+                    'status' => \App\Models\Subject::STATUS_OPEN,
+                ]);
+
                 $course = \App\Models\Course::create([
                     'subject_id' => $subject->id,
-                    'title' => $courseTitle,
-                    'description' => 'Khóa học ' . $courseTitle,
-                    'schedule' => '1 tháng',
-                    'teacher_id' => 1,
+                    'title' => 'Khóa 26 - ' . $courseTitle,
+                    'description' => 'Khóa 26 - ' . $courseTitle,
+                    'price' => $subjectPrice,
+                    'schedule' => 'Tối T2-T4-T6, 18:00 - 20:30',
+                    'teacher_id' => User::where('role_id', Role::idByName('teacher'))->inRandomOrder()->first()?->id ?? 1,
+                    'capacity' => 20,
+                    'status' => 'active',
                 ]);
 
                 for ($mi = 1; $mi <= 2; $mi++) {
@@ -181,6 +188,24 @@ class DatabaseSeeder extends Seeder
                     'status' => 'published',
                     'published_at' => $item['published_at'],
                     'is_pinned' => $item['is_pinned'],
+                ]
+            );
+        }
+
+        // Realistic Room Seeding (auto-generated codes and room types)
+        $roomTypes = ['theory', 'practice'];
+        $locations = ['Tầng 1 - Khu A', 'Tầng 2 - Khu A', 'Tầng 1 - Khu B', 'Tầng 3 - Khu C'];
+        
+        for ($i = 1; $i <= 10; $i++) {
+            \App\Models\Room::firstOrCreate(
+                ['name' => 'Phòng học ' . $i],
+                [
+                    'code' => 'PH' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                    'type' => $roomTypes[array_rand($roomTypes)],
+                    'location' => $locations[array_rand($locations)],
+                    'capacity' => rand(20, 60),
+                    'status' => \App\Models\Room::STATUS_ACTIVE,
+                    'note' => 'Phòng học đầy đủ trang thiết bị.',
                 ]
             );
         }
