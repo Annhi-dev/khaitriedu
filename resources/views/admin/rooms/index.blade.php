@@ -38,8 +38,14 @@
                     @forelse ($rooms as $room)
                         <tr class="hover:bg-slate-50 transition">
                             <td class="px-6 py-4">
-                                <div class="font-medium text-slate-800">{{ $room->code }}</div>
-                                <div class="mt-1 text-sm text-slate-600">{{ $room->name }}</div>
+                                <div class="font-medium text-slate-800">{{ $room->code }} - {{ $room->name }}</div>
+                                <div class="mt-1 text-sm text-slate-600">
+                                    @if($room->type == 'theory')
+                                        Phòng lý thuyết
+                                    @else
+                                        Phòng thực hành
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-600">
                                 {{ $room->location ?: 'Chưa cấu hình' }}

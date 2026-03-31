@@ -66,6 +66,13 @@
           <input name="title" value="{{ old('title') }}" required placeholder="Ví dụ: Tin học văn phòng" class="w-full rounded-xl border border-gray-300 px-3 py-2.5" />
         </div>
         <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700">Giá khóa học</label>
+          <div class="relative">
+            <input type="number" name="price" value="{{ old('price', 0) }}" min="0" placeholder="Nhập giá" class="w-full rounded-xl border border-gray-300 px-3 py-2.5 pr-12" />
+            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-gray-500">VNĐ</span>
+          </div>
+        </div>
+        <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">Lịch dự kiến</label>
           <input name="schedule" value="{{ old('schedule') }}" placeholder="Ví dụ: T2-T4-T6, 18:00-20:00" class="w-full rounded-xl border border-gray-300 px-3 py-2.5" />
         </div>
@@ -94,6 +101,7 @@
             </div>
             <div class="mt-2 space-y-1 text-sm text-gray-600">
               <p><strong>Nhóm học:</strong> {{ $course->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>
+              <p><strong>Giá:</strong> {{ $course->price == 0 ? 'Miễn phí' : number_format($course->price) . ' VNĐ' }}</p>
               <p><strong>Lịch:</strong> {{ $course->formattedSchedule() }}</p>
               <p><strong>Giảng viên:</strong> {{ $course->teacher?->name ?? 'Chưa phân công' }}</p>
               <p><strong>Học viên đã xếp:</strong> {{ $course->enrollments_count ?? 0 }}</p>

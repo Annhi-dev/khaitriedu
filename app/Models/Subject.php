@@ -61,9 +61,13 @@ class Subject extends Model
 
     public function scopeVisibleOnCatalog(Builder $query): Builder
     {
-        return $query->publiclyAvailable()->where(function (Builder $subjectQuery) {
-            $subjectQuery->whereNull('category_id')
-                ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->active());
+        $dummyNames = ['Ngoại ngữ - Tin học', 'Bồi dưỡng ngắn hạn', 'Đào tạo nghề', 'Đào tạo dài hạn'];
+
+        return $query->publiclyAvailable()
+            ->whereNotIn('name', $dummyNames)
+            ->where(function (Builder $subjectQuery) {
+                $subjectQuery->whereNull('category_id')
+                    ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->active());
         });
     }
 
@@ -84,7 +88,19 @@ class Subject extends Model
 
     public function durationLabel(): string
     {
-        return $this->duration ? $this->duration . ' giờ học dự kiến' : 'Chưa cấu hình';
+        if (!$this->duration) return 'Chưa cấu hình';
+
+        if ($this->duration >= 12) {
+            $years = floor($this->duration / 12);
+            $months = $this->duration % 12;
+            $res = $years . ' năm';
+            if ($months > 0) {
+                $res .= ' ' . $months . ' tháng';
+            }
+            return $res;
+        }
+
+        return $this->duration . ' tháng';
     }
 
     public function isOpenForEnrollment(): bool

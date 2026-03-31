@@ -21,6 +21,7 @@ class Course extends Model
         'subject_id',
         'title',
         'description',
+        'price',
         'schedule',
         'teacher_id',
         'day_of_week',

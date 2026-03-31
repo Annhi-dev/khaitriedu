@@ -16,11 +16,10 @@ class StoreRoomRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'code' => strtoupper(trim((string) $this->input('code', ''))),
             'name' => trim((string) $this->input('name', '')),
+            'type' => $this->input('type', 'theory'),
             'location' => $this->filled('location') ? trim((string) $this->input('location')) : null,
             'capacity' => $this->filled('capacity') ? (int) $this->input('capacity') : null,
-            'status' => $this->input('status', Room::STATUS_ACTIVE),
             'note' => $this->filled('note') ? trim((string) $this->input('note')) : null,
         ]);
     }
@@ -28,11 +27,10 @@ class StoreRoomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', Rule::unique('rooms', 'code')],
             'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'string', 'in:theory,practice'],
             'location' => ['nullable', 'string', 'max:255'],
             'capacity' => ['required', 'integer', 'min:1', 'max:9999'],
-            'status' => ['required', Rule::in(array_keys(Room::statusOptions()))],
             'note' => ['nullable', 'string'],
         ];
     }

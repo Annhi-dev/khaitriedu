@@ -11,8 +11,11 @@
 
 <div class="grid gap-4 md:grid-cols-2">
     <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Mã phòng</label>
-        <input type="text" name="code" value="{{ old('code', $room->code) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500" required>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Loại phòng</label>
+        <select name="type" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+            <option value="theory" @selected(old('type', $room->type) === 'theory')>Phòng lý thuyết</option>
+            <option value="practice" @selected(old('type', $room->type) === 'practice')>Phòng thực hành</option>
+        </select>
     </div>
     <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Tên phòng</label>
@@ -26,14 +29,7 @@
         <label class="block text-sm font-medium text-slate-700 mb-1">Sức chứa</label>
         <input type="number" min="1" name="capacity" value="{{ old('capacity', $room->capacity) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500" required>
     </div>
-    <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
-        <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
-            @foreach ($statuses as $value => $label)
-                <option value="{{ $value }}" @selected(old('status', $room->status) === $value)>{{ $label }}</option>
-            @endforeach
-        </select>
-    </div>
+
     <div class="md:col-span-2">
         <label class="block text-sm font-medium text-slate-700 mb-1">Ghi chú</label>
         <textarea name="note" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">{{ old('note', $room->note) }}</textarea>

@@ -54,6 +54,15 @@
                         <input name="schedule" value="{{ $course->schedule }}" placeholder="Ví dụ: T2-T4-T6, 18:00-20:00" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
                     </div>
                 </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-700">Giá khóa học</label>
+                        <div class="relative">
+                            <input type="number" name="price" value="{{ $course->price ?? 0 }}" min="0" placeholder="Nhập giá" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 pr-12 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-4 text-sm text-slate-500">VNĐ</span>
+                        </div>
+                    </div>
+                </div>
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Mô tả lớp học</label>
                     <textarea name="description" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">{{ $course->description }}</textarea>

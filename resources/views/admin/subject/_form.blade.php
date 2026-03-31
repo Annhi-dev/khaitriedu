@@ -51,8 +51,13 @@
                 </div>
 
                 <div>
-                    <label for="duration" class="mb-2 block text-sm font-medium text-slate-700">Thời lượng dự kiến</label>
-                    <input id="duration" name="duration" type="number" min="1" value="{{ old('duration', $subject->duration ?? '') }}" placeholder="Số giờ học dự kiến" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+                    <label for="duration" class="mb-2 block text-sm font-medium text-slate-700">Thời gian học (dự kiến)</label>
+                    <select id="duration" name="duration" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
+                        <option value="">-- Chọn thời gian học --</option>
+                        @foreach([1, 2, 3, 4, 6, 12, 18, 24] as $val)
+                            <option value="{{ $val }}" @selected(old('duration', $subject->duration ?? '') == $val)>{{ $val }} tháng</option>
+                        @endforeach
+                    </select>
                     @error('duration')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 

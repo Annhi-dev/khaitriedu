@@ -17,9 +17,12 @@ class AdminSubjectService
         $status = trim((string) ($filters['status'] ?? ''));
         $categoryId = $filters['category_id'] ?? null;
 
+        $dummyNames = ['Ngoại ngữ - Tin học', 'Bồi dưỡng ngắn hạn', 'Đào tạo nghề', 'Đào tạo dài hạn'];
+
         return Subject::query()
             ->with('category')
             ->withCount(['courses', 'enrollments', 'modules'])
+            ->whereNotIn('name', $dummyNames)
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
                     $builder->where('name', 'like', '%' . $search . '%')

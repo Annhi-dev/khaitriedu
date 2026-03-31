@@ -17,6 +17,27 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in-down { animation: fadeInDown 0.3s ease-out; }
+
+        /* Sidebar Collapse CSS overrides */
+        @media (min-width: 1024px) {
+            #app-wrapper.sidebar-collapsed {
+                grid-template-columns: 80px minmax(0, 1fr) !important;
+            }
+            #app-wrapper.sidebar-collapsed .sidebar-header-text,
+            #app-wrapper.sidebar-collapsed .sidebar-text,
+            #app-wrapper.sidebar-collapsed .sidebar-badge {
+                display: none !important;
+            }
+            #app-wrapper.sidebar-collapsed .sidebar-menu-item {
+                justify-content: center;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            #app-wrapper.sidebar-collapsed .sidebar-icon {
+                margin: 0;
+                font-size: 1.25rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800">
@@ -49,7 +70,7 @@
                 ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
                 ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
                 ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
-                ['label' => 'Nguyện vọng slot', 'icon' => 'fas fa-list-check', 'route' => 'admin.slot-registrations.index', 'active' => request()->routeIs('admin.slot-registrations.*')],
+                ['label' => 'Đăng ký học', 'icon' => 'fas fa-list-check', 'route' => 'admin.slot-registrations.index', 'active' => request()->routeIs('admin.slot-registrations.*')],
                 ['label' => 'Theo dõi theo slot', 'icon' => 'fas fa-chart-simple', 'route' => 'admin.slot-tracking.index', 'active' => request()->routeIs('admin.slot-tracking.*')],
             ],
         ],
@@ -64,14 +85,14 @@
     ];
 @endphp
 <div x-data="{ sidebarOpen: false }" class="relative min-h-screen">
-    <div class="lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside class="hidden lg:block bg-white border-r border-slate-200 shadow-sm h-screen sticky top-0 overflow-y-auto">
+    <div id="app-wrapper" class="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] transition-all duration-300">
+        <aside id="main-sidebar" class="hidden lg:block bg-white border-r border-slate-200 shadow-sm h-screen sticky top-0 overflow-x-hidden overflow-y-auto transition-all duration-300">
             <div class="px-6 py-6 border-b border-slate-100">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-xl bg-cyan-100 flex items-center justify-center text-cyan-700">
+                    <div class="h-10 w-10 shrink-0 rounded-xl bg-cyan-100 flex items-center justify-center text-cyan-700">
                         <i class="fas fa-shield-halved"></i>
                     </div>
-                    <div>
+                    <div class="sidebar-header-text whitespace-nowrap">
                         <h1 class="text-lg font-bold text-slate-800">KhaiTriEdu</h1>
                         <p class="text-xs text-slate-500">Admin Console</p>
                     </div>
@@ -80,33 +101,33 @@
             <nav class="px-4 py-6 space-y-6">
                 @foreach ($menuSections as $section)
                     <div>
-                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-3">{{ $section['label'] }}</p>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-3 sidebar-text whitespace-nowrap">{{ $section['label'] }}</p>
                         <div class="mt-2 space-y-1">
                             @foreach ($section['items'] as $item)
                                 @php
                                     $active = $item['active'];
                                     $isPlaceholder = empty($item['route']);
-                                    $classes = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200';
+                                    $classes = 'sidebar-menu-item flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200';
                                     $classes .= $active
                                         ? ' bg-cyan-50 text-cyan-700'
                                         : ($isPlaceholder ? ' text-slate-400 bg-slate-50/80 cursor-not-allowed' : ' text-slate-600 hover:bg-slate-50 hover:text-cyan-600');
                                 @endphp
                                 @if ($isPlaceholder)
-                                    <div class="{{ $classes }}">
-                                        <i class="{{ $item['icon'] }} w-5 text-sm text-slate-300"></i>
-                                        <span>{{ $item['label'] }}</span>
+                                    <div class="{{ $classes }}" title="{{ $item['label'] }}">
+                                        <i class="{{ $item['icon'] }} w-5 text-center text-sm text-slate-300 shrink-0 sidebar-icon overflow-visible"></i>
+                                        <span class="sidebar-text truncate whitespace-nowrap">{{ $item['label'] }}</span>
                                         @if (! empty($item['badge']))
-                                            <span class="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $item['badge'] }}</span>
+                                            <span class="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 sidebar-badge">{{ $item['badge'] }}</span>
                                         @endif
                                     </div>
                                 @else
-                                    <a href="{{ route($item['route']) }}" class="{{ $classes }}">
-                                        <i class="{{ $item['icon'] }} w-5 text-sm {{ $active ? 'text-cyan-600' : 'text-slate-400' }}"></i>
-                                        <span>{{ $item['label'] }}</span>
+                                    <a href="{{ route($item['route']) }}" class="{{ $classes }}" title="{{ $item['label'] }}">
+                                        <i class="{{ $item['icon'] }} w-5 text-center text-sm {{ $active ? 'text-cyan-600' : 'text-slate-400' }} shrink-0 sidebar-icon overflow-visible"></i>
+                                        <span class="sidebar-text truncate whitespace-nowrap">{{ $item['label'] }}</span>
                                         @if (! empty($item['badge']))
-                                            <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $item['badge'] }}</span>
+                                            <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 sidebar-badge">{{ $item['badge'] }}</span>
                                         @elseif ($active)
-                                            <span class="ml-auto h-2 w-2 rounded-full bg-cyan-500"></span>
+                                            <span class="ml-auto h-2 w-2 rounded-full shadow bg-cyan-500 shrink-0 sidebar-badge"></span>
                                         @endif
                                     </a>
                                 @endif
@@ -122,6 +143,10 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-lg hover:bg-slate-100">
+                            <i class="fas fa-bars text-slate-600"></i>
+                        </button>
+                        <!-- Desktop Collapse Toggle Button -->
+                        <button onclick="toggleSidebar()" class="hidden lg:block p-2 rounded-lg hover:bg-slate-100" title="Thu gọn/Mở rộng menu">
                             <i class="fas fa-bars text-slate-600"></i>
                         </button>
                         <div>
@@ -212,5 +237,22 @@
         </nav>
     </aside>
 </div>
+
+<script>
+    function toggleSidebar() {
+        const wrapper = document.getElementById('app-wrapper');
+        if(wrapper) {
+            wrapper.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarState', wrapper.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        if(localStorage.getItem('sidebarState') === 'collapsed') {
+            const wrapper = document.getElementById('app-wrapper');
+            if(wrapper) wrapper.classList.add('sidebar-collapsed');
+        }
+    });
+</script>
 </body>
 </html>

@@ -90,6 +90,7 @@ class CourseController extends Controller
             'subject_id' => 'required|exists:mon_hoc,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
             'teacher_id' => 'nullable|exists:nguoi_dung,id',
             'schedule' => 'nullable|string|max:255',
             'return_to_category_id' => 'nullable|exists:danh_muc,id',
@@ -99,6 +100,7 @@ class CourseController extends Controller
             'subject_id' => $data['subject_id'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
+            'price' => $data['price'] ?? 0,
             'teacher_id' => $data['teacher_id'] ?? null,
             'schedule' => $data['schedule'] ?? null,
         ]);
@@ -123,11 +125,13 @@ class CourseController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
             'subject_id' => 'required|exists:mon_hoc,id',
             'teacher_id' => 'nullable|exists:nguoi_dung,id',
             'schedule' => 'nullable|string|max:255',
         ]);
 
+        $data['price'] = $data['price'] ?? 0;
         $course->update($data);
 
         return redirect()->route('admin.course.show', $course)->with('status', 'Khóa học đã được cập nhật.');
@@ -172,12 +176,14 @@ class CourseController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
         ]);
 
         Course::create([
             'subject_id' => $subject->id,
             'title' => $data['title'],
             'description' => $data['description'],
+            'price' => $data['price'] ?? 0,
         ]);
 
         return redirect()->route('admin.subjects')->with('status', 'Khóa học đã thêm.');

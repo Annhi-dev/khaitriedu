@@ -29,7 +29,7 @@ class UpdateSubjectRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
-            'duration' => ['nullable', 'integer', 'min:1', 'max:9999'],
+            'duration' => ['required', 'integer', 'in:1,2,3,4,6,12,18,24'],
             'status' => ['required', Rule::in([
                 Subject::STATUS_DRAFT,
                 Subject::STATUS_OPEN,
