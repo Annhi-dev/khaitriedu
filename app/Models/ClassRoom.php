@@ -53,6 +53,26 @@ class ClassRoom extends Model
         return $this->hasMany(ClassSchedule::class, 'lop_hoc_id');
     }
 
+    public function attendanceRecords()
+    {
+        return $this->hasMany(AttendanceRecord::class, 'class_room_id');
+    }
+
+    public function grades()
+    {
+        return $this->hasMany(Grade::class, 'class_room_id');
+    }
+
+    public function evaluations()
+    {
+        return $this->hasMany(TeacherEvaluation::class, 'class_room_id');
+    }
+
+    public function scheduleChangeRequests()
+    {
+        return $this->hasMany(ScheduleChangeRequest::class, 'class_room_id');
+    }
+
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class, 'lop_hoc_id');
@@ -104,6 +124,28 @@ class ClassRoom extends Model
             self::STATUS_COMPLETED => 'Hoàn thành',
             default                => ucfirst((string) $this->status),
         };
+    }
+
+    public function displayName(): string
+    {
+        $subjectName = $this->subject?->name ?? 'Lớp học';
+        $roomName = $this->room?->name;
+
+        return trim($subjectName . ' - Lớp ' . $this->id . ($roomName ? ' (' . $roomName . ')' : ''));
+    }
+
+    public function scheduleSummary(): string
+    {
+        $segments = $this->schedules
+            ->sortBy(function (ClassSchedule $schedule) {
+                return array_search($schedule->day_of_week, array_keys(ClassSchedule::$dayOptions), true);
+            })
+            ->map(fn (ClassSchedule $schedule) => $schedule->label())
+            ->values();
+
+        return $segments->isNotEmpty()
+            ? $segments->implode(' | ')
+            : 'Chưa có lịch giảng dạy';
     }
 
     // ─── Conflict Checks ────────────────────────────────────────────────────────

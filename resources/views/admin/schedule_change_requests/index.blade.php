@@ -13,7 +13,8 @@
             <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
                 <div class="flex justify-between items-start gap-4">
                     <div>
-                        <h3 class="font-semibold text-slate-800">{{ $requestItem->course?->title ?? 'Lớp học' }}</h3>
+                        <h3 class="font-semibold text-slate-800">{{ $requestItem->targetTitle() }}</h3>
+                        <p class="text-sm text-slate-500">{{ $requestItem->subjectName() }}</p>
                         <p class="text-sm text-slate-500">Giảng viên: {{ $requestItem->teacher?->name }}</p>
                     </div>
                     <x-admin.badge :type="match($requestItem->status) {'pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger', default => 'default'}" :text="$requestItem->statusLabel()" />

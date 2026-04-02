@@ -13,6 +13,15 @@ class EnsureStudent
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
+        $sessionUserId = $request->session()->get('user_id');
+
+        if ($sessionUserId && (! $user || (int) $user->id !== (int) $sessionUserId)) {
+            $user = User::with('role')->find($sessionUserId);
+
+            if ($user) {
+                Auth::setUser($user);
+            }
+        }
 
         if (! $user) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập khu vực học viên.');

@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\ScheduleChangeRequest;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +19,7 @@ class TeacherScheduleChangeRequestService
         $search = trim((string) ($filters['search'] ?? ''));
 
         return ScheduleChangeRequest::query()
-            ->with(['course.subject.category', 'reviewer'])
+            ->with(['course.subject.category', 'classRoom.subject.category', 'classSchedule', 'reviewer'])
             ->where('teacher_id', $teacher->id)
             ->when(in_array($status, ScheduleChangeRequest::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
             ->when($search !== '', function (Builder $query) use ($search) {
@@ -25,6 +27,9 @@ class TeacherScheduleChangeRequestService
                     $builder->whereHas('course', function (Builder $courseQuery) use ($search) {
                         $courseQuery->where('title', 'like', '%' . $search . '%')
                             ->orWhereHas('subject', fn (Builder $subjectQuery) => $subjectQuery->where('name', 'like', '%' . $search . '%'));
+                    })->orWhereHas('classRoom', function (Builder $classQuery) use ($search) {
+                        $classQuery->whereHas('subject', fn (Builder $subjectQuery) => $subjectQuery->where('name', 'like', '%' . $search . '%'))
+                            ->orWhere('id', 'like', '%' . $search . '%');
                     })->orWhere('reason', 'like', '%' . $search . '%');
                 });
             })
@@ -87,6 +92,53 @@ class TeacherScheduleChangeRequestService
             'requested_end_date' => $requestedEndDate,
             'requested_start_time' => $data['requested_start_time'],
             'requested_end_time' => $data['requested_end_time'],
+            'reason' => $data['reason'],
+            'status' => ScheduleChangeRequest::STATUS_PENDING,
+        ]);
+    }
+
+    public function createForClassSchedule(ClassSchedule $schedule, User $teacher, array $data): ScheduleChangeRequest
+    {
+        $schedule->loadMissing(['classRoom.subject.category']);
+
+        if (! $schedule->classRoom || (int) $schedule->classRoom->teacher_id !== (int) $teacher->id) {
+            throw ValidationException::withMessages([
+                'schedule' => 'Bạn không có quyền gửi yêu cầu đổi lịch cho buổi học này.',
+            ]);
+        }
+
+        if (ScheduleChangeRequest::query()
+            ->pending()
+            ->where('teacher_id', $teacher->id)
+            ->where('class_schedule_id', $schedule->id)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'schedule' => 'Buổi học này đang có một yêu cầu đổi lịch chờ admin xử lý.',
+            ]);
+        }
+
+        $requestedStartAt = Carbon::parse($data['requested_start_at']);
+        $requestedEndAt = Carbon::parse($data['requested_end_at']);
+        $requestedDay = $requestedStartAt->englishDayOfWeek;
+
+        if ($requestedDay === $schedule->day_of_week
+            && $requestedStartAt->format('H:i') === substr((string) $schedule->start_time, 0, 5)
+            && $requestedEndAt->format('H:i') === substr((string) $schedule->end_time, 0, 5)) {
+            throw ValidationException::withMessages([
+                'requested_start_at' => 'Lịch đề xuất đang trùng với lịch hiện tại của buổi học.',
+            ]);
+        }
+
+        return ScheduleChangeRequest::create([
+            'teacher_id' => $teacher->id,
+            'class_room_id' => $schedule->classRoom->id,
+            'class_schedule_id' => $schedule->id,
+            'current_schedule' => $schedule->label(),
+            'requested_day_of_week' => $requestedDay,
+            'requested_date' => $requestedStartAt->toDateString(),
+            'requested_end_date' => $requestedStartAt->toDateString(),
+            'requested_start_time' => $requestedStartAt->format('H:i'),
+            'requested_end_time' => $requestedEndAt->format('H:i'),
             'reason' => $data['reason'],
             'status' => ScheduleChangeRequest::STATUS_PENDING,
         ]);

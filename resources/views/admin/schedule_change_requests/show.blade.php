@@ -28,9 +28,9 @@
                 <div class="mt-5 grid gap-4 md:grid-cols-2 text-sm text-slate-600">
                     <p><strong>Giang vien:</strong> {{ $scheduleChangeRequest->teacher?->name ?? 'Khong co du lieu' }}</p>
                     <p><strong>Email:</strong> {{ $scheduleChangeRequest->teacher?->email ?? 'Khong co du lieu' }}</p>
-                    <p><strong>Lop hoc:</strong> {{ $scheduleChangeRequest->course?->title ?? 'Lop hoc da bi xoa' }}</p>
-                    <p><strong>Khoa hoc:</strong> {{ $scheduleChangeRequest->course?->subject?->name ?? 'Chua xac dinh' }}</p>
-                    <p class="md:col-span-2"><strong>Nhom hoc:</strong> {{ $scheduleChangeRequest->course?->subject?->category?->name ?? 'Chua phan nhom' }}</p>
+                    <p><strong>Lop hoc:</strong> {{ $scheduleChangeRequest->targetTitle() }}</p>
+                    <p><strong>Khoa hoc:</strong> {{ $scheduleChangeRequest->subjectName() }}</p>
+                    <p class="md:col-span-2"><strong>Nhom hoc:</strong> {{ $scheduleChangeRequest->categoryName() }}</p>
                 </div>
             </section>
 

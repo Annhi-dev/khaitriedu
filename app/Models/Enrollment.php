@@ -24,6 +24,7 @@ class Enrollment extends Model
         'user_id',
         'subject_id',
         'course_id',
+        'lop_hoc_id',
         'preferred_schedule',
         'assigned_teacher_id',
         'status',

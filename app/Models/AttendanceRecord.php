@@ -18,6 +18,8 @@ class AttendanceRecord extends Model
 
     protected $fillable = [
         'course_id',
+        'class_room_id',
+        'class_schedule_id',
         'enrollment_id',
         'student_id',
         'teacher_id',
@@ -50,6 +52,16 @@ class AttendanceRecord extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function classRoom()
+    {
+        return $this->belongsTo(ClassRoom::class, 'class_room_id');
+    }
+
+    public function classSchedule()
+    {
+        return $this->belongsTo(ClassSchedule::class, 'class_schedule_id');
     }
 
     public function enrollment()

@@ -16,7 +16,18 @@ abstract class Controller extends BaseController
 
     protected function sessionUser(): ?User
     {
-        return Auth::user();
+        $user = Auth::user();
+        $sessionUserId = session('user_id');
+
+        if ($sessionUserId && (! $user || (int) $user->id !== (int) $sessionUserId)) {
+            $user = User::with('role')->find($sessionUserId);
+
+            if ($user) {
+                Auth::setUser($user);
+            }
+        }
+
+        return $user;
     }
 
     protected function requireRole(?string $role = null): array

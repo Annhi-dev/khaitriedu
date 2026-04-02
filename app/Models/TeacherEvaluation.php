@@ -2,33 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Grade extends Model
+class TeacherEvaluation extends Model
 {
-    protected $table = 'diem';
+    use HasFactory;
 
     protected $fillable = [
-        'enrollment_id',
-        'module_id',
         'class_room_id',
         'student_id',
         'teacher_id',
-        'test_name',
-        'score',
-        'grade',
-        'feedback',
+        'rating',
+        'comments',
     ];
-
-    public function enrollment()
-    {
-        return $this->belongsTo(Enrollment::class);
-    }
-
-    public function module()
-    {
-        return $this->belongsTo(Module::class);
-    }
 
     public function classRoom()
     {

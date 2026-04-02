@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\TeacherScheduleService;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(TeacherScheduleService $service)
     {
         [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
 
@@ -15,6 +16,8 @@ class DashboardController extends Controller
             return $redirect;
         }
 
-        return redirect()->route('teacher.courses');
+        return view('teacher.dashboard', array_merge([
+            'current' => $user,
+        ], $service->dashboardData($user)));
     }
 }

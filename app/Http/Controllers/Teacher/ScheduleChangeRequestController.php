@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Teacher\StoreTeacherClassScheduleChangeRequest;
 use App\Http\Requests\Teacher\StoreTeacherScheduleChangeRequest;
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\User;
 use App\Services\TeacherScheduleChangeRequestService;
@@ -66,5 +68,17 @@ class ScheduleChangeRequestController extends Controller
         $service->createRequest($course, $current, $request->validated());
 
         return redirect()->route('teacher.schedule-change-requests.index')->with('status', 'Yêu cầu đổi lịch đã được gửi tới admin.');
+    }
+
+    public function storeForSchedule(StoreTeacherClassScheduleChangeRequest $request, ClassSchedule $schedule, TeacherScheduleChangeRequestService $service)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $service->createForClassSchedule($schedule, $current, $request->validated());
+
+        return redirect()->route('teacher.schedules.index')->with('status', 'Yêu cầu đổi lịch cho buổi học đã được gửi tới admin.');
     }
 }

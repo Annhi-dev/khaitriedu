@@ -164,4 +164,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(ScheduleChangeRequest::class, 'teacher_id');
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function teacherEvaluations()
+    {
+        return $this->hasMany(TeacherEvaluation::class, 'teacher_id');
+    }
+
+    public function receivedTeacherEvaluations()
+    {
+        return $this->hasMany(TeacherEvaluation::class, 'student_id');
+    }
 }

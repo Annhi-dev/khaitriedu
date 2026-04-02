@@ -19,6 +19,8 @@ class ScheduleChangeRequest extends Model
     protected $fillable = [
         'teacher_id',
         'course_id',
+        'class_room_id',
+        'class_schedule_id',
         'current_schedule',
         'requested_day_of_week',
         'requested_date',
@@ -90,6 +92,16 @@ class ScheduleChangeRequest extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    public function classRoom()
+    {
+        return $this->belongsTo(ClassRoom::class, 'class_room_id');
+    }
+
+    public function classSchedule()
+    {
+        return $this->belongsTo(ClassSchedule::class, 'class_schedule_id');
+    }
+
     public function course()
     {
         return $this->belongsTo(Course::class, 'course_id');
@@ -98,5 +110,33 @@ class ScheduleChangeRequest extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function isClassScheduleRequest(): bool
+    {
+        return $this->class_schedule_id !== null;
+    }
+
+    public function targetTitle(): string
+    {
+        if ($this->classRoom) {
+            return $this->classRoom->displayName();
+        }
+
+        return $this->course?->title ?? 'Lớp học đã bị xóa';
+    }
+
+    public function subjectName(): string
+    {
+        return $this->classRoom?->subject?->name
+            ?? $this->course?->subject?->name
+            ?? 'Chưa xác định';
+    }
+
+    public function categoryName(): string
+    {
+        return $this->classRoom?->subject?->category?->name
+            ?? $this->course?->subject?->category?->name
+            ?? 'Chưa phân nhóm';
     }
 }

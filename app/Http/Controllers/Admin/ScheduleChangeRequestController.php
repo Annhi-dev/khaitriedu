@@ -31,7 +31,7 @@ class ScheduleChangeRequestController extends Controller
             return $redirect;
         }
 
-        $scheduleChangeRequest->load(['teacher', 'course.subject.category', 'reviewer']);
+        $scheduleChangeRequest->load(['teacher', 'course.subject.category', 'classRoom.subject.category', 'classSchedule', 'reviewer']);
 
         return view('admin.schedule_change_requests.show', compact('current', 'scheduleChangeRequest'));
     }
