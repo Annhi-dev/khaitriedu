@@ -7,6 +7,7 @@ use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Notification;
+use App\Models\Room;
 use App\Models\ScheduleChangeRequest;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -21,7 +22,15 @@ class AdminScheduleChangeRequestService
         $search = trim((string) ($filters['search'] ?? ''));
 
         return ScheduleChangeRequest::query()
-            ->with(['teacher', 'course.subject.category', 'classRoom.subject.category', 'classSchedule', 'reviewer'])
+            ->with([
+                'teacher',
+                'course.subject.category',
+                'classRoom.subject.category',
+                'classRoom.room',
+                'classSchedule.room',
+                'requestedRoom',
+                'reviewer',
+            ])
             ->when(in_array($status, ScheduleChangeRequest::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
@@ -49,8 +58,11 @@ class AdminScheduleChangeRequestService
             'teacher',
             'course.enrollments.user',
             'classRoom.subject.category',
+            'classRoom.room',
+            'classRoom.course.enrollments',
             'classRoom.enrollments.user',
-            'classSchedule',
+            'classSchedule.room',
+            'requestedRoom',
         ]);
 
         if (! $scheduleChangeRequest->isPending()) {
@@ -69,6 +81,7 @@ class AdminScheduleChangeRequestService
             if ($scheduleChangeRequest->classSchedule) {
                 $this->ensureTeacherAvailabilityForClassSchedule($scheduleChangeRequest);
                 $this->ensureStudentsAvailabilityForClassSchedule($scheduleChangeRequest);
+                $this->ensureRequestedRoomAvailabilityForClassSchedule($scheduleChangeRequest);
                 $newSchedule = $this->applyApprovedClassSchedule($scheduleChangeRequest);
             } else {
                 $this->ensureTeacherAvailability($scheduleChangeRequest);
@@ -205,11 +218,17 @@ class AdminScheduleChangeRequestService
         $classSchedule = $scheduleChangeRequest->classSchedule;
         $classRoom = $scheduleChangeRequest->classRoom;
 
-        $classSchedule->fill([
+        $attributes = [
             'day_of_week' => $scheduleChangeRequest->requested_day_of_week,
             'start_time' => $scheduleChangeRequest->requested_start_time,
             'end_time' => $scheduleChangeRequest->requested_end_time,
-        ])->save();
+        ];
+
+        if ($scheduleChangeRequest->requested_room_id !== null) {
+            $attributes['room_id'] = $scheduleChangeRequest->requested_room_id;
+        }
+
+        $classSchedule->fill($attributes)->save();
 
         if ($classRoom && $scheduleChangeRequest->requested_date) {
             if (! $classRoom->start_date || $classRoom->start_date->gt($scheduleChangeRequest->requested_date)) {
@@ -218,6 +237,8 @@ class AdminScheduleChangeRequestService
                 ])->save();
             }
         }
+
+        $this->syncLinkedCourseScheduleForClassRoom($classRoom, $scheduleChangeRequest);
 
         return $classSchedule->fresh()->label();
     }
@@ -285,6 +306,108 @@ class AdminScheduleChangeRequestService
                     . ' bị trùng với buổi học khác.',
             ]);
         }
+    }
+
+    protected function ensureRequestedRoomAvailabilityForClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): void
+    {
+        $requestedRoomId = (int) ($scheduleChangeRequest->requested_room_id ?? 0);
+        $currentRoomId = (int) ($scheduleChangeRequest->classSchedule?->room_id ?: $scheduleChangeRequest->classRoom?->room_id);
+
+        if ($requestedRoomId === 0 || $requestedRoomId === $currentRoomId) {
+            return;
+        }
+
+        $requestedRoom = Room::query()->find($requestedRoomId);
+
+        if (! $requestedRoom || $requestedRoom->status !== Room::STATUS_ACTIVE) {
+            throw ValidationException::withMessages([
+                'action' => 'Phong hoc de xuat khong hop le hoac dang tam ngung.',
+            ]);
+        }
+
+        $conflict = ClassSchedule::query()
+            ->whereKeyNot($scheduleChangeRequest->class_schedule_id)
+            ->where('room_id', $requestedRoomId)
+            ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
+            ->where('start_time', '<', $scheduleChangeRequest->requested_end_time)
+            ->where('end_time', '>', $scheduleChangeRequest->requested_start_time)
+            ->whereHas('classRoom', function (Builder $query) {
+                $query->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED]);
+            })
+            ->first();
+
+        if ($conflict) {
+            throw ValidationException::withMessages([
+                'action' => 'Phong hoc de xuat dang trung lich voi mot lop khac.',
+            ]);
+        }
+    }
+
+    protected function syncLinkedCourseScheduleForClassRoom(?ClassRoom $classRoom, ScheduleChangeRequest $scheduleChangeRequest): void
+    {
+        if (! $classRoom || ! $classRoom->course_id) {
+            return;
+        }
+
+        $classRoom->loadMissing(['course', 'schedules']);
+        $course = $classRoom->course;
+
+        if (! $course) {
+            return;
+        }
+
+        $meetingDays = $classRoom->schedules
+            ->pluck('day_of_week')
+            ->filter(fn ($day) => is_string($day) && $day !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($meetingDays === []) {
+            $meetingDays = [(string) $scheduleChangeRequest->requested_day_of_week];
+        }
+
+        $course->fill([
+            'day_of_week' => $meetingDays[0] ?? $course->day_of_week,
+            'meeting_days' => $meetingDays,
+            'start_time' => $scheduleChangeRequest->requested_start_time ?: $course->start_time,
+            'end_time' => $scheduleChangeRequest->requested_end_time ?: $course->end_time,
+        ]);
+
+        if ($classRoom->start_date && (! $course->start_date || $course->start_date->gt($classRoom->start_date))) {
+            $course->start_date = $classRoom->start_date->format('Y-m-d');
+        }
+
+        $course->schedule = $this->buildLinkedCourseSchedule($course);
+        $course->save();
+
+        $course->enrollments()
+            ->whereIn('status', [
+                Enrollment::LEGACY_STATUS_CONFIRMED,
+                Enrollment::STATUS_SCHEDULED,
+                Enrollment::STATUS_ACTIVE,
+            ])
+            ->update(['schedule' => $course->schedule]);
+    }
+
+    protected function buildLinkedCourseSchedule(Course $course): string
+    {
+        $segments = [];
+
+        if ($course->meetingDayValues() !== []) {
+            $segments[] = $course->meetingDaysLabel();
+        }
+
+        if ($course->start_time && $course->end_time) {
+            $segments[] = $course->start_time . ' - ' . $course->end_time;
+        }
+
+        if ($course->start_date) {
+            $segments[] = 'Từ ' . $course->start_date->format('d/m/Y')
+                . ($course->end_date ? ' đến ' . $course->end_date->format('d/m/Y') : '');
+        }
+
+        return $segments !== [] ? implode(' | ', $segments) : 'Chưa có lịch cụ thể';
     }
 
     protected function buildScheduleLabel(ScheduleChangeRequest $scheduleChangeRequest): string

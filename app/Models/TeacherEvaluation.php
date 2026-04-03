@@ -9,6 +9,10 @@ class TeacherEvaluation extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'rating' => 'integer',
+    ];
+
     protected $fillable = [
         'class_room_id',
         'student_id',

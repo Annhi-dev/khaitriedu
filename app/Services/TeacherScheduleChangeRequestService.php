@@ -19,7 +19,14 @@ class TeacherScheduleChangeRequestService
         $search = trim((string) ($filters['search'] ?? ''));
 
         return ScheduleChangeRequest::query()
-            ->with(['course.subject.category', 'classRoom.subject.category', 'classSchedule', 'reviewer'])
+            ->with([
+                'course.subject.category',
+                'classRoom.subject.category',
+                'classRoom.room',
+                'classSchedule.room',
+                'requestedRoom',
+                'reviewer',
+            ])
             ->where('teacher_id', $teacher->id)
             ->when(in_array($status, ScheduleChangeRequest::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
             ->when($search !== '', function (Builder $query) use ($search) {
@@ -99,7 +106,7 @@ class TeacherScheduleChangeRequestService
 
     public function createForClassSchedule(ClassSchedule $schedule, User $teacher, array $data): ScheduleChangeRequest
     {
-        $schedule->loadMissing(['classRoom.subject.category']);
+        $schedule->loadMissing(['classRoom.subject.category', 'classRoom.room', 'classRoom.course', 'room']);
 
         if (! $schedule->classRoom || (int) $schedule->classRoom->teacher_id !== (int) $teacher->id) {
             throw ValidationException::withMessages([
@@ -120,10 +127,17 @@ class TeacherScheduleChangeRequestService
         $requestedStartAt = Carbon::parse($data['requested_start_at']);
         $requestedEndAt = Carbon::parse($data['requested_end_at']);
         $requestedDay = $requestedStartAt->englishDayOfWeek;
+        $currentRoomId = $schedule->room_id ?: $schedule->classRoom?->room_id;
+        $requestedRoomId = $data['requested_room_id'] ?? null;
+
+        if ($requestedRoomId !== null && (int) $requestedRoomId === (int) $currentRoomId) {
+            $requestedRoomId = null;
+        }
 
         if ($requestedDay === $schedule->day_of_week
             && $requestedStartAt->format('H:i') === substr((string) $schedule->start_time, 0, 5)
-            && $requestedEndAt->format('H:i') === substr((string) $schedule->end_time, 0, 5)) {
+            && $requestedEndAt->format('H:i') === substr((string) $schedule->end_time, 0, 5)
+            && $requestedRoomId === null) {
             throw ValidationException::withMessages([
                 'requested_start_at' => 'Lịch đề xuất đang trùng với lịch hiện tại của buổi học.',
             ]);
@@ -131,8 +145,10 @@ class TeacherScheduleChangeRequestService
 
         return ScheduleChangeRequest::create([
             'teacher_id' => $teacher->id,
+            'course_id' => $schedule->classRoom->course_id,
             'class_room_id' => $schedule->classRoom->id,
             'class_schedule_id' => $schedule->id,
+            'requested_room_id' => $requestedRoomId,
             'current_schedule' => $schedule->label(),
             'requested_day_of_week' => $requestedDay,
             'requested_date' => $requestedStartAt->toDateString(),

@@ -62,7 +62,7 @@
                         <i class="fab fa-youtube"></i>
                     </a>
                     <a href="https://zalo.me/84867852853" target="_blank" class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center hover:bg-primary-dark transition">
-                        <img src="{{ asset('hinh/zalo.png') }}" alt="Zalo" class="w-6 h-6">
+                        <img src="{{ asset('images/zalo.png') }}" alt="Zalo" class="w-6 h-6">
                     </a>
                 </div>
             </div>
@@ -127,7 +127,7 @@
 
     <!-- Map Section (Optional) -->
     <div class="bg-gray-200 rounded-2xl overflow-hidden h-96 mb-20">
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1569.6935022522895!2d105.43735901504439!3d10.367556123108891!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310a72e6226e4093%3A0xdc2db2a3b1ff6bb4!2zVHJ1bmcgdMsQY2ggRMO0eSBEacOgIEtoaSBUcuG7qyBLaGFpIFTDtGk!5e0!3m2!1svi!2s!4v1700000000000!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1569.6935022522895!2d105.43735901504439!3d10.367556123108891!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310a72e6226e4093%3A0xdc2db2a3b1ff6bb4!2zVHJ1bmcgdMsQY2ggRMO0eSBEacOgIEtoaSBUcuG7qyBLaGFpIFTDtGk!5e0!3m2!1svi!2s!4v1700000000000!5m2!1svi!2s" width="100%" height="100%" class="contact-map-iframe" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
 
     <!-- FAQ -->

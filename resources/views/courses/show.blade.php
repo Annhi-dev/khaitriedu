@@ -1,5 +1,17 @@
-@extends('layouts.app')
+@php
+  $courseLayout = 'layouts.app';
+
+  if ($user?->isStudent()) {
+      $courseLayout = 'layouts.student';
+  } elseif ($user?->isTeacher()) {
+      $courseLayout = 'layouts.teacher';
+  } elseif ($user?->isAdmin()) {
+      $courseLayout = 'layouts.admin';
+  }
+@endphp
+@extends($courseLayout)
 @section('title', $course->title)
+@section('eyebrow', 'Lớp học nội bộ')
 @section('content')
 @php
   $backUrl = route('dashboard');
@@ -24,11 +36,11 @@
     {{ $backLabel }}
   </a>
 
-  @if(session('status'))
+  @if($courseLayout === 'layouts.app' && session('status'))
     <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-green-800">{{ session('status') }}</div>
   @endif
 
-  @if(session('error'))
+  @if($courseLayout === 'layouts.app' && session('error'))
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">{{ session('error') }}</div>
   @endif
 
@@ -105,7 +117,30 @@
       </div>
     </div>
 
+    @php
+      $completedLessonLookup = array_flip($completedLessonIds ?? []);
+    @endphp
+
+    @if($user && $user->isStudent() && $enrollment && $courseProgress)
+      <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Tien do khoa hoc cua ban</div>
+            <p class="mt-1 text-sm text-emerald-800">Da hoan thanh {{ $courseProgress['completed'] }}/{{ $courseProgress['total'] }} bai hoc.</p>
+          </div>
+          <div class="text-3xl font-black text-emerald-700">{{ $courseProgress['percent'] }}%</div>
+        </div>
+      </div>
+    @endif
+
     @forelse($course->modules as $module)
+      @php
+        $moduleStat = $moduleProgress[$module->id] ?? [
+          'completed' => 0,
+          'total' => $module->lessons->count(),
+          'percent' => 0,
+        ];
+      @endphp
       <div class="mb-4 rounded-2xl border border-gray-200 p-5 last:mb-0">
         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
@@ -113,9 +148,16 @@
             <h3 class="mt-1 text-xl font-bold text-gray-900">{{ $module->title }}</h3>
             <p class="mt-2 text-gray-600">{{ $module->content ?: 'Module này đang được cập nhật nội dung chi tiết.' }}</p>
           </div>
-          <div class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-            {{ $module->lessons->count() }} bài học
-          </div>
+          @if($user && $user->isStudent() && $enrollment)
+            <div class="rounded-2xl bg-emerald-50 px-4 py-2 text-right text-sm font-semibold text-emerald-700">
+              <div>{{ $moduleStat['completed'] }}/{{ $moduleStat['total'] }} bài học</div>
+              <div>{{ $moduleStat['percent'] }}% hoàn thành</div>
+            </div>
+          @else
+            <div class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+              {{ $module->lessons->count() }} bài học
+            </div>
+          @endif
         </div>
 
         @if($module->lessons->isEmpty())
@@ -137,6 +179,13 @@
                   @endif
                   @if($lesson->quiz)
                     <span class="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800">Có quiz</span>
+                  @endif
+                  @if($user && $user->isStudent() && $enrollment)
+                    @if(isset($completedLessonLookup[$lesson->id]))
+                      <span class="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">Đã học</span>
+                    @else
+                      <span class="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-600">Chưa học</span>
+                    @endif
                   @endif
                   <span class="font-semibold text-primary">Vào bài học</span>
                 </div>

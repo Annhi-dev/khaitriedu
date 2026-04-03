@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+use App\Mail\TeacherApplicationReviewedMail;
+use App\Models\Department;
 use App\Models\TeacherApplication;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class AdminTeacherApplicationService
@@ -35,22 +40,26 @@ class AdminTeacherApplicationService
 
     public function review(TeacherApplication $application, array $data, User $admin): TeacherApplication
     {
-        $application->status = $data['action'];
-        $application->admin_note = $data['action'] === TeacherApplication::STATUS_NEEDS_REVISION
-            ? ($data['admin_note'] ?? null)
-            : ($data['admin_note'] ?? null);
-        $application->rejection_reason = $data['action'] === TeacherApplication::STATUS_REJECTED
-            ? ($data['rejection_reason'] ?? null)
-            : null;
-        $application->reviewed_at = now();
-        $application->reviewed_by = $admin->id;
-        $application->save();
+        return DB::transaction(function () use ($application, $data, $admin) {
+            $application->status = $data['action'];
+            $application->admin_note = $data['admin_note'] ?? null;
+            $application->rejection_reason = $data['action'] === TeacherApplication::STATUS_REJECTED
+                ? ($data['rejection_reason'] ?? null)
+                : null;
+            $application->reviewed_at = now();
+            $application->reviewed_by = $admin->id;
+            $application->save();
 
-        if ($data['action'] === TeacherApplication::STATUS_APPROVED) {
-            $this->activateTeacherAccount($application);
-        }
+            $credentials = null;
 
-        return $application;
+            if ($data['action'] === TeacherApplication::STATUS_APPROVED) {
+                $credentials = $this->activateTeacherAccount($application);
+            }
+
+            $this->sendReviewEmail($application, $data['action'], $credentials);
+
+            return $application;
+        });
     }
 
     public function resolveRelatedUser(TeacherApplication $application): ?User
@@ -58,29 +67,39 @@ class AdminTeacherApplicationService
         return User::where('email', $application->email)->first();
     }
 
-    protected function activateTeacherAccount(TeacherApplication $application): User
+    protected function activateTeacherAccount(TeacherApplication $application): array
     {
         $user = User::where('email', $application->email)->first();
+        $temporaryPassword = $this->generateTemporaryPassword();
 
         if (! $user) {
-            return User::create([
+            $user = User::create([
                 'name' => $application->name,
                 'email' => $application->email,
                 'phone' => $application->phone,
                 'username' => $this->generateUniqueUsername($application->email),
-                'password' => Hash::make('12345678'),
+                'password' => Hash::make($temporaryPassword),
                 'role_id' => Role::idByName(User::ROLE_TEACHER),
+                'department_id' => $this->resolveTeacherDepartmentId(),
                 'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
             ]);
+
+            return [
+                'user' => $user,
+                'temporary_password' => $temporaryPassword,
+            ];
         }
 
         $user->fill([
             'name' => $application->name,
             'phone' => $application->phone,
             'role_id' => Role::idByName(User::ROLE_TEACHER),
+            'department_id' => $this->resolveTeacherDepartmentId($user),
             'status' => User::STATUS_ACTIVE,
         ]);
+        $user->username = $user->username ?: $this->generateUniqueUsername($application->email);
+        $user->password = Hash::make($temporaryPassword);
 
         if (! $user->email_verified_at) {
             $user->email_verified_at = now();
@@ -88,7 +107,10 @@ class AdminTeacherApplicationService
 
         $user->save();
 
-        return $user;
+        return [
+            'user' => $user,
+            'temporary_password' => $temporaryPassword,
+        ];
     }
 
     protected function generateUniqueUsername(string $email): string
@@ -107,5 +129,45 @@ class AdminTeacherApplicationService
         }
 
         return $candidate;
+    }
+
+    protected function generateTemporaryPassword(): string
+    {
+        return 'GV@' . Str::upper(Str::random(4)) . random_int(1000, 9999);
+    }
+
+    protected function resolveTeacherDepartmentId(?User $user = null): ?int
+    {
+        if ($user?->department_id) {
+            return $user->department_id;
+        }
+
+        if (! Schema::hasTable('phong_ban') || ! Schema::hasColumn('nguoi_dung', 'department_id')) {
+            return null;
+        }
+
+        return Department::query()->orderBy('id')->value('id');
+    }
+
+    protected function sendReviewEmail(TeacherApplication $application, string $action, ?array $credentials = null): void
+    {
+        Mail::to($application->email)->send(new TeacherApplicationReviewedMail(
+            application: $application,
+            action: $action,
+            reviewMessage: $this->resolveReviewMessage($application, $action),
+            username: $credentials['user']->username ?? null,
+            temporaryPassword: $credentials['temporary_password'] ?? null,
+            loginUrl: $action === TeacherApplication::STATUS_APPROVED ? route('login') : null,
+        ));
+    }
+
+    protected function resolveReviewMessage(TeacherApplication $application, string $action): ?string
+    {
+        return match ($action) {
+            TeacherApplication::STATUS_REJECTED => $application->rejection_reason,
+            TeacherApplication::STATUS_NEEDS_REVISION,
+            TeacherApplication::STATUS_APPROVED => $application->admin_note,
+            default => null,
+        };
     }
 }

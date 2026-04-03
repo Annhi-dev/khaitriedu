@@ -43,4 +43,16 @@ class StoreTeacherScheduleChangeRequest extends FormRequest
             'reason' => ['required', 'string', 'max:1000'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'requested_day_of_week.required' => 'Vui long chon thu moi.',
+            'requested_date.required' => 'Vui long chon ngay bat dau.',
+            'requested_start_time.required' => 'Vui long chon gio bat dau.',
+            'requested_end_time.required' => 'Vui long chon gio ket thuc.',
+            'requested_end_time.after' => 'Gio ket thuc phai sau gio bat dau.',
+            'reason.required' => 'Vui long nhap ly do doi lich.',
+        ];
+    }
 }

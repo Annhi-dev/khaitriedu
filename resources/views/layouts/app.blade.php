@@ -13,6 +13,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Font Awesome (icon) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body class="font-sans antialiased bg-gradient-to-br from-blue-50 via-white to-indigo-50 text-gray-800 min-h-screen flex flex-col">
 
@@ -23,7 +24,7 @@
                 @php $user = Auth::user(); @endphp
                 <!-- Logo + icon -->
                 <a href="{{ route('home') }}" class="flex items-center space-x-2">
-                    <img src="{{ asset('hinh/LOGO.png') }}" alt="KhaiTriEdu Logo" class="h-10 w-auto" />
+                    <img src="{{ asset('images/LOGO.png') }}" alt="KhaiTriEdu Logo" class="h-10 w-auto" />
                     <span class="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">KhaiTri Edu</span>
                 </a>
 
@@ -54,6 +55,9 @@
                             <i class="fas fa-user-plus"></i> Đăng ký
                         </a>
                     @else
+                        <a href="{{ route('dashboard') }}" class="btn px-5 py-2.5 bg-primary text-white rounded-xl shadow-md hover:bg-primary-dark transition text-sm font-medium flex items-center gap-2">
+                            <i class="fas fa-user-circle"></i> Về trang cá nhân
+                        </a>
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none group">
                                 <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold">
@@ -114,6 +118,7 @@
                         <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold mr-2">{{ substr($user->name, 0, 1) }}</div>
                         {{ $user->name }}
                     </div>
+                    <a href="{{ route('dashboard') }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-user-circle w-6 mr-2"></i>Về trang cá nhân</a>
                     @if($user->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-tachometer-alt w-6 mr-2"></i>Admin Dashboard</a>
                     @else
@@ -173,7 +178,7 @@
                         <a href="https://www.facebook.com/profile.php?id=61575515763147" target="_blank" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-facebook"></i></a>
                         <a href="https://www.youtube.com/channel/UCPrE7RBNFZHZAxJzvCxvMSg" target="_blank" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-youtube"></i></a>
                         <a href="https://zalo.me/84867852853" target="_blank" class="hover:opacity-75 transition">
-                            <img src="{{ asset('hinh/zalo.png') }}" alt="Zalo" class="w-6 h-6">
+                            <img src="{{ asset('images/zalo.png') }}" alt="Zalo" class="w-6 h-6">
                         </a>
                     </div>
                     <p class="text-sm text-gray-600 mb-2">Nhận thông tin khóa học mới:</p>
@@ -188,11 +193,6 @@
             </div>
         </div>
     </footer>
-
-    <!-- Alpine x-cloak style -->
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 
     <!-- Ripple effect script (giữ nguyên) -->
     <script>

@@ -24,6 +24,7 @@ class UpdateTeacherRequest extends FormRequest
             'username' => ['required', 'string', 'max:50', Rule::unique('nguoi_dung', 'username')->ignore($teacherId)],
             'email' => ['required', 'email', 'max:255', Rule::unique('nguoi_dung', 'email')->ignore($teacherId)],
             'phone' => ['nullable', 'string', 'max:30', Rule::unique('nguoi_dung', 'phone')->ignore($teacherId)],
+            'department_id' => ['required', 'exists:phong_ban,id'],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
             'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])],
         ];

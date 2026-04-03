@@ -20,6 +20,10 @@ class Grade extends Model
         'feedback',
     ];
 
+    protected $casts = [
+        'score' => 'decimal:2',
+    ];
+
     public function enrollment()
     {
         return $this->belongsTo(Enrollment::class);

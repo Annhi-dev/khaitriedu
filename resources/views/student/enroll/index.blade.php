@@ -1,25 +1,17 @@
-@extends('layouts.app')
+@extends('layouts.student')
 @section('title', 'Đăng ký khóa học')
+@section('eyebrow', 'Course Registration')
 @section('content')
 <div class="max-w-6xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-primary-dark">Đăng ký khóa học</h1>
-            <p class="text-gray-600">Chọn khóa học phù hợp và đăng ký vào lớp học còn chỗ trống.</p>
+            <p class="text-gray-600">Bạn có thể chọn lớp cố định do admin đã mở, hoặc tự gửi yêu cầu lịch học riêng để admin xếp lớp sau.</p>
         </div>
         <a href="{{ route('student.enroll.my-classes') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             <i class="fas fa-list mr-1"></i> Lớp của tôi
         </a>
     </div>
-
-    @if(session('status'))
-        <div class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-800">{{ session('status') }}</div>
-    @endif
-    @if($errors->any())
-        <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            @foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach
-        </div>
-    @endif
 
     <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         @forelse($subjects as $subject)
@@ -50,24 +42,42 @@
 
                     {{-- Lớp còn chỗ --}}
                     @php
-                        $openClasses = $subject->classRooms->filter(fn ($cl) => $cl->status === 'open');
+                        $openClasses = $subject->classRooms->filter(fn ($cl) => $cl->status === 'open' && ! $cl->isFull());
+                        $existingEnrollment = $subject->enrollments->sortByDesc('id')->first();
+                        $hasLockedEnrollment = $existingEnrollment?->hasCourseAccess();
                     @endphp
                     <div class="mt-2 text-xs {{ $openClasses->count() > 0 ? 'text-green-600' : 'text-red-500' }}">
                         <i class="fas fa-door-open mr-1"></i>
-                        {{ $openClasses->count() > 0 ? $openClasses->count() . ' lớp đang mở' : 'Tạm hết lớp' }}
+                        {{ $openClasses->count() > 0 ? $openClasses->count() . ' lớp cố định đang mở' : 'Hiện chưa có lớp cố định phù hợp' }}
                     </div>
+
+                    @if($existingEnrollment)
+                        <div class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $hasLockedEnrollment ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                            {{ $existingEnrollment->statusLabel() }}
+                        </div>
+                    @endif
                 </div>
-                <div class="mt-4 pt-4 border-t border-gray-100">
-                    @if($openClasses->count() > 0)
+                <div class="mt-4 space-y-2 pt-4 border-t border-gray-100">
+                    @if($openClasses->count() > 0 && ! $hasLockedEnrollment)
                         <a href="{{ route('student.enroll.select', $subject) }}"
                             class="block w-full rounded-xl bg-cyan-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-cyan-700 transition">
-                            Chọn lớp &amp; Đăng ký
+                            Chọn lớp cố định
+                        </a>
+                    @elseif($openClasses->count() > 0)
+                        <a href="{{ route('student.enroll.my-classes') }}"
+                            class="block w-full rounded-xl bg-emerald-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-emerald-700 transition">
+                            Xem lớp đã ghi danh
                         </a>
                     @else
                         <span class="block w-full rounded-xl bg-gray-100 py-2.5 text-center text-sm font-medium text-gray-400 cursor-not-allowed">
-                            Chưa có lớp
+                            Chưa có lớp cố định
                         </span>
                     @endif
+
+                    <a href="{{ route('student.enroll.request-form', $subject) }}"
+                        class="block w-full rounded-xl border border-cyan-200 bg-cyan-50 py-2.5 text-center text-sm font-semibold text-cyan-700 hover:bg-cyan-100 transition">
+                        {{ $hasLockedEnrollment ? 'Xem yêu cầu hiện tại' : ($existingEnrollment ? 'Cập nhật yêu cầu lịch học' : 'Gửi yêu cầu lịch học') }}
+                    </a>
                 </div>
             </div>
         @empty

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Course;
+use App\Models\Department;
 use App\Models\Enrollment;
 use App\Models\ScheduleChangeRequest;
 use App\Models\TeacherApplication;
@@ -19,9 +20,11 @@ class AdminTeacherService
     {
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
+        $departmentId = (int) ($filters['department_id'] ?? 0);
 
         return User::query()
             ->teachers()
+            ->with('department')
             ->withCount(['taughtCourses', 'scheduleChangeRequests'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
@@ -33,6 +36,7 @@ class AdminTeacherService
             ->when($status !== '', function (Builder $query) use ($status) {
                 $query->where('status', $status);
             })
+            ->when($departmentId > 0, fn (Builder $query) => $query->where('department_id', $departmentId))
             ->orderByDesc('id')
             ->paginate(15)
             ->withQueryString();
@@ -47,6 +51,7 @@ class AdminTeacherService
             'phone' => $data['phone'] ?: null,
             'password' => Hash::make($data['password']),
             'role_id' => Role::idByName(User::ROLE_TEACHER),
+            'department_id' => $data['department_id'],
             'status' => $data['status'],
             'email_verified_at' => now(),
         ]);
@@ -59,6 +64,7 @@ class AdminTeacherService
             'username' => $data['username'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?: null,
+            'department_id' => $data['department_id'],
             'status' => $data['status'],
         ]);
 
@@ -84,7 +90,7 @@ class AdminTeacherService
 
     public function getTeacherDetail(User $teacher): array
     {
-        $teacher->loadCount(['taughtCourses', 'scheduleChangeRequests']);
+        $teacher->loadMissing('department')->loadCount(['taughtCourses', 'scheduleChangeRequests']);
 
         $courses = Course::with(['subject.category'])
             ->withCount('enrollments')
@@ -123,5 +129,12 @@ class AdminTeacherService
             'scheduleChangeRequests' => $scheduleChangeRequests,
             'application' => $application,
         ];
+    }
+
+    public function departmentOptions()
+    {
+        return Department::query()
+            ->orderBy('name')
+            ->get();
     }
 }

@@ -14,13 +14,12 @@ class ScheduleChangeRequest extends Model
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
 
-    protected $table = 'schedule_change_requests';
-
     protected $fillable = [
         'teacher_id',
         'course_id',
         'class_room_id',
         'class_schedule_id',
+        'requested_room_id',
         'current_schedule',
         'requested_day_of_week',
         'requested_date',
@@ -35,6 +34,7 @@ class ScheduleChangeRequest extends Model
     ];
 
     protected $casts = [
+        'requested_room_id' => 'integer',
         'requested_date' => 'date',
         'requested_end_date' => 'date',
         'reviewed_at' => 'datetime',
@@ -102,6 +102,11 @@ class ScheduleChangeRequest extends Model
         return $this->belongsTo(ClassSchedule::class, 'class_schedule_id');
     }
 
+    public function requestedRoom()
+    {
+        return $this->belongsTo(Room::class, 'requested_room_id');
+    }
+
     public function course()
     {
         return $this->belongsTo(Course::class, 'course_id');
@@ -138,5 +143,17 @@ class ScheduleChangeRequest extends Model
         return $this->classRoom?->subject?->category?->name
             ?? $this->course?->subject?->category?->name
             ?? 'Chưa phân nhóm';
+    }
+
+    public function currentRoomLabel(): string
+    {
+        return $this->classSchedule?->room?->name
+            ?? $this->classRoom?->room?->name
+            ?? 'Chưa phân phòng';
+    }
+
+    public function requestedRoomLabel(): string
+    {
+        return $this->requestedRoom?->name ?: $this->currentRoomLabel();
     }
 }

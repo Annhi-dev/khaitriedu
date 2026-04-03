@@ -1,11 +1,29 @@
-﻿@extends('layouts.app')
+@php
+    $lessonLayout = 'layouts.app';
+
+    if ($user?->isStudent()) {
+        $lessonLayout = 'layouts.student';
+    } elseif ($user?->isTeacher()) {
+        $lessonLayout = 'layouts.teacher';
+    } elseif ($user?->isAdmin()) {
+        $lessonLayout = 'layouts.admin';
+    }
+@endphp
+@extends($lessonLayout)
 @section('title', $lesson->title)
+@section('eyebrow', 'Bài học trong lớp')
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
     <a href="{{ route('courses.show', $course->id) }}" class="text-primary hover:underline">← Quay lại lớp học</a>
     <div class="bg-white p-6 rounded-xl shadow-sm">
         <h1 class="text-2xl font-bold mb-2">{{ $lesson->title }}</h1>
         <div class="text-gray-600 mb-4">Module: {{ $module->title }}</div>
+        @if($user && $user->isStudent())
+            <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                <i class="fas fa-circle-check"></i>
+                {{ $lessonProgress?->is_completed ? 'Bai hoc nay da duoc ghi nhan hoan thanh.' : 'Bai hoc nay chua hoan thanh.' }}
+            </div>
+        @endif
         <p class="text-gray-700 mb-4">{{ $lesson->description }}</p>
         @if($lesson->video_url)
             <div class="mb-4">

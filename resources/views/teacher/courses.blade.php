@@ -63,7 +63,9 @@
         <tbody>
           @forelse($enrollments as $enrollment)
             @php
-              $days = $enrollment->preferred_days ? json_decode($enrollment->preferred_days, true) : [];
+              $days = is_array($enrollment->preferred_days)
+                  ? $enrollment->preferred_days
+                  : ((is_string($enrollment->preferred_days) && $enrollment->preferred_days !== '') ? (json_decode($enrollment->preferred_days, true) ?: []) : []);
               $labels = [
                 'Monday' => 'T2',
                 'Tuesday' => 'T3',

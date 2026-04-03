@@ -32,6 +32,7 @@ class User extends Authenticatable
         'phone',
         'password',
         'role_id',
+        'department_id',
         'status',
         'email_verified_at',
     ];
@@ -53,6 +54,11 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     // ─── Role Helpers ────────────────────────────────────
@@ -135,6 +141,31 @@ class User extends Authenticatable
         return $this->hasMany(Enrollment::class);
     }
 
+    public function classEnrollments()
+    {
+        return $this->hasMany(Enrollment::class)->whereNotNull('lop_hoc_id');
+    }
+
+    public function enrolledClasses()
+    {
+        return $this->belongsToMany(ClassRoom::class, 'dang_ky', 'user_id', 'lop_hoc_id')
+            ->withPivot([
+                'id',
+                'subject_id',
+                'course_id',
+                'status',
+                'assigned_teacher_id',
+                'schedule',
+                'submitted_at',
+            ])
+            ->withTimestamps();
+    }
+
+    public function customScheduleRequests()
+    {
+        return $this->hasMany(CustomScheduleRequest::class, 'student_id');
+    }
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
@@ -150,6 +181,11 @@ class User extends Authenticatable
         return $this->hasMany(AttendanceRecord::class, 'student_id');
     }
 
+    public function academicGrades()
+    {
+        return $this->hasMany(Grade::class, 'student_id');
+    }
+
     public function recordedAttendances()
     {
         return $this->hasMany(AttendanceRecord::class, 'teacher_id');
@@ -158,6 +194,16 @@ class User extends Authenticatable
     public function taughtCourses()
     {
         return $this->hasMany(Course::class, 'teacher_id');
+    }
+
+    public function teachingClassRooms()
+    {
+        return $this->hasMany(ClassRoom::class, 'teacher_id');
+    }
+
+    public function teachingSchedules()
+    {
+        return $this->hasMany(ClassSchedule::class, 'teacher_id');
     }
 
     public function scheduleChangeRequests()

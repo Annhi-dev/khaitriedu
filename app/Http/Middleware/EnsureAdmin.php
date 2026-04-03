@@ -2,11 +2,15 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Enrollment;
+use App\Models\ScheduleChangeRequest;
+use App\Models\TeacherApplication;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class EnsureAdmin
 {
@@ -40,7 +44,28 @@ class EnsureAdmin
             return redirect()->route($route)->with('error', 'Bạn không có quyền truy cập khu vực quản trị.');
         }
 
+        try {
+            $adminSidebarBadges = [
+                'teacher_applications_pending' => TeacherApplication::query()
+                    ->where('status', TeacherApplication::STATUS_PENDING)
+                    ->count(),
+                'enrollments_pending' => Enrollment::query()
+                    ->where('status', Enrollment::STATUS_PENDING)
+                    ->count(),
+                'schedule_change_requests_pending' => ScheduleChangeRequest::query()
+                    ->where('status', ScheduleChangeRequest::STATUS_PENDING)
+                    ->count(),
+            ];
+        } catch (Throwable $exception) {
+            $adminSidebarBadges = [
+                'teacher_applications_pending' => 0,
+                'enrollments_pending' => 0,
+                'schedule_change_requests_pending' => 0,
+            ];
+        }
+
         view()->share('adminAuthUser', $user);
+        view()->share('adminSidebarBadges', $adminSidebarBadges);
 
         return $next($request);
     }

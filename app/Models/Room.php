@@ -13,8 +13,6 @@ class Room extends Model
     public const STATUS_MAINTENANCE = 'maintenance';
     public const STATUS_INACTIVE = 'inactive';
 
-    protected $table = 'rooms';
-
     protected $fillable = [
         'code',
         'name',

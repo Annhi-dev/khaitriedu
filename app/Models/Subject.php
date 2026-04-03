@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 
 class Subject extends Model
 {
@@ -15,8 +14,6 @@ class Subject extends Model
     public const STATUS_OPEN = 'open';
     public const STATUS_CLOSED = 'closed';
     public const STATUS_ARCHIVED = 'archived';
-
-    protected static array $schemaColumnCache = [];
 
     protected $table = 'mon_hoc';
 
@@ -35,28 +32,9 @@ class Subject extends Model
         'duration' => 'integer',
     ];
 
-    public static function hasStatusColumn(): bool
-    {
-        return static::hasTableColumn('status');
-    }
-
-    protected static function hasTableColumn(string $column): bool
-    {
-        $table = (new static())->getTable();
-        $cacheKey = $table . '.' . $column;
-
-        if (! array_key_exists($cacheKey, static::$schemaColumnCache)) {
-            static::$schemaColumnCache[$cacheKey] = Schema::hasTable($table) && Schema::hasColumn($table, $column);
-        }
-
-        return static::$schemaColumnCache[$cacheKey];
-    }
-
     public function scopePubliclyAvailable(Builder $query): Builder
     {
-        return static::hasStatusColumn()
-            ? $query->where('status', self::STATUS_OPEN)
-            : $query;
+        return $query->where('status', self::STATUS_OPEN);
     }
 
     public function scopeVisibleOnCatalog(Builder $query): Builder
@@ -73,10 +51,6 @@ class Subject extends Model
 
     public function statusLabel(): string
     {
-        if (! static::hasStatusColumn()) {
-            return 'Dang mo';
-        }
-
         return match ($this->status) {
             self::STATUS_DRAFT => 'Nháp',
             self::STATUS_OPEN => 'Đang mở',
@@ -88,7 +62,9 @@ class Subject extends Model
 
     public function durationLabel(): string
     {
-        if (!$this->duration) return 'Chưa cấu hình';
+        if (! $this->duration) {
+            return 'Chưa cấu hình';
+        }
 
         if ($this->duration >= 12) {
             $years = floor($this->duration / 12);
@@ -105,7 +81,7 @@ class Subject extends Model
 
     public function isOpenForEnrollment(): bool
     {
-        $subjectOpen = ! static::hasStatusColumn() || $this->status === null || $this->status === self::STATUS_OPEN;
+        $subjectOpen = $this->status === null || $this->status === self::STATUS_OPEN;
 
         return $subjectOpen
             && (! $this->category || $this->category->isActive());
@@ -149,6 +125,11 @@ class Subject extends Model
     public function slotRegistrations()
     {
         return $this->hasMany(SlotRegistration::class);
+    }
+
+    public function customScheduleRequests()
+    {
+        return $this->hasMany(CustomScheduleRequest::class);
     }
 
     public function getImageUrlAttribute(): ?string

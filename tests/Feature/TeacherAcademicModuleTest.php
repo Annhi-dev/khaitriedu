@@ -9,6 +9,7 @@ use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Notification;
+use App\Models\Room;
 use App\Models\ScheduleChangeRequest;
 use App\Models\Subject;
 use App\Models\TeacherEvaluation;
@@ -167,7 +168,11 @@ class TeacherAcademicModuleTest extends TestCase
     public function test_teacher_can_submit_schedule_change_request_from_schedule_slot(): void
     {
         $teacher = User::factory()->teacher()->create();
-        ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createClassroomBundle($teacher);
+        $currentRoom = $this->createRoom(['name' => 'Phong hien tai']);
+        $requestedRoom = $this->createRoom(['name' => 'Phong de xuat']);
+        ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createClassroomBundle($teacher, [
+            'room_id' => $currentRoom->id,
+        ]);
 
         $startAt = Carbon::parse('next friday 19:00');
         $endAt = Carbon::parse('next friday 21:00');
@@ -177,6 +182,7 @@ class TeacherAcademicModuleTest extends TestCase
             ->post(route('teacher.schedules.change-requests.store', $schedule), [
                 'requested_start_at' => $startAt->format('Y-m-d H:i:s'),
                 'requested_end_at' => $endAt->format('Y-m-d H:i:s'),
+                'requested_room_id' => $requestedRoom->id,
                 'reason' => 'Can doi lich de phu hop lich day moi.',
             ]);
 
@@ -186,6 +192,7 @@ class TeacherAcademicModuleTest extends TestCase
             'teacher_id' => $teacher->id,
             'class_room_id' => $classRoom->id,
             'class_schedule_id' => $schedule->id,
+            'requested_room_id' => $requestedRoom->id,
             'status' => ScheduleChangeRequest::STATUS_PENDING,
             'requested_day_of_week' => 'Friday',
         ]);
@@ -195,17 +202,35 @@ class TeacherAcademicModuleTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
+        $student = User::factory()->student()->create();
+        $currentRoom = $this->createRoom(['name' => 'Phong 1']);
+        $requestedRoom = $this->createRoom(['name' => 'Phong 2']);
 
-        ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createClassroomBundle($teacher, [
+        ['subject' => $subject, 'course' => $course, 'classRoom' => $classRoom, 'schedule' => $schedule] = $this->createClassroomBundle($teacher, [
             'day' => 'Monday',
             'start_time' => '18:00',
             'end_time' => '20:00',
+            'room_id' => $currentRoom->id,
+        ]);
+
+        $enrollment = Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $course->schedule,
+            'is_submitted' => true,
+            'submitted_at' => now(),
         ]);
 
         $request = ScheduleChangeRequest::create([
             'teacher_id' => $teacher->id,
+            'course_id' => $course->id,
             'class_room_id' => $classRoom->id,
             'class_schedule_id' => $schedule->id,
+            'requested_room_id' => $requestedRoom->id,
             'current_schedule' => $schedule->label(),
             'requested_day_of_week' => 'Wednesday',
             'requested_date' => now()->addWeek()->toDateString(),
@@ -230,7 +255,18 @@ class TeacherAcademicModuleTest extends TestCase
             'day_of_week' => 'Wednesday',
             'start_time' => '19:00',
             'end_time' => '21:00',
+            'room_id' => $requestedRoom->id,
         ]);
+
+        $this->assertDatabaseHas('khoa_hoc', [
+            'id' => $course->id,
+            'day_of_week' => 'Wednesday',
+            'start_time' => '19:00',
+            'end_time' => '21:00',
+        ]);
+
+        $this->assertStringContainsString('19:00 - 21:00', (string) $course->fresh()->schedule);
+        $this->assertSame($course->fresh()->schedule, (string) $enrollment->fresh()->schedule);
 
         $this->assertDatabaseHas('thong_bao', [
             'user_id' => $teacher->id,
@@ -274,7 +310,9 @@ class TeacherAcademicModuleTest extends TestCase
 
         $classRoom = ClassRoom::create([
             'subject_id' => $subject->id,
+            'course_id' => $overrides['course_id'] ?? $course->id,
             'teacher_id' => $teacher->id,
+            'room_id' => $overrides['room_id'] ?? null,
             'start_date' => now()->toDateString(),
             'duration' => 3,
             'status' => ClassRoom::STATUS_OPEN,
@@ -283,11 +321,26 @@ class TeacherAcademicModuleTest extends TestCase
 
         $schedule = ClassSchedule::create([
             'lop_hoc_id' => $classRoom->id,
+            'room_id' => $overrides['schedule_room_id'] ?? ($overrides['room_id'] ?? null),
             'day_of_week' => $overrides['day'] ?? 'Tuesday',
             'start_time' => $overrides['start_time'] ?? '18:00',
             'end_time' => $overrides['end_time'] ?? '20:00',
         ]);
 
         return compact('category', 'subject', 'course', 'classRoom', 'schedule');
+    }
+
+    private function createRoom(array $overrides = []): Room
+    {
+        $code = $overrides['code'] ?? 'PH-' . strtoupper(str()->random(6));
+
+        return Room::create(array_merge([
+            'code' => $code,
+            'name' => 'Phong ' . $code,
+            'type' => 'theory',
+            'location' => 'Tang 1',
+            'capacity' => 30,
+            'status' => Room::STATUS_ACTIVE,
+        ], $overrides));
     }
 }

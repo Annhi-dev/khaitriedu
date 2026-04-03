@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\OpenPendingCourseRequest;
 use App\Http\Requests\Admin\ScheduleEnrollmentRequest;
+use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Services\AdminScheduleService;
@@ -61,6 +63,31 @@ class ScheduleController extends Controller
         }
 
         $message = $scheduleService->scheduleEnrollment($enrollment, $request->validated(), $current);
+
+        return redirect()->route('admin.schedules.index')->with('status', $message);
+    }
+
+    public function showOpenCourse(Course $course, AdminScheduleService $scheduleService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        return view('admin.schedules.open_course', array_merge(
+            ['current' => $current],
+            $scheduleService->getOpenCourseContext($course),
+        ));
+    }
+
+    public function openCourse(OpenPendingCourseRequest $request, Course $course, AdminScheduleService $scheduleService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $message = $scheduleService->openPendingCourse($course, $request->validated(), $current);
 
         return redirect()->route('admin.schedules.index')->with('status', $message);
     }

@@ -102,7 +102,7 @@ class SubjectEnrollmentTest extends TestCase
         $response->assertSee('Lộ trình trong lớp học');
     }
 
-    public function test_admin_must_choose_class_before_scheduling_enrollment(): void
+    public function test_admin_must_use_phase_9_to_schedule_custom_request(): void
     {
         $admin = User::factory()->create([
             'role_id' => Role::idByName('admin'),
@@ -132,7 +132,7 @@ class SubjectEnrollmentTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
-        $response->assertSessionHasErrors('course_id');
+        $response->assertSessionHasErrors('action');
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
@@ -141,7 +141,7 @@ class SubjectEnrollmentTest extends TestCase
         ]);
     }
 
-    public function test_admin_scheduling_defaults_teacher_and_schedule_from_selected_class(): void
+    public function test_admin_cannot_pick_existing_class_from_phase_8_for_custom_request(): void
     {
         $admin = User::factory()->create([
             'role_id' => Role::idByName('admin'),
@@ -164,6 +164,7 @@ class SubjectEnrollmentTest extends TestCase
         ]);
 
         $response = $this
+            ->from(route('admin.enrollments.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.enrollments.review', $enrollment), [
                 'action' => 'schedule',
@@ -174,15 +175,61 @@ class SubjectEnrollmentTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
+        $response->assertSessionHasErrors('action');
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
             'subject_id' => $subject->id,
-            'course_id' => $course->id,
-            'assigned_teacher_id' => $teacher->id,
-            'schedule' => 'T2-T4-T6, 18:00-20:00',
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'course_id' => null,
+            'assigned_teacher_id' => null,
+            'status' => Enrollment::STATUS_PENDING,
         ]);
+    }
+
+    public function test_subject_enrollment_update_keeps_approved_status(): void
+    {
+        $student = User::factory()->create([
+            'role_id' => Role::idByName('student'),
+        ]);
+        $admin = User::factory()->create([
+            'role_id' => Role::idByName('admin'),
+        ]);
+
+        [, $subject] = $this->createCatalogSubject();
+
+        $enrollment = Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'status' => Enrollment::STATUS_APPROVED,
+            'start_time' => '17:30',
+            'end_time' => '19:30',
+            'preferred_days' => ['Monday', 'Wednesday'],
+            'note' => 'Can cap nhat lai lich.',
+            'is_submitted' => true,
+            'submitted_at' => now()->subDay(),
+            'reviewed_by' => $admin->id,
+            'reviewed_at' => now()->subHours(2),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $student->id])
+            ->post(route('khoa-hoc.enroll', $subject->id), [
+                'start_time' => '18:00',
+                'end_time' => '20:00',
+                'preferred_days' => ['Tuesday', 'Thursday'],
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('status');
+
+        $updatedEnrollment = $enrollment->fresh();
+        $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
+        $this->assertSame('18:00', $updatedEnrollment->start_time);
+        $this->assertSame('20:00', $updatedEnrollment->end_time);
+        $this->assertSame(['Tuesday', 'Thursday'], $updatedEnrollment->preferred_days);
+        $this->assertNull($updatedEnrollment->note);
+        $this->assertSame($admin->id, $updatedEnrollment->reviewed_by);
+        $this->assertNotNull($updatedEnrollment->reviewed_at);
     }
 
     private function createCatalogSubject(): array

@@ -15,6 +15,11 @@ class DashboardController extends Controller
             return $redirect;
         }
 
-        return view('dashboard', compact('user'));
+        $notifications = $user->notifications()
+            ->latest('id')
+            ->take(6)
+            ->get();
+
+        return view('student.dashboard', compact('user', 'notifications'));
     }
 }

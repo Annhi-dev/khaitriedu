@@ -9,41 +9,14 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        [x-cloak] { display: none !important; }
-        .transition-smooth { transition: all 0.2s ease-in-out; }
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out; }
-
-        /* Sidebar Collapse CSS overrides */
-        @media (min-width: 1024px) {
-            #app-wrapper.sidebar-collapsed {
-                grid-template-columns: 80px minmax(0, 1fr) !important;
-            }
-            #app-wrapper.sidebar-collapsed .sidebar-header-text,
-            #app-wrapper.sidebar-collapsed .sidebar-text,
-            #app-wrapper.sidebar-collapsed .sidebar-badge {
-                display: none !important;
-            }
-            #app-wrapper.sidebar-collapsed .sidebar-menu-item {
-                justify-content: center;
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
-            }
-            #app-wrapper.sidebar-collapsed .sidebar-icon {
-                margin: 0;
-                font-size: 1.25rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800">
 @php
     $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
+    $sidebarBadges = $adminSidebarBadges ?? [];
+    $totalPendingItems = (int) ($sidebarBadges['teacher_applications_pending'] ?? 0) + (int) ($sidebarBadges['enrollments_pending'] ?? 0) + (int) ($sidebarBadges['schedule_change_requests_pending'] ?? 0);
     $menuSections = [
         [
             'label' => 'Tổng quan',
@@ -57,8 +30,15 @@
             'items' => [
                 ['label' => 'Học viên', 'icon' => 'fas fa-user-graduate', 'route' => 'admin.students.index', 'active' => request()->routeIs('admin.students.*')],
                 ['label' => 'Giảng viên', 'icon' => 'fas fa-chalkboard-user', 'route' => 'admin.teachers.index', 'active' => request()->routeIs('admin.teachers.*')],
+                ['label' => 'Phòng ban', 'icon' => 'fas fa-building', 'route' => 'admin.departments.index', 'active' => request()->routeIs('admin.departments.*')],
                 ['label' => 'Tài khoản hệ thống', 'icon' => 'fas fa-users-gear', 'route' => 'admin.users', 'active' => request()->routeIs('admin.users*') || request()->routeIs('admin.user.*')],
-                ['label' => 'Ứng tuyển giảng viên', 'icon' => 'fas fa-file-signature', 'route' => 'admin.teacher-applications', 'active' => request()->routeIs('admin.teacher-applications*')],
+                [
+                    'label' => 'Ứng tuyển giảng viên',
+                    'icon' => 'fas fa-file-signature',
+                    'route' => 'admin.teacher-applications',
+                    'active' => request()->routeIs('admin.teacher-applications*'),
+                    'badge' => ($sidebarBadges['teacher_applications_pending'] ?? 0) ?: null,
+                ],
             ],
         ],
         [
@@ -71,16 +51,21 @@
                 ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
                 ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
                 ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
-                ['label' => 'Đăng ký học', 'icon' => 'fas fa-list-check', 'route' => 'admin.slot-registrations.index', 'active' => request()->routeIs('admin.slot-registrations.*')],
-                ['label' => 'Theo dõi theo slot', 'icon' => 'fas fa-chart-simple', 'route' => 'admin.slot-tracking.index', 'active' => request()->routeIs('admin.slot-tracking.*')],
-            ],
-        ],
-        [
-            'label' => 'Vận hành',
-            'items' => [
-                ['label' => 'Đăng ký học', 'icon' => 'fas fa-clipboard-check', 'route' => 'admin.enrollments', 'active' => request()->routeIs('admin.enrollments*')],
+                [
+                    'label' => 'Đăng ký học',
+                    'icon' => 'fas fa-clipboard-check',
+                    'route' => 'admin.enrollments',
+                    'active' => request()->routeIs('admin.enrollments*'),
+                    'badge' => ($sidebarBadges['enrollments_pending'] ?? 0) ?: null,
+                ],
                 ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
-                ['label' => 'Yêu cầu đổi lịch', 'icon' => 'fas fa-calendar-rotate', 'route' => 'admin.schedule-change-requests.index', 'active' => request()->routeIs('admin.schedule-change-requests.*')],
+                [
+                    'label' => 'Yêu cầu đổi lịch',
+                    'icon' => 'fas fa-calendar-rotate',
+                    'route' => 'admin.schedule-change-requests.index',
+                    'active' => request()->routeIs('admin.schedule-change-requests.*'),
+                    'badge' => ($sidebarBadges['schedule_change_requests_pending'] ?? 0) ?: null,
+                ],
             ],
         ],
     ];
@@ -156,8 +141,17 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button class="p-2 rounded-full hover:bg-slate-100">
+                        <a href="{{ route('home') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
+                            <i class="fas fa-house"></i>
+                            <span class="hidden sm:inline">Trang chủ</span>
+                        </a>
+                        <button class="relative p-2 rounded-full hover:bg-slate-100" title="Muc can xu ly">
                             <i class="fas fa-bell text-slate-500"></i>
+                            @if ($totalPendingItems > 0)
+                                <span class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
+                                    {{ $totalPendingItems > 99 ? '99+' : $totalPendingItems }}
+                                </span>
+                            @endif
                         </button>
                         <div class="flex items-center gap-2">
                             <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">

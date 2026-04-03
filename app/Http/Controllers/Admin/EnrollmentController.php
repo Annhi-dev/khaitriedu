@@ -18,11 +18,12 @@ class EnrollmentController extends Controller
             return $redirect;
         }
 
-        $filters = $request->only(['search', 'status']);
+        $filters = $request->only(['search', 'status', 'request_source']);
         $enrollments = $enrollmentService->paginateEnrollments($filters);
         $statusOptions = Enrollment::statusOptions();
+        $requestSourceOptions = Enrollment::requestSourceOptions();
 
-        return view('admin.enrollments.index', compact('current', 'filters', 'enrollments', 'statusOptions'));
+        return view('admin.enrollments.index', compact('current', 'filters', 'enrollments', 'statusOptions', 'requestSourceOptions'));
     }
 
     public function show(Enrollment $enrollment, AdminEnrollmentService $enrollmentService)

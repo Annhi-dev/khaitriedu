@@ -18,6 +18,8 @@
                 <span>{{ $teacher->email }}</span>
                 <span class="text-slate-300">|</span>
                 <span>{{ $teacher->phone ?: 'Chưa có số điện thoại' }}</span>
+                <span class="text-slate-300">|</span>
+                <span>{{ $teacher->department?->name ?: 'Chưa gán phòng ban' }}</span>
                 <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $teacher->statusLabel() }}</span>
             </div>
         </div>
@@ -64,6 +66,10 @@
                 <div>
                     <p class="text-xs uppercase tracking-wide text-slate-400">Trạng thái</p>
                     <p class="mt-1 text-sm font-medium text-slate-900">{{ $teacher->statusLabel() }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-slate-400">Phòng ban</p>
+                    <p class="mt-1 text-sm font-medium text-slate-900">{{ $teacher->department?->name ?: 'Chưa gán phòng ban' }}</p>
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-slate-400">Ngày tạo</p>

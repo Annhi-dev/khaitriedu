@@ -1,5 +1,17 @@
-﻿@extends('layouts.app')
+@php
+    $quizLayout = 'layouts.app';
+
+    if ($user?->isStudent()) {
+        $quizLayout = 'layouts.student';
+    } elseif ($user?->isTeacher()) {
+        $quizLayout = 'layouts.teacher';
+    } elseif ($user?->isAdmin()) {
+        $quizLayout = 'layouts.admin';
+    }
+@endphp
+@extends($quizLayout)
 @section('title', 'Quiz: ' . $quiz->title)
+@section('eyebrow', 'Bài kiểm tra')
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
     <a href="{{ route('courses.show', $course->id) }}" class="text-primary hover:underline">← Quay lại lớp học</a>

@@ -10,7 +10,19 @@
         </div>
     </div>
 
-    <x-admin.filter-bar route="{{ route('admin.enrollments') }}" searchPlaceholder="Tên học viên, email, khóa học..." :statuses="$statusOptions" />
+    <x-admin.filter-bar route="{{ route('admin.enrollments') }}" searchPlaceholder="Tên học viên, email, khóa học..." :statuses="$statusOptions">
+        <x-slot:additionalFilters>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Loại hồ sơ</label>
+                <select name="request_source" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                    <option value="">Tất cả</option>
+                    @foreach($requestSourceOptions as $value => $label)
+                        <option value="{{ $value }}" @selected(request('request_source') == $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </x-slot:additionalFilters>
+    </x-admin.filter-bar>
 
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
@@ -32,7 +44,12 @@
                             <div class="font-medium">{{ $enrollment->user?->name }}</div>
                             <div class="text-xs text-slate-500">{{ $enrollment->user?->email }}</div>
                         </td>
-                        <td class="px-5 py-4">{{ $enrollment->subject?->name ?? 'Chưa xác định' }}</td>
+                        <td class="px-5 py-4">
+                            <div class="font-medium text-slate-900">{{ $enrollment->subject?->name ?? 'Chưa xác định' }}</div>
+                            <div class="mt-2">
+                                <x-admin.badge :type="$enrollment->requestSourceBadgeType()" :text="$enrollment->requestSourceLabel()" />
+                            </div>
+                        </td>
                         <td class="px-5 py-4">{{ $enrollment->start_time ?: '--' }} - {{ $enrollment->end_time ?: '--' }}</td>
                         <td class="px-5 py-4">{{ $enrollment->course?->title ?? 'Chưa xếp lớp' }}</td>
                         <td class="px-5 py-4">

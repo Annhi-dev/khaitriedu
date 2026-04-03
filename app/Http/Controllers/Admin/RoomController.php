@@ -73,10 +73,13 @@ class RoomController extends Controller
         }
 
         $data = $request->validated();
-        $last = Room::latest('id')->first();
-        $number = $last && preg_match('/^PH(\d+)$/', $last->code, $matches) ? intval($matches[1]) + 1 : 1;
-        $data['code'] = 'PH' . str_pad($number, 3, '0', STR_PAD_LEFT);
-        $data['status'] = Room::STATUS_ACTIVE;
+        if (blank($data['code'] ?? null)) {
+            $last = Room::latest('id')->first();
+            $number = $last && preg_match('/^PH(\d+)$/', $last->code, $matches) ? intval($matches[1]) + 1 : 1;
+            $data['code'] = 'PH' . str_pad($number, 3, '0', STR_PAD_LEFT);
+        }
+
+        $data['status'] = $data['status'] ?? Room::STATUS_ACTIVE;
 
         Room::create($data);
 

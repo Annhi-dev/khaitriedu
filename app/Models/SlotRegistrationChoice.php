@@ -9,8 +9,6 @@ class SlotRegistrationChoice extends Model
 {
     use HasFactory;
 
-    protected $table = 'slot_registration_choices';
-
     protected $fillable = [
         'slot_registration_id',
         'course_time_slot_id',

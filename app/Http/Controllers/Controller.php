@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Database\QueryException;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,16 +44,34 @@ abstract class Controller extends BaseController
 
     protected function findSubjectEnrollment(int $userId, int $subjectId, array $with = []): ?Enrollment
     {
-        return Enrollment::with($with)
-            ->where('user_id', $userId)
-            ->where(function ($query) use ($subjectId) {
-                $query->where('subject_id', $subjectId)
-                    ->orWhereHas('course', function ($courseQuery) use ($subjectId) {
-                        $courseQuery->where('subject_id', $subjectId);
-                    });
-            })
+        return Enrollment::query()
+            ->with($with)
+            ->forUserSubject($userId, $subjectId)
             ->latest('id')
             ->first();
+    }
+
+    protected function isMissingTableException(QueryException $exception, array $tableNames = []): bool
+    {
+        $queryExceptionCode = (string) $exception->getCode();
+        $driverErrorCode = (int) ($exception->errorInfo[1] ?? 0);
+        $message = strtolower($exception->getMessage());
+
+        if ($queryExceptionCode !== '42S02' && $driverErrorCode !== 1146 && ! str_contains($message, "doesn't exist")) {
+            return false;
+        }
+
+        if ($tableNames === []) {
+            return true;
+        }
+
+        foreach ($tableNames as $tableName) {
+            if (str_contains($message, strtolower($tableName))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function resolveInternalClassAccess(int $courseId, ?User $user, array $with = []): array
@@ -88,6 +107,14 @@ abstract class Controller extends BaseController
                 ->first();
 
             if ($enrollment) {
+                if ($course->isPendingOpen()) {
+                    return [
+                        $course,
+                        $enrollment,
+                        redirect()->route('khoa-hoc.show', $course->subject_id)->with('error', 'Lop nay dang cho du hoc vien de mo chinh thuc. Ban se duoc thong bao ngay khi admin chot ngay khai giang.'),
+                    ];
+                }
+
                 return [$course, $enrollment, null];
             }
 

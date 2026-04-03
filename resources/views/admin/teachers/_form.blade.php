@@ -1,5 +1,6 @@
 @php
     $statusValue = old('status', $teacher->status ?? \App\Models\User::STATUS_ACTIVE);
+    $departmentValue = old('department_id', $teacher->department_id ?? '');
 @endphp
 
 <div class="grid gap-5 md:grid-cols-2">
@@ -18,6 +19,18 @@
     <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">Số điện thoại</label>
         <input name="phone" value="{{ old('phone', $teacher->phone ?? '') }}" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+    </div>
+    <div>
+        <label class="mb-2 block text-sm font-medium text-slate-700">Phòng ban</label>
+        <select name="department_id" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
+            <option value="">Chọn phòng ban</option>
+            @foreach(($departments ?? collect()) as $department)
+                <option value="{{ $department->id }}" @selected((string) $departmentValue === (string) $department->id)>{{ $department->name }}</option>
+            @endforeach
+        </select>
+        @if(($departments ?? collect())->isEmpty())
+            <p class="mt-2 text-xs text-amber-600">Chưa có phòng ban hoạt động. Vui lòng thêm dữ liệu bảng phòng ban trước khi tạo giảng viên.</p>
+        @endif
     </div>
     <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">Trạng thái tài khoản</label>

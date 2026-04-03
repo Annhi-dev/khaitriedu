@@ -1,82 +1,107 @@
 @extends('layouts.admin')
-@section('title', 'Lịch học toàn hệ thống')
+@section('title', 'Lich hoc toan he thong')
 @section('content')
 <div class="space-y-6">
     <span class="sr-only">Phase 9</span>
 
-    <x-admin.page-header title="Lịch học toàn hệ thống" subtitle="Theo dõi các lớp đã xếp lịch và phân bổ giảng viên trong toàn trung tâm">
-        <a href="{{ route('admin.schedules.queue') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">Hàng chờ xếp lịch</a>
+    <x-admin.page-header title="Lich hoc toan he thong" subtitle="Theo doi cac lop da xep lich, lop cho mo va phan bo giang vien trong toan trung tam">
+        <a href="{{ route('admin.schedules.queue') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">Hang cho xep lich</a>
     </x-admin.page-header>
 
-    <form method="get" action="{{ route('admin.schedules.index') }}" class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <form method="get" action="{{ route('admin.schedules.index') }}" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
             <div>
-                <label class="block text-sm font-medium text-slate-700">Giảng viên</label>
+                <label class="block text-sm font-medium text-slate-700">Giang vien</label>
                 <select name="teacher_id" class="w-full rounded-xl border px-3 py-2">
-                    <option value="">Tất cả</option>
+                    <option value="">Tat ca</option>
                     @foreach($teachers as $teacher)
                         <option value="{{ $teacher->id }}" @selected(request('teacher_id') == $teacher->id)>{{ $teacher->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700">Học viên</label>
+                <label class="block text-sm font-medium text-slate-700">Hoc vien</label>
                 <select name="student_id" class="w-full rounded-xl border px-3 py-2">
-                    <option value="">Tất cả</option>
+                    <option value="">Tat ca</option>
                     @foreach($students as $student)
                         <option value="{{ $student->id }}" @selected(request('student_id') == $student->id)>{{ $student->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700">Lớp học</label>
+                <label class="block text-sm font-medium text-slate-700">Lop hoc</label>
                 <select name="course_id" class="w-full rounded-xl border px-3 py-2">
-                    <option value="">Tất cả</option>
+                    <option value="">Tat ca</option>
                     @foreach($courses as $courseOption)
                         <option value="{{ $courseOption->id }}" @selected(request('course_id') == $courseOption->id)>{{ $courseOption->title }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700">Ngày học</label>
+                <label class="block text-sm font-medium text-slate-700">Ngay hoc</label>
                 <input type="date" name="date" value="{{ request('date') }}" class="w-full rounded-xl border px-3 py-2">
             </div>
             <div class="flex items-end gap-2">
-                <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-xl">Lọc</button>
-                <a href="{{ route('admin.schedules.index') }}" class="border px-4 py-2 rounded-xl">Xóa</a>
+                <button type="submit" class="rounded-xl bg-slate-800 px-4 py-2 text-white">Loc</button>
+                <a href="{{ route('admin.schedules.index') }}" class="rounded-xl border px-4 py-2">Xoa</a>
             </div>
         </div>
     </form>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         @forelse($schedules as $course)
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            @php
+                $studentsNeeded = max(0, \App\Models\Course::minimumStudentsToOpen() - (int) $course->scheduled_students_count);
+            @endphp
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="flex justify-between gap-4">
                     <div>
-                        <p class="text-xs text-slate-500">{{ $course->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>
-                        <h3 class="font-semibold text-lg">{{ $course->title }}</h3>
+                        <p class="text-xs text-slate-500">{{ $course->subject?->category?->name ?? 'Chua phan nhom' }}</p>
+                        <h3 class="text-lg font-semibold">{{ $course->title }}</h3>
                     </div>
-                    <x-admin.badge :type="'info'" :text="$course->statusLabel()" />
+                    <x-admin.badge :type="$course->isPendingOpen() ? 'warning' : 'info'" :text="$course->statusLabel()" />
                 </div>
+
                 <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <p><span class="text-slate-500">Giảng viên:</span> {{ $course->teacher?->name ?? 'Chưa phân công' }}</p>
-                    <p><span class="text-slate-500">Lịch:</span> {{ $course->formattedSchedule() }}</p>
-                    <p><span class="text-slate-500">Sĩ số:</span> {{ $course->scheduled_students_count }}/{{ $course->capacity ?? 20 }}</p>
-                    <p><span class="text-slate-500">Ngày học:</span> {{ $course->dayLabel() }}</p>
+                    <p><span class="text-slate-500">Giang vien:</span> {{ $course->teacher?->name ?? 'Chua phan cong' }}</p>
+                    <p><span class="text-slate-500">Lich:</span> {{ $course->formattedSchedule() }}</p>
+                    <p><span class="text-slate-500">Si so:</span> {{ $course->scheduled_students_count }}/{{ $course->capacity ?? 20 }}</p>
+                    <p><span class="text-slate-500">Ngay hoc:</span> {{ $course->meetingDaysLabel() }}</p>
                 </div>
-                <div class="mt-4 p-3 bg-slate-50 rounded-xl text-sm">
-                    <p class="font-medium">Học viên:</p>
-                    <div class="flex flex-wrap gap-1 mt-1">
+
+                @if ($course->isPendingOpen())
+                    <div class="mt-4 rounded-xl {{ $studentsNeeded === 0 ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' : 'border border-amber-200 bg-amber-50 text-amber-800' }} px-4 py-3 text-sm">
+                        @if ($studentsNeeded === 0)
+                            Lop da du toi thieu {{ \App\Models\Course::minimumStudentsToOpen() }} hoc vien va co the mo lop ngay bay gio.
+                        @else
+                            Lop dang cho mo. Con thieu {{ $studentsNeeded }} hoc vien nua de chot ngay khai giang.
+                        @endif
+                    </div>
+                @endif
+
+                <div class="mt-4 rounded-xl bg-slate-50 p-3 text-sm">
+                    <p class="font-medium">Hoc vien:</p>
+                    <div class="mt-1 flex flex-wrap gap-1">
                         @forelse($course->enrollments->whereIn('status', \App\Models\Enrollment::courseAccessStatuses()) as $enrollment)
-                            <span class="px-2 py-1 bg-white rounded-full text-xs border">{{ $enrollment->user?->name }}</span>
+                            <span class="rounded-full border bg-white px-2 py-1 text-xs">{{ $enrollment->user?->name }}</span>
                         @empty
-                            <span class="text-xs text-slate-500">Chưa có</span>
+                            <span class="text-xs text-slate-500">Chua co</span>
                         @endforelse
                     </div>
                 </div>
+
+                @if ($course->isPendingOpen())
+                    <div class="mt-4 flex justify-end">
+                        <a href="{{ route('admin.schedules.courses.open', $course) }}" class="inline-flex items-center justify-center rounded-2xl {{ $studentsNeeded === 0 ? 'bg-cyan-600 text-white hover:bg-cyan-700' : 'border border-slate-300 text-slate-600 hover:bg-slate-50' }} px-4 py-2.5 text-sm font-semibold">
+                            {{ $studentsNeeded === 0 ? 'Chon ngay va mo lop' : 'Xem dieu kien mo lop' }}
+                        </a>
+                    </div>
+                @endif
             </div>
         @empty
-            <div class="col-span-2 text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">Chưa có lớp học nào được xếp lịch chính thức.</div>
+            <div class="col-span-2 rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center">
+                Chua co lop hoc nao duoc luu trong he thong.
+            </div>
         @endforelse
     </div>
 

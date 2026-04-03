@@ -13,32 +13,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- UI Enhancement CSS ONLY -->
-    <style>
-        .dashboard-wrapper { display: flex; min-height: 100vh; background-color: #f8fafc; }
-        .dashboard-sidebar { width: 260px; flex-shrink: 0; background-color: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s ease; }
-        .dashboard-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .dashboard-header { height: 64px; background-color: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; }
-        .dashboard-content { flex: 1; padding: 1.5rem; overflow-y: auto; background-color: #f8fafc; }
-        
-        .sidebar-logo { height: 64px; display: flex; align-items: center; padding: 0 1.5rem; border-bottom: 1px solid #e2e8f0; font-weight: 700; font-size: 1.25rem; color: #1e293b; }
-        .sidebar-nav { padding: 1rem 0; flex: 1; overflow-y: auto; }
-        .nav-item { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #64748b; font-weight: 500; text-decoration: none; transition: all 0.2s; }
-        .nav-item:hover { background-color: #f1f5f9; color: #2563eb; }
-        .nav-item.active { background-color: #eff6ff; color: #2563eb; border-right: 3px solid #2563eb; }
-        .nav-icon { width: 24px; text-align: center; margin-right: 0.75rem; font-size: 1.1rem; }
-        
-        /* Modern generic wrapper card */
-        .content-card-wrapper { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 2rem; border: 1px solid #f1f5f9; }
-        
-        @media (max-width: 768px) {
-            .dashboard-sidebar { position: fixed; z-index: 50; height: 100vh; transform: translateX(-100%); }
-            .sidebar-open .dashboard-sidebar { transform: translateX(0); }
-            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
-            .sidebar-open .sidebar-overlay { display: block; }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body class="font-sans antialiased text-gray-800" x-data="{ mobileMenuOpen: false }" :class="{'sidebar-open': mobileMenuOpen}">
 

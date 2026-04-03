@@ -78,14 +78,37 @@
                 <div class="text-sm text-gray-500">{{ $enrollment->statusLabel() }} - Lịch đã chốt: {{ $enrollment->schedule ?: $course->formattedSchedule() }}</div>
               </div>
 
+              @php
+                $courseStat = $studentCourseProgress[$enrollment->id] ?? ['completed' => 0, 'total' => 0, 'percent' => 0];
+              @endphp
+              <div class="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
+                <div class="flex items-center justify-between">
+                  <div class="font-semibold text-emerald-800">Tien do khoa hoc</div>
+                  <div class="font-black text-emerald-700">{{ $courseStat['percent'] }}%</div>
+                </div>
+                <div class="mt-1 text-emerald-700">Da hoc {{ $courseStat['completed'] }}/{{ $courseStat['total'] }} bai.</div>
+              </div>
+
               <div class="mt-4 space-y-3">
                 @foreach($course->modules as $module)
-                  @php $grade = $gradeMap->get($enrollment->id . '-' . $module->id); @endphp
+                  @php
+                    $grade = $gradeMap->get($enrollment->id . '-' . $module->id);
+                    $moduleStat = $studentModuleProgress[$enrollment->id][$module->id] ?? [
+                      'completed' => 0,
+                      'total' => $module->lessons->count(),
+                      'percent' => 0,
+                    ];
+                  @endphp
                   <form method="post" action="{{ route('teacher.grades.update') }}" class="grid gap-2 rounded-2xl bg-slate-50 p-3">
                     @csrf
                     <input type="hidden" name="enrollment_id" value="{{ $enrollment->id }}" />
                     <input type="hidden" name="module_id" value="{{ $module->id }}" />
-                    <div class="text-sm font-semibold text-gray-700">{{ $module->title }}</div>
+                    <div class="flex items-center justify-between gap-3 text-sm">
+                      <div class="font-semibold text-gray-700">{{ $module->title }}</div>
+                      <div class="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">
+                        {{ $moduleStat['completed'] }}/{{ $moduleStat['total'] }} bai - {{ $moduleStat['percent'] }}%
+                      </div>
+                    </div>
                     <div class="grid gap-2 md:grid-cols-[120px_100px_1fr_auto]">
                       <input name="score" value="{{ $grade->score ?? '' }}" placeholder="Điểm" class="rounded-xl border border-gray-300 px-3 py-2" type="number" min="0" max="100" />
                       <input name="grade" value="{{ $grade->grade ?? '' }}" placeholder="A/B/C" class="rounded-xl border border-gray-300 px-3 py-2" maxlength="5" />
@@ -103,3 +126,4 @@
   </div>
 </div>
 @endsection
+

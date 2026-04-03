@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\TeacherApplicationReviewedMail;
+use App\Models\Role;
 use App\Models\TeacherApplication;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AdminTeacherApplicationReviewTest extends TestCase
@@ -41,6 +45,8 @@ class AdminTeacherApplicationReviewTest extends TestCase
 
     public function test_admin_can_approve_teacher_application_and_create_teacher_account(): void
     {
+        Mail::fake();
+
         $admin = User::factory()->admin()->create();
         $application = TeacherApplication::create([
             'name' => 'Ung vien Moi',
@@ -70,10 +76,23 @@ class AdminTeacherApplicationReviewTest extends TestCase
             'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
             'status' => User::STATUS_ACTIVE,
         ]);
+
+        $teacher = User::where('email', 'ungvienmoi@example.com')->firstOrFail();
+
+        Mail::assertSent(TeacherApplicationReviewedMail::class, function (TeacherApplicationReviewedMail $mail) use ($application, $teacher) {
+            return $mail->hasTo($application->email)
+                && $mail->action === TeacherApplication::STATUS_APPROVED
+                && $mail->username === $teacher->username
+                && filled($mail->temporaryPassword)
+                && Hash::check($mail->temporaryPassword, $teacher->password)
+                && str_contains((string) $mail->reviewMessage, 'duyệt ngay');
+        });
     }
 
     public function test_admin_can_approve_teacher_application_and_upgrade_existing_user(): void
     {
+        Mail::fake();
+
         $admin = User::factory()->admin()->create();
         $existingUser = User::factory()->student()->create([
             'name' => 'Hoc vien chuyen role',
@@ -99,10 +118,22 @@ class AdminTeacherApplicationReviewTest extends TestCase
             'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
             'status' => User::STATUS_ACTIVE,
         ]);
+
+        $upgradedUser = $existingUser->fresh();
+
+        Mail::assertSent(TeacherApplicationReviewedMail::class, function (TeacherApplicationReviewedMail $mail) use ($application, $upgradedUser) {
+            return $mail->hasTo($application->email)
+                && $mail->action === TeacherApplication::STATUS_APPROVED
+                && $mail->username === $upgradedUser->username
+                && filled($mail->temporaryPassword)
+                && Hash::check($mail->temporaryPassword, $upgradedUser->password);
+        });
     }
 
     public function test_admin_can_reject_teacher_application_with_reason(): void
     {
+        Mail::fake();
+
         $admin = User::factory()->admin()->create();
         $application = TeacherApplication::create([
             'name' => 'Ung vien bi tu choi',
@@ -127,10 +158,19 @@ class AdminTeacherApplicationReviewTest extends TestCase
             'email' => 'reject@example.com',
             'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
         ]);
+
+        Mail::assertSent(TeacherApplicationReviewedMail::class, function (TeacherApplicationReviewedMail $mail) use ($application) {
+            return $mail->hasTo($application->email)
+                && $mail->action === TeacherApplication::STATUS_REJECTED
+                && $mail->reviewMessage === 'Chưa phù hợp yêu cầu chuyên môn hiện tại.'
+                && $mail->temporaryPassword === null;
+        });
     }
 
     public function test_admin_can_mark_teacher_application_needs_revision(): void
     {
+        Mail::fake();
+
         $admin = User::factory()->admin()->create();
         $application = TeacherApplication::create([
             'name' => 'Ung vien can bo sung',
@@ -151,6 +191,13 @@ class AdminTeacherApplicationReviewTest extends TestCase
             'status' => TeacherApplication::STATUS_NEEDS_REVISION,
             'admin_note' => 'Vui lòng bổ sung minh chứng kinh nghiệm giảng dạy.',
         ]);
+
+        Mail::assertSent(TeacherApplicationReviewedMail::class, function (TeacherApplicationReviewedMail $mail) use ($application) {
+            return $mail->hasTo($application->email)
+                && $mail->action === TeacherApplication::STATUS_NEEDS_REVISION
+                && $mail->reviewMessage === 'Vui lòng bổ sung minh chứng kinh nghiệm giảng dạy.'
+                && $mail->temporaryPassword === null;
+        });
     }
 
     public function test_review_requires_reason_or_admin_note_by_action(): void

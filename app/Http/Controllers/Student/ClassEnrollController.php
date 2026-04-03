@@ -2,151 +2,115 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Exceptions\EnrollmentOperationException;
 use App\Http\Controllers\Controller;
-use App\Models\ClassRoom;
-use App\Models\Course;
-use App\Models\Enrollment;
+use App\Http\Requests\Student\StoreStudentClassEnrollmentRequest;
+use App\Http\Requests\Student\StoreStudentScheduleRequest;
 use App\Models\Subject;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Services\StudentEnrollmentService;
+use Illuminate\Database\QueryException;
 
 class ClassEnrollController extends Controller
 {
-    /**
-     * Danh sách khóa học student có thể đăng ký.
-     */
-    public function index()
+    public function index(StudentEnrollmentService $enrollmentService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
-        if ($redirect) return $redirect;
+        if ($redirect) {
+            return $redirect;
+        }
 
         try {
-            $subjects = Subject::with(['category', 'classRooms'])
-                ->publiclyAvailable()
-                ->orderBy('name')
-                ->paginate(12);
-        } catch (\Illuminate\Database\QueryException $e) {
-            if (str_contains($e->getMessage(), "Table 'edukhaitri.lop_hoc' doesn't exist") || str_contains($e->getMessage(), "1146")) {
-                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-                return redirect()->route('student.enroll.index')->with('status', 'Hệ thống đã tự động chạy Database Migration. Vui lòng tải lại trang!');
+            $subjects = $enrollmentService->paginateAvailableSubjects($current);
+        } catch (QueryException $e) {
+            if ($this->isMissingTableException($e, ['lop_hoc'])) {
+                return redirect()->route('student.dashboard')->with('error', 'He thong chua duoc khoi tao day du. Vui long chay migration tu CLI truoc khi mo cong dang ky.');
             }
+
             throw $e;
         }
 
         return view('student.enroll.index', compact('current', 'subjects'));
     }
 
-    /**
-     * Hiển thị các lớp học available của một khóa gốc cụ thể.
-     */
-    public function selectClass(Subject $subject)
+    public function selectClass(Subject $subject, StudentEnrollmentService $enrollmentService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
-        if ($redirect) return $redirect;
+        if ($redirect) {
+            return $redirect;
+        }
 
-        $student = Auth::user();
+        try {
+            $viewData = $enrollmentService->getFixedClassSelectionContext($current, $subject);
+        } catch (EnrollmentOperationException $e) {
+            return redirect()->route('student.enroll.index')->with('error', $e->getMessage());
+        }
 
-        // Các lớp open, có slot trống
-        $classes = ClassRoom::with(['subject', 'room', 'teacher', 'schedules'])
-            ->withCount('enrollments')
-            ->where('subject_id', $subject->id)
-            ->where('status', ClassRoom::STATUS_OPEN)
-            ->get()
-            ->filter(fn ($c) => ! $c->isFull());
-
-        // Kiểm tra học viên đã đăng ký lớp nào trong khóa này chưa
-        $existingEnrollment = Enrollment::where('user_id', $student->id)
-            ->where('subject_id', $subject->id)
-            ->whereNotIn('status', [Enrollment::STATUS_REJECTED])
-            ->latest()
-            ->first();
-
-        return view('student.enroll.select_class', compact(
-            'current',
-            'subject',
-            'classes',
-            'existingEnrollment'
-        ));
+        return view('student.enroll.select_class', ['current' => $current] + $viewData);
     }
 
-    /**
-     * Lưu đăng ký lớp học.
-     */
-    public function store(Request $request, Subject $subject)
+    public function requestForm(Subject $subject, StudentEnrollmentService $enrollmentService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
-        if ($redirect) return $redirect;
-
-        $data = $request->validate([
-            'lop_hoc_id' => 'required|exists:lop_hoc,id',
-        ]);
-
-        $student  = Auth::user();
-        $classObj = ClassRoom::with('room')->findOrFail($data['lop_hoc_id']);
-
-        // Kiểm tra lớp có thuộc khóa không
-        if ($classObj->subject_id != $subject->id) {
-            return back()->withErrors(['error' => 'Lớp học không thuộc khóa này.']);
+        if ($redirect) {
+            return $redirect;
         }
 
-        // Kiểm tra đã đăng ký chưa
-        $already = Enrollment::where('user_id', $student->id)
-            ->where('lop_hoc_id', $classObj->id)
-            ->exists();
-
-        if ($already) {
-            return back()->withErrors(['error' => 'Bạn đã đăng ký lớp này rồi.']);
+        try {
+            $viewData = $enrollmentService->getCustomRequestContext($current, $subject);
+        } catch (EnrollmentOperationException $e) {
+            return redirect()->route('student.enroll.index')->with('error', $e->getMessage());
         }
 
-        // Kiểm tra đã đăng ký khóa này chưa (bất kể lớp nào)
-        $alreadyInSubject = Enrollment::where('user_id', $student->id)
-            ->where('subject_id', $subject->id)
-            ->whereNotIn('status', [Enrollment::STATUS_REJECTED])
-            ->exists();
-
-        if ($alreadyInSubject) {
-            return back()->withErrors(['error' => 'Bạn đã đăng ký khóa học này rồi. Hãy chờ admin xét duyệt hoặc liên hệ để thay lớp.']);
-        }
-
-        // Kiểm tra sức chứa
-        if ($classObj->isFull()) {
-            return back()->withErrors(['error' => 'Lớp này đã đủ chỗ. Vui lòng chọn lớp khác.']);
-        }
-
-        Enrollment::create([
-            'user_id'      => $student->id,
-            'subject_id'   => $subject->id,
-            'lop_hoc_id'   => $classObj->id,
-            'status'       => Enrollment::STATUS_PENDING,
-            'is_submitted' => true,
-            'submitted_at' => now(),
-        ]);
-
-        // Nếu lớp vừa đầy → tự update status
-        if ($classObj->isFull()) {
-            $classObj->update(['status' => ClassRoom::STATUS_FULL]);
-        }
-
-        return redirect()->route('student.enroll.index')
-            ->with('status', 'Đăng ký thành công! Vui lòng chờ admin xét duyệt.');
+        return view('student.enroll.request_form', ['current' => $current] + $viewData);
     }
 
-    /**
-     * Danh sách các lớp học viên đã đăng ký.
-     */
-    public function myClasses()
+    public function store(
+        StoreStudentClassEnrollmentRequest $request,
+        Subject $subject,
+        StudentEnrollmentService $enrollmentService
+    ) {
+        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        try {
+            $message = $enrollmentService->submitFixedClassEnrollment($current, $subject, $request->integer('lop_hoc_id'));
+        } catch (EnrollmentOperationException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('student.enroll.my-classes')->with('status', $message);
+    }
+
+    public function storeCustomRequest(
+        StoreStudentScheduleRequest $request,
+        Subject $subject,
+        StudentEnrollmentService $enrollmentService
+    ) {
+        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        try {
+            $message = $enrollmentService->submitCustomScheduleRequest($current, $subject, $request->validated());
+        } catch (EnrollmentOperationException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('student.enroll.my-classes')->with('status', $message);
+    }
+
+    public function myClasses(StudentEnrollmentService $enrollmentService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
-        if ($redirect) return $redirect;
+        if ($redirect) {
+            return $redirect;
+        }
 
-        $student = Auth::user();
-
-        $enrollments = Enrollment::with(['subject', 'classRoom.schedules', 'classRoom.room', 'classRoom.teacher'])
-            ->where('user_id', $student->id)
-            ->whereNotNull('lop_hoc_id')
-            ->latest()
-            ->paginate(10);
+        $enrollments = $enrollmentService->paginateStudentEnrollments($current);
 
         return view('student.enroll.my_classes', compact('current', 'enrollments'));
     }

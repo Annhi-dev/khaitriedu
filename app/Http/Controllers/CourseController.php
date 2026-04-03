@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\EnrollmentOperationException;
+use App\Http\Requests\Student\StoreStudentScheduleRequest;
 use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Course;
@@ -14,7 +16,7 @@ use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\Review;
 use App\Models\Subject;
-use Carbon\Carbon;
+use App\Services\StudentEnrollmentService;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
@@ -57,7 +59,64 @@ class CourseController extends Controller
         $reviews = $course->reviews->sortByDesc('created_at')->values();
         $review = $user && $user->isStudent() ? $reviews->firstWhere('user_id', $user->id) : null;
 
-        return view('courses.show', compact('course', 'user', 'enrollment', 'review', 'reviews'));
+        $completedLessonIds = [];
+        $moduleProgress = [];
+        $courseProgress = null;
+
+        if ($user && $user->isStudent() && $enrollment) {
+            $lessonIds = $course->modules
+                ->flatMap(fn ($module) => $module->lessons->pluck('id'))
+                ->filter()
+                ->values();
+
+            if ($lessonIds->isNotEmpty()) {
+                $completedLessonIds = LessonProgress::query()
+                    ->where('user_id', $user->id)
+                    ->whereIn('lesson_id', $lessonIds)
+                    ->where('is_completed', true)
+                    ->pluck('lesson_id')
+                    ->all();
+            }
+
+            $completedLessonLookup = array_flip($completedLessonIds);
+
+            foreach ($course->modules as $module) {
+                $totalLessons = $module->lessons->count();
+                $completedLessons = $module->lessons
+                    ->filter(fn ($lesson) => isset($completedLessonLookup[$lesson->id]))
+                    ->count();
+
+                $moduleProgress[$module->id] = [
+                    'completed' => $completedLessons,
+                    'total' => $totalLessons,
+                    'percent' => $totalLessons > 0
+                        ? (int) round(($completedLessons / $totalLessons) * 100)
+                        : 0,
+                ];
+            }
+
+            $totalCourseLessons = (int) $course->modules->sum(fn ($module) => $module->lessons->count());
+            $completedCourseLessons = count($completedLessonIds);
+
+            $courseProgress = [
+                'completed' => $completedCourseLessons,
+                'total' => $totalCourseLessons,
+                'percent' => $totalCourseLessons > 0
+                    ? (int) round(($completedCourseLessons / $totalCourseLessons) * 100)
+                    : 0,
+            ];
+        }
+
+        return view('courses.show', compact(
+            'course',
+            'user',
+            'enrollment',
+            'review',
+            'reviews',
+            'completedLessonIds',
+            'moduleProgress',
+            'courseProgress'
+        ));
     }
 
     public function showLesson($course, $module, $lesson)
@@ -75,23 +134,34 @@ class CourseController extends Controller
             ->find($module);
 
         if (! $module) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Bài học không tồn tại.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'Bai hoc khong ton tai.');
         }
 
         $lesson = Lesson::with('quiz')->where('module_id', $module->id)->find($lesson);
 
         if (! $lesson) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Bài học không tồn tại.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'Bai hoc khong ton tai.');
         }
+
+        $lessonProgress = null;
 
         if ($user && $user->isStudent() && $enrollment) {
-            LessonProgress::updateOrCreate(
-                ['user_id' => $user->id, 'lesson_id' => $lesson->id],
-                ['started_at' => now(), 'is_completed' => true, 'completed_at' => now(), 'time_spent' => 300]
-            );
+            $lessonProgress = LessonProgress::firstOrNew([
+                'user_id' => $user->id,
+                'lesson_id' => $lesson->id,
+            ]);
+
+            if (! $lessonProgress->started_at) {
+                $lessonProgress->started_at = now();
+            }
+
+            $lessonProgress->is_completed = true;
+            $lessonProgress->completed_at = $lessonProgress->completed_at ?? now();
+            $lessonProgress->time_spent = max((int) $lessonProgress->time_spent, 300);
+            $lessonProgress->save();
         }
 
-        return view('courses.lesson', compact('course', 'module', 'lesson', 'user'));
+        return view('courses.lesson', compact('course', 'module', 'lesson', 'user', 'lessonProgress'));
     }
 
     public function showQuiz($course, $quiz)
@@ -106,7 +176,7 @@ class CourseController extends Controller
         $quiz = $this->findQuizForCourse($course, (int) $quiz);
 
         if (! $quiz) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Quiz không tồn tại.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'Quiz khong ton tai.');
         }
 
         return view('courses.quiz', compact('course', 'quiz', 'user'));
@@ -122,13 +192,13 @@ class CourseController extends Controller
         }
 
         if (! $user->isStudent() || ! $enrollment) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Chỉ học viên đã được xếp lớp mới có thể nộp quiz.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'Chi hoc vien da duoc xep lop moi co the nop quiz.');
         }
 
         $quiz = $this->findQuizForCourse($course, (int) $quiz);
 
         if (! $quiz) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Quiz không tồn tại.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'Quiz khong ton tai.');
         }
 
         $answers = $request->input('answers', []);
@@ -175,7 +245,7 @@ class CourseController extends Controller
             ]);
         }
 
-        return redirect()->route('courses.show', $course->id)->with('status', "Quiz hoàn thành: $score%. " . ($passed ? 'Đạt chứng chỉ.' : 'Không đạt.'));
+        return redirect()->route('courses.show', $course->id)->with('status', "Quiz hoan thanh: $score%. " . ($passed ? 'Dat chung chi.' : 'Khong dat.'));
     }
 
     public function redirectEnroll($id)
@@ -183,10 +253,10 @@ class CourseController extends Controller
         $course = Course::find($id);
 
         if (! $course) {
-            return redirect()->route('courses.index')->with('error', 'Lớp học không tồn tại.');
+            return redirect()->route('courses.index')->with('error', 'Lop hoc khong ton tai.');
         }
 
-        return redirect()->route('khoa-hoc.show', $course->subject_id)->with('error', 'Học viên không đăng ký trực tiếp vào lớp học. Vui lòng gửi yêu cầu ở trang khóa học.');
+        return redirect()->route('khoa-hoc.show', $course->subject_id)->with('error', 'Hoc vien khong dang ky truc tiep vao lop hoc. Vui long gui yeu cau o trang khoa hoc.');
     }
 
     public function review(Request $request, $id)
@@ -203,7 +273,7 @@ class CourseController extends Controller
             ->first();
 
         if (! $enrollment) {
-            return back()->with('error', 'Bạn chưa được xếp vào lớp học này.');
+            return back()->with('error', 'Ban chua duoc xep vao lop hoc nay.');
         }
 
         $data = $request->validate([
@@ -216,7 +286,7 @@ class CourseController extends Controller
             $data
         );
 
-        return back()->with('status', 'Đánh giá đã được gửi.');
+        return back()->with('status', 'Danh gia da duoc gui.');
     }
 
     public function showSubject($id)
@@ -225,7 +295,7 @@ class CourseController extends Controller
         $subject = Subject::with(['category', 'courses.teacher'])->find($id);
 
         if (! $subject || ($subject->category && ! $subject->category->isActive())) {
-            return redirect()->route('courses.index')->with('error', 'Khóa học không tồn tại hoặc đang tạm ẩn.');
+            return redirect()->route('courses.index')->with('error', 'Khoa hoc khong ton tai hoac dang tam an.');
         }
 
         $userEnrollment = $user && $user->isStudent()
@@ -235,74 +305,32 @@ class CourseController extends Controller
         return view('subjects.show', compact('subject', 'user', 'userEnrollment'));
     }
 
-    public function enrollSubject(Request $request, $id)
+    public function enrollSubject(Request $request, $id, StudentEnrollmentService $enrollmentService)
     {
         $user = $this->sessionUser();
 
         if (! $user || ! $user->isStudent()) {
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập bằng tài khoản học viên.');
+            return redirect()->route('login')->with('error', 'Vui long dang nhap bang tai khoan hoc vien.');
         }
 
         $subject = Subject::find($id);
 
         if (! $subject) {
-            return back()->with('error', 'Khóa học không tồn tại.');
+            return back()->with('error', 'Khoa hoc khong ton tai.');
         }
 
-        $data = $request->validate([
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'preferred_days' => 'required|array|min:1',
-            'preferred_days.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-        ]);
+        $data = validator(
+            StoreStudentScheduleRequest::sanitize($request->all()),
+            StoreStudentScheduleRequest::rulesList()
+        )->validate();
 
-        $existing = $this->findSubjectEnrollment($user->id, $subject->id);
-        $payload = [
-            'subject_id' => $subject->id,
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'preferred_days' => json_encode($data['preferred_days']),
-            'is_submitted' => true,
-            'submitted_at' => Carbon::now(),
-            'note' => null,
-        ];
-
-        if ($existing) {
-            if ($existing->hasCourseAccess()) {
-                return back()->with('error', 'Bạn đã được xếp lớp cho khóa học này. Nếu cần đổi lịch, vui lòng liên hệ admin.');
-            }
-
-            if (in_array($existing->normalizedStatus(), [Enrollment::STATUS_REJECTED, Enrollment::STATUS_PENDING], true)) {
-                $payload['status'] = Enrollment::STATUS_PENDING;
-                $payload['course_id'] = null;
-                $payload['assigned_teacher_id'] = null;
-                $payload['schedule'] = null;
-                $payload['reviewed_by'] = null;
-                $payload['reviewed_at'] = null;
-            } elseif ($existing->normalizedStatus() === Enrollment::STATUS_APPROVED) {
-                $payload['status'] = Enrollment::STATUS_APPROVED;
-            } else {
-                $payload['status'] = $existing->status;
-            }
-
-            $existing->update($payload);
-
-            return back()->with('status', 'Yêu cầu đăng ký khóa học đã được cập nhật. Admin sẽ xem lại và sắp xếp lớp phù hợp.');
+        try {
+            $message = $enrollmentService->submitCustomScheduleRequest($user, $subject, $data);
+        } catch (EnrollmentOperationException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         }
 
-        Enrollment::create([
-            'user_id' => $user->id,
-            'subject_id' => $subject->id,
-            'course_id' => null,
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'preferred_days' => json_encode($data['preferred_days']),
-            'is_submitted' => true,
-            'submitted_at' => Carbon::now(),
-            'status' => Enrollment::STATUS_PENDING,
-        ]);
-
-        return back()->with('status', 'Đăng ký khóa học đã gửi. Admin sẽ xem lịch mong muốn và xếp bạn vào lớp phù hợp.');
+        return back()->with('status', $message);
     }
 
     public function legacySubjectShow($id)

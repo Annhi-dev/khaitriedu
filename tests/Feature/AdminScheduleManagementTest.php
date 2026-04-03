@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Notification;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,6 +42,26 @@ class AdminScheduleManagementTest extends TestCase
         $response->assertSee($subject->name);
     }
 
+    public function test_admin_can_open_schedule_screen_for_custom_schedule_request(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->student()->create();
+        [, $subject] = $this->createCatalogSubject();
+        $enrollment = $this->createEnrollment($student, $subject, [
+            'status' => Enrollment::STATUS_PENDING,
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.schedules.enrollments.show', $enrollment));
+
+        $response->assertOk();
+        $response->assertSee($subject->name);
+        $response->assertSee('Luu lop cho mo');
+        $response->assertSee('Luu y kiem tra');
+        $response->assertDontSee('Chon lop hoc co san');
+    }
+
     public function test_admin_can_view_and_filter_system_schedule_list(): void
     {
         $admin = User::factory()->admin()->create();
@@ -51,6 +72,7 @@ class AdminScheduleManagementTest extends TestCase
         $courseA = $this->createInternalCourse($subject, $teacherA, [
             'title' => 'Lop Teacher Alpha',
             'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday'],
             'start_date' => '2026-04-01',
             'end_date' => '2026-05-01',
             'start_time' => '18:00',
@@ -61,6 +83,7 @@ class AdminScheduleManagementTest extends TestCase
         $courseB = $this->createInternalCourse($subject, $teacherB, [
             'title' => 'Lop Teacher Beta',
             'day_of_week' => 'Tuesday',
+            'meeting_days' => ['Tuesday'],
             'start_date' => '2026-04-02',
             'end_date' => '2026-05-02',
             'start_time' => '08:00',
@@ -84,53 +107,47 @@ class AdminScheduleManagementTest extends TestCase
         });
     }
 
-    public function test_admin_can_schedule_approved_enrollment_into_existing_class(): void
+    public function test_custom_schedule_request_cannot_use_existing_open_class_in_phase_9(): void
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
         $student = User::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
-        $course = $this->createInternalCourse($subject);
+        $course = $this->createInternalCourse($subject, $teacher, [
+            'status' => Course::STATUS_SCHEDULED,
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday'],
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-05-01',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+        ]);
         $enrollment = $this->createEnrollment($student, $subject, [
             'status' => Enrollment::STATUS_APPROVED,
         ]);
 
         $response = $this
+            ->from(route('admin.schedules.enrollments.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.schedules.enrollments.store', $enrollment), [
                 'course_id' => $course->id,
                 'teacher_id' => $teacher->id,
-                'new_course_title' => '',
-                'new_course_description' => '',
-                'day_of_week' => 'Monday',
-                'start_date' => '2026-04-01',
-                'end_date' => '2026-05-01',
+                'day_of_week' => ['Monday'],
                 'start_time' => '18:00',
                 'end_time' => '20:00',
                 'capacity' => 20,
-                'note' => 'Xep lop toi cho hoc vien',
+                'note' => 'Thu nghiem',
             ]);
 
-        $response->assertRedirect(route('admin.schedules.index'));
+        $response->assertRedirect(route('admin.schedules.enrollments.show', $enrollment));
+        $response->assertSessionHasErrors('course_id');
 
         $enrollment->refresh();
-        $course->refresh();
-
-        $this->assertSame(Enrollment::STATUS_SCHEDULED, $enrollment->status);
-        $this->assertSame($course->id, $enrollment->course_id);
-        $this->assertSame($teacher->id, $enrollment->assigned_teacher_id);
-        $this->assertSame($admin->id, $enrollment->reviewed_by);
-        $this->assertSame(Course::STATUS_SCHEDULED, $course->status);
-        $this->assertSame('Monday', $course->day_of_week);
-        $this->assertSame('18:00', $course->start_time);
-        $this->assertSame('20:00', $course->end_time);
-        $this->assertNotNull($enrollment->reviewed_at);
-        $this->assertNotNull($enrollment->schedule);
-        $this->assertStringContainsString('18:00 - 20:00', $enrollment->schedule);
-        $this->assertStringContainsString('01/04/2026', $enrollment->schedule);
+        $this->assertSame(Enrollment::STATUS_APPROVED, $enrollment->status);
+        $this->assertNull($enrollment->course_id);
     }
 
-    public function test_admin_can_create_new_class_while_scheduling_enrollment(): void
+    public function test_admin_can_save_custom_request_into_waiting_class_and_notify_student(): void
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
@@ -145,116 +162,219 @@ class AdminScheduleManagementTest extends TestCase
             ->post(route('admin.schedules.enrollments.store', $enrollment), [
                 'course_id' => '',
                 'teacher_id' => $teacher->id,
-                'new_course_title' => 'Tieng Anh giao tiep - Ca toi',
-                'new_course_description' => 'Lop moi tao trong phase 9',
-                'day_of_week' => 'Wednesday',
-                'start_date' => '2026-04-08',
-                'end_date' => '2026-06-08',
+                'new_course_title' => '',
+                'new_course_description' => 'Lop moi dang gom hoc vien',
+                'day_of_week' => ['Wednesday', 'Friday'],
                 'start_time' => '19:00',
                 'end_time' => '21:00',
                 'capacity' => 15,
-                'note' => 'Tao lop moi cho hoc vien',
+                'note' => 'Luu lop cho mo',
             ]);
 
         $response->assertRedirect(route('admin.schedules.index'));
 
-        $course = Course::where('title', 'Tieng Anh giao tiep - Ca toi')->first();
+        $course = Course::where('subject_id', $subject->id)->latest('id')->first();
 
         $this->assertNotNull($course);
         $this->assertSame($subject->id, $course->subject_id);
+        $this->assertSame('Tieng Anh giao tiep - Khóa học 1', $course->title);
         $this->assertSame($teacher->id, $course->teacher_id);
-        $this->assertSame(Course::STATUS_SCHEDULED, $course->status);
+        $this->assertSame(Course::STATUS_PENDING_OPEN, $course->status);
         $this->assertSame(15, $course->capacity);
+        $this->assertSame(['Wednesday', 'Friday'], $course->meeting_days);
+        $this->assertNull($course->start_date);
+        $this->assertNull($course->end_date);
 
         $enrollment->refresh();
         $this->assertSame($course->id, $enrollment->course_id);
         $this->assertSame(Enrollment::STATUS_SCHEDULED, $enrollment->status);
+        $this->assertSame($teacher->id, $enrollment->assigned_teacher_id);
+
+        $this->assertSame(1, Notification::query()->where('user_id', $student->id)->count());
+        $this->assertDatabaseHas('thong_bao', [
+            'user_id' => $student->id,
+            'type' => 'info',
+            'link' => route('student.enroll.my-classes'),
+        ]);
     }
 
-    public function test_teacher_can_see_schedule_after_admin_arranges_it(): void
+    public function test_custom_schedule_request_can_join_existing_waiting_class(): void
     {
         $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Giang Vien Lich Day']);
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Da Xep']);
+        $teacher = User::factory()->teacher()->create();
+        $studentA = User::factory()->student()->create();
+        $studentB = User::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
-        $course = $this->createInternalCourse($subject, null, [
-            'title' => 'Tin hoc van phong - Lop toi',
+
+        $waitingCourse = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'Tin hoc van phong - Khóa học 1',
+            'day_of_week' => 'Thursday',
+            'meeting_days' => ['Thursday'],
+            'start_time' => '18:30',
+            'end_time' => '20:30',
+            'capacity' => 12,
+            'status' => Course::STATUS_PENDING_OPEN,
+            'schedule' => 'Thu 5, 18:30 - 20:30 | Cho du 5 hoc vien de mo lop',
         ]);
-        $enrollment = $this->createEnrollment($student, $subject, [
+        $this->createEnrollment($studentA, $subject, [
+            'course_id' => $waitingCourse->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_SCHEDULED,
+            'schedule' => $waitingCourse->schedule,
+        ]);
+
+        $enrollment = $this->createEnrollment($studentB, $subject, [
             'status' => Enrollment::STATUS_APPROVED,
         ]);
 
-        $this->withSession(['user_id' => $admin->id])
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
             ->post(route('admin.schedules.enrollments.store', $enrollment), [
-                'course_id' => $course->id,
-                'teacher_id' => $teacher->id,
-                'new_course_title' => '',
-                'new_course_description' => '',
-                'day_of_week' => 'Thursday',
-                'start_date' => '2026-04-09',
-                'end_date' => '2026-06-09',
-                'start_time' => '18:30',
-                'end_time' => '20:30',
-                'capacity' => 12,
-                'note' => 'Da xep cho teacher',
+                'course_id' => $waitingCourse->id,
+                'note' => 'Ghep vao lop cho mo',
             ]);
 
-        $response = $this
-            ->withSession(['user_id' => $teacher->id])
-            ->get(route('teacher.courses'));
+        $response->assertRedirect(route('admin.schedules.index'));
 
-        $response->assertOk();
-        $response->assertSee('Tin hoc van phong - Lop toi');
-        $response->assertSee('18:30 - 20:30');
-        $response->assertSee('Hoc Vien Da Xep');
+        $this->assertSame(1, Course::query()->count());
+        $this->assertSame($waitingCourse->id, $enrollment->fresh()->course_id);
+        $this->assertSame(2, $waitingCourse->fresh()->enrollments()->whereIn('status', Enrollment::courseAccessStatuses())->count());
+        $this->assertSame(1, Notification::query()->where('user_id', $studentB->id)->count());
     }
 
-    public function test_student_can_see_schedule_after_admin_arranges_it(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Schedule']);
-        $student = User::factory()->student()->create(['name' => 'Student Schedule']);
-        [, $subject] = $this->createCatalogSubject();
-        $course = $this->createInternalCourse($subject);
-        $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
-        ]);
-
-        $this->withSession(['user_id' => $admin->id])
-            ->post(route('admin.schedules.enrollments.store', $enrollment), [
-                'course_id' => $course->id,
-                'teacher_id' => $teacher->id,
-                'new_course_title' => '',
-                'new_course_description' => '',
-                'day_of_week' => 'Friday',
-                'start_date' => '2026-04-10',
-                'end_date' => '2026-06-10',
-                'start_time' => '17:00',
-                'end_time' => '19:00',
-                'capacity' => 25,
-                'note' => 'Da xep cho student',
-            ]);
-
-        $response = $this
-            ->withSession(['user_id' => $student->id])
-            ->get(route('student.schedule'));
-
-        $response->assertOk();
-        $response->assertSee($subject->name);
-        $response->assertSee('17:00 - 19:00');
-        $response->assertSee('Teacher Schedule');
-    }
-
-    public function test_admin_cannot_schedule_teacher_into_conflicting_time_slot(): void
+    public function test_generated_course_title_increments_for_same_subject(): void
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
         $student = User::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
+        $this->createInternalCourse($subject, null, [
+            'title' => 'Tin hoc van phong - Khóa học 1',
+        ]);
+        $enrollment = $this->createEnrollment($student, $subject, [
+            'status' => Enrollment::STATUS_APPROVED,
+        ]);
+
+        $this->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.enrollments.store', $enrollment), [
+                'course_id' => '',
+                'teacher_id' => $teacher->id,
+                'new_course_title' => '',
+                'new_course_description' => 'Lop moi tao tu dong ten',
+                'day_of_week' => ['Thursday'],
+                'start_time' => '18:30',
+                'end_time' => '20:30',
+                'capacity' => 12,
+                'note' => 'Da luu cho mo',
+            ]);
+
+        $this->assertDatabaseHas('khoa_hoc', [
+            'subject_id' => $subject->id,
+            'title' => 'Tin hoc van phong - Khóa học 2',
+        ]);
+    }
+
+    public function test_admin_can_open_waiting_class_once_it_has_enough_students_and_notify_students(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject();
+
+        $waitingCourse = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'Tin hoc van phong - Khóa học 1',
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday', 'Wednesday'],
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+            'capacity' => 10,
+            'status' => Course::STATUS_PENDING_OPEN,
+            'schedule' => 'Thu 2, Thu 4, 18:00 - 20:00 | Cho du 5 hoc vien de mo lop',
+        ]);
+
+        foreach (range(1, Course::minimumStudentsToOpen()) as $index) {
+            $student = User::factory()->student()->create([
+                'name' => 'Hoc Vien ' . $index,
+            ]);
+
+            $this->createEnrollment($student, $subject, [
+                'course_id' => $waitingCourse->id,
+                'assigned_teacher_id' => $teacher->id,
+                'status' => Enrollment::STATUS_SCHEDULED,
+                'schedule' => $waitingCourse->schedule,
+            ]);
+        }
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'start_date' => '2026-04-20',
+                'end_date' => '2026-06-20',
+            ]);
+
+        $response->assertRedirect(route('admin.schedules.index'));
+
+        $waitingCourse->refresh();
+        $this->assertSame(Course::STATUS_SCHEDULED, $waitingCourse->status);
+        $this->assertSame('2026-04-20', $waitingCourse->start_date?->format('Y-m-d'));
+        $this->assertSame('2026-06-20', $waitingCourse->end_date?->format('Y-m-d'));
+        $this->assertStringContainsString('20/04/2026', $waitingCourse->schedule);
+
+        $this->assertSame(Course::minimumStudentsToOpen(), Notification::query()->where('type', 'success')->count());
+        $this->assertDatabaseHas('thong_bao', [
+            'type' => 'success',
+            'link' => route('student.schedule'),
+        ]);
+    }
+
+    public function test_admin_cannot_open_waiting_class_before_minimum_students(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject();
+
+        $waitingCourse = $this->createInternalCourse($subject, $teacher, [
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday'],
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+            'status' => Course::STATUS_PENDING_OPEN,
+        ]);
+
+        foreach (range(1, Course::minimumStudentsToOpen() - 1) as $index) {
+            $student = User::factory()->student()->create([
+                'name' => 'Hoc Vien Cho ' . $index,
+            ]);
+
+            $this->createEnrollment($student, $subject, [
+                'course_id' => $waitingCourse->id,
+                'assigned_teacher_id' => $teacher->id,
+                'status' => Enrollment::STATUS_SCHEDULED,
+            ]);
+        }
+
+        $response = $this
+            ->from(route('admin.schedules.courses.open', $waitingCourse))
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'start_date' => '2026-04-20',
+                'end_date' => '2026-06-20',
+            ]);
+
+        $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
+        $response->assertSessionHasErrors('course');
+        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+    }
+
+    public function test_admin_cannot_open_waiting_class_when_teacher_has_conflicting_time_slot(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject();
 
         $this->createInternalCourse($subject, $teacher, [
             'title' => 'Lop dang day',
             'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday'],
             'start_date' => '2026-04-01',
             'end_date' => '2026-05-01',
             'start_time' => '18:00',
@@ -262,35 +382,40 @@ class AdminScheduleManagementTest extends TestCase
             'schedule' => 'Thu 2, 18:00 - 20:00 | Tu 01/04/2026 den 01/05/2026',
             'status' => Course::STATUS_SCHEDULED,
         ]);
-        $candidateCourse = $this->createInternalCourse($subject);
-        $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+
+        $waitingCourse = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'Lop cho mo',
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday'],
+            'start_time' => '19:00',
+            'end_time' => '21:00',
+            'status' => Course::STATUS_PENDING_OPEN,
         ]);
 
+        foreach (range(1, Course::minimumStudentsToOpen()) as $index) {
+            $student = User::factory()->student()->create();
+
+            $this->createEnrollment($student, $subject, [
+                'course_id' => $waitingCourse->id,
+                'assigned_teacher_id' => $teacher->id,
+                'status' => Enrollment::STATUS_SCHEDULED,
+            ]);
+        }
+
         $response = $this
-            ->from(route('admin.schedules.enrollments.show', $enrollment))
+            ->from(route('admin.schedules.courses.open', $waitingCourse))
             ->withSession(['user_id' => $admin->id])
-            ->post(route('admin.schedules.enrollments.store', $enrollment), [
-                'course_id' => $candidateCourse->id,
-                'teacher_id' => $teacher->id,
-                'new_course_title' => '',
-                'new_course_description' => '',
-                'day_of_week' => 'Monday',
+            ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
                 'start_date' => '2026-04-15',
                 'end_date' => '2026-05-15',
-                'start_time' => '19:00',
-                'end_time' => '21:00',
-                'capacity' => 20,
-                'note' => 'Thu nghiem xung dot teacher',
             ]);
 
-        $response->assertRedirect(route('admin.schedules.enrollments.show', $enrollment));
+        $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
         $response->assertSessionHasErrors('teacher_id');
-        $this->assertSame(Enrollment::STATUS_APPROVED, $enrollment->fresh()->status);
-        $this->assertNull($enrollment->fresh()->course_id);
+        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
     }
 
-    public function test_admin_cannot_schedule_student_into_conflicting_time_slot(): void
+    public function test_admin_cannot_open_waiting_class_when_student_has_conflicting_time_slot(): void
     {
         $admin = User::factory()->admin()->create();
         $teacherA = User::factory()->teacher()->create();
@@ -301,6 +426,7 @@ class AdminScheduleManagementTest extends TestCase
         $existingCourse = $this->createInternalCourse($subject, $teacherA, [
             'title' => 'Lop hien tai cua hoc vien',
             'day_of_week' => 'Tuesday',
+            'meeting_days' => ['Tuesday'],
             'start_date' => '2026-04-02',
             'end_date' => '2026-05-02',
             'start_time' => '18:00',
@@ -315,32 +441,110 @@ class AdminScheduleManagementTest extends TestCase
             'schedule' => $existingCourse->schedule,
         ]);
 
-        $candidateCourse = $this->createInternalCourse($subject);
-        $newEnrollment = $this->createEnrollment($student, $subject, [
+        $waitingCourse = $this->createInternalCourse($subject, $teacherB, [
+            'title' => 'Lop cho mo cua hoc vien',
+            'day_of_week' => 'Tuesday',
+            'meeting_days' => ['Tuesday'],
+            'start_time' => '19:00',
+            'end_time' => '21:00',
+            'status' => Course::STATUS_PENDING_OPEN,
+        ]);
+
+        $this->createEnrollment($student, $subject, [
+            'course_id' => $waitingCourse->id,
+            'assigned_teacher_id' => $teacherB->id,
+            'status' => Enrollment::STATUS_SCHEDULED,
+        ]);
+
+        foreach (range(1, Course::minimumStudentsToOpen() - 1) as $index) {
+            $otherStudent = User::factory()->student()->create();
+
+            $this->createEnrollment($otherStudent, $subject, [
+                'course_id' => $waitingCourse->id,
+                'assigned_teacher_id' => $teacherB->id,
+                'status' => Enrollment::STATUS_SCHEDULED,
+            ]);
+        }
+
+        $response = $this
+            ->from(route('admin.schedules.courses.open', $waitingCourse))
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'start_date' => '2026-04-16',
+                'end_date' => '2026-05-16',
+            ]);
+
+        $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
+        $response->assertSessionHasErrors('start_date');
+        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+    }
+
+    public function test_teacher_can_see_waiting_class_after_admin_saves_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create(['name' => 'Giang Vien Lich Day']);
+        $student = User::factory()->student()->create(['name' => 'Hoc Vien Da Xep']);
+        [, $subject] = $this->createCatalogSubject();
+        $enrollment = $this->createEnrollment($student, $subject, [
             'status' => Enrollment::STATUS_APPROVED,
         ]);
 
-        $response = $this
-            ->from(route('admin.schedules.enrollments.show', $newEnrollment))
-            ->withSession(['user_id' => $admin->id])
-            ->post(route('admin.schedules.enrollments.store', $newEnrollment), [
-                'course_id' => $candidateCourse->id,
-                'teacher_id' => $teacherB->id,
+        $this->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.enrollments.store', $enrollment), [
+                'course_id' => '',
+                'teacher_id' => $teacher->id,
                 'new_course_title' => '',
-                'new_course_description' => '',
-                'day_of_week' => 'Tuesday',
-                'start_date' => '2026-04-16',
-                'end_date' => '2026-05-16',
-                'start_time' => '19:00',
-                'end_time' => '21:00',
-                'capacity' => 20,
-                'note' => 'Thu nghiem xung dot hoc vien',
+                'new_course_description' => 'Lop moi cho hoc vien yeu cau lich rieng',
+                'day_of_week' => ['Thursday'],
+                'start_time' => '18:30',
+                'end_time' => '20:30',
+                'capacity' => 12,
+                'note' => 'Da luu cho teacher',
             ]);
 
-        $response->assertRedirect(route('admin.schedules.enrollments.show', $newEnrollment));
-        $response->assertSessionHasErrors('start_time');
-        $this->assertSame(Enrollment::STATUS_APPROVED, $newEnrollment->fresh()->status);
-        $this->assertNull($newEnrollment->fresh()->course_id);
+        $response = $this
+            ->withSession(['user_id' => $teacher->id])
+            ->get(route('teacher.courses'));
+
+        $response->assertOk();
+        $response->assertSee('Tin hoc van phong - Khóa học 1');
+        $response->assertSee('18:30 - 20:30');
+        $response->assertSee('Hoc Vien Da Xep');
+    }
+
+    public function test_student_can_see_waiting_class_after_admin_saves_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Schedule']);
+        $student = User::factory()->student()->create(['name' => 'Student Schedule']);
+        [, $subject] = $this->createCatalogSubject();
+        $enrollment = $this->createEnrollment($student, $subject, [
+            'status' => Enrollment::STATUS_APPROVED,
+        ]);
+
+        $this->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.enrollments.store', $enrollment), [
+                'course_id' => '',
+                'teacher_id' => $teacher->id,
+                'new_course_title' => '',
+                'new_course_description' => 'Lop moi cho hoc vien yeu cau lich rieng',
+                'day_of_week' => ['Friday'],
+                'start_time' => '17:00',
+                'end_time' => '19:00',
+                'capacity' => 25,
+                'note' => 'Da luu cho student',
+            ]);
+
+        $response = $this
+            ->withSession(['user_id' => $student->id])
+            ->get(route('student.schedule'));
+
+        $response->assertOk();
+        $response->assertSee($subject->name);
+        $response->assertSee('17:00 - 19:00');
+        $response->assertSee('Teacher Schedule');
+        $response->assertSee('Dang cho mo lop');
+        $response->assertDontSee('Vao lop hoc');
     }
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array

@@ -119,44 +119,6 @@
     </div>
 </div>
 
-<style>
-    .pagination {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .pagination a, .pagination span {
-        padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
-        border: 2px solid #e5e7eb;
-        transition: all 0.3s ease;
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    .pagination a {
-        color: #2563eb;
-        background: white;
-    }
-
-    .pagination a:hover {
-        border-color: #2563eb;
-        background: #eff6ff;
-        transform: translateY(-2px);
-    }
-
-    .pagination .active {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        border-color: #2563eb;
-    }
-
-    .pagination .disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-</style>
-
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {

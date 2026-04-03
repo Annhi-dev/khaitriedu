@@ -18,6 +18,8 @@ class ClassRoom extends Model
 
     protected $fillable = [
         'subject_id',
+        'course_id',
+        'name',
         'room_id',
         'teacher_id',
         'start_date',
@@ -36,6 +38,11 @@ class ClassRoom extends Model
     public function subject()
     {
         return $this->belongsTo(Subject::class, 'subject_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id');
     }
 
     public function room()
@@ -90,10 +97,33 @@ class ClassRoom extends Model
         );
     }
 
+    public function enrolledStudents()
+    {
+        return $this->belongsToMany(User::class, 'dang_ky', 'lop_hoc_id', 'user_id')
+            ->withPivot([
+                'id',
+                'subject_id',
+                'course_id',
+                'status',
+                'assigned_teacher_id',
+                'schedule',
+            ])
+            ->wherePivotIn('status', Enrollment::courseAccessStatuses())
+            ->withTimestamps();
+    }
+
     // ─── Computed ───────────────────────────────────────────────────────────────
 
     public function enrolledCount(): int
     {
+        if ($this->getAttribute('enrollments_count') !== null) {
+            return (int) $this->getAttribute('enrollments_count');
+        }
+
+        if ($this->relationLoaded('enrollments')) {
+            return $this->enrollments->count();
+        }
+
         return $this->enrollments()->count();
     }
 
@@ -128,10 +158,12 @@ class ClassRoom extends Model
 
     public function displayName(): string
     {
-        $subjectName = $this->subject?->name ?? 'Lớp học';
+        $subjectName = $this->name
+            ?: $this->course?->title
+            ?: (($this->subject?->name ?? 'Lớp học') . ' - Lớp ' . $this->id);
         $roomName = $this->room?->name;
 
-        return trim($subjectName . ' - Lớp ' . $this->id . ($roomName ? ' (' . $roomName . ')' : ''));
+        return trim($subjectName . ($roomName ? ' (' . $roomName . ')' : ''));
     }
 
     public function scheduleSummary(): string

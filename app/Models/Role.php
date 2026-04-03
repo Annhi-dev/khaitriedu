@@ -9,21 +9,11 @@ class Role extends Model
 {
     protected $fillable = ['name'];
 
-    // ─── Role Name Constants ────────────────────────
-    public const ADMIN = 'admin';
-    public const TEACHER = 'teacher';
-    public const STUDENT = 'student';
-
-    // ─── Relationships ──────────────────────────────
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    // ─── Helpers ────────────────────────────────────
-    /**
-     * Get role ID by name (cached per-request).
-     */
     public static function idByName(string $name): int
     {
         static $cache = [];

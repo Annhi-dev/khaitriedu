@@ -1,6 +1,8 @@
 @php
     $module = $module ?? null;
+    $defaultPosition = $defaultPosition ?? null;
     $statusValue = old('status', $module->status ?? \App\Models\Module::STATUS_PUBLISHED);
+    $positionValue = old('position', $module->position ?? $defaultPosition ?? '');
 @endphp
 <div class="grid gap-4 md:grid-cols-2">
     <div class="md:col-span-2">
@@ -11,7 +13,7 @@
 
     <div>
         <label for="position" class="mb-2 block text-sm font-medium text-slate-700">Thứ tự</label>
-        <input id="position" name="position" type="number" min="1" value="{{ old('position', $module->position ?? '') }}" placeholder="Ví dụ: 1" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+        <input id="position" name="position" type="number" min="1" value="{{ $positionValue }}" placeholder="Ví dụ: 1" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
         @error('position')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
     </div>
 
@@ -36,3 +38,4 @@
         @error('content')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
     </div>
 </div>
+

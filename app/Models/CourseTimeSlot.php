@@ -15,8 +15,6 @@ class CourseTimeSlot extends Model
     public const STATUS_CLASS_OPENED = 'class_opened';
     public const STATUS_CANCELLED = 'cancelled';
 
-    protected $table = 'course_time_slots';
-
     protected $fillable = [
         'subject_id',
         'teacher_id',

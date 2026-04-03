@@ -23,6 +23,11 @@
                     <div><span class="text-slate-500">Lịch hiện tại:</span> {{ $requestItem->currentScheduleLabel() }}</div>
                     <div><span class="text-slate-500">Lịch đề xuất:</span> {{ $requestItem->requestedScheduleLabel() }}</div>
                 </div>
+                @if ($requestItem->isClassScheduleRequest())
+                    <div class="mt-2 text-sm">
+                        <span class="text-slate-500">Phòng đề xuất:</span> {{ $requestItem->requestedRoomLabel() }}
+                    </div>
+                @endif
                 <div class="mt-4 p-3 bg-slate-50 rounded-xl text-sm">
                     <span class="font-medium">Lý do:</span> {{ \Illuminate\Support\Str::limit($requestItem->reason, 100) }}
                 </div>

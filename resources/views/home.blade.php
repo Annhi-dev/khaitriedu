@@ -34,7 +34,7 @@
                             </a>
                         @else
                             <a href="{{ route('dashboard') }}" class="btn px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold shadow-lg hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
-                                <i class="fas fa-chalkboard-user"></i> Vào học ngay
+                                <i class="fas fa-user-circle"></i> Về trang cá nhân
                             </a>
                             <a href="{{ route('courses.index') }}" class="btn px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition transform hover:scale-105 flex items-center gap-2">
                                 <i class="fas fa-search"></i> Khám phá khóa học
@@ -398,18 +398,4 @@
         </div>
     </div>
 
-    <style>
-        @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob {
-            animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-            animation-delay: 2s;
-        }
-    </style>
 @endsection

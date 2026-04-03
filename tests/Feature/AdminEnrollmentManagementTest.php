@@ -54,6 +54,71 @@ class AdminEnrollmentManagementTest extends TestCase
         $response->assertDontSee($studentB->name);
     }
 
+    public function test_admin_can_distinguish_custom_schedule_requests_from_fixed_class_enrollments(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $studentCustom = User::factory()->student()->create(['name' => 'Hoc Vien Linh Hoat']);
+        $studentFixed = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        [, $subjectCustom] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
+        [, $subjectFixed] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+
+        $this->createPendingEnrollment($studentCustom, $subjectCustom);
+        $fixedCourse = $this->createInternalCourse($subjectFixed, null, 'T3-T5-T7, 18:00-20:00');
+
+        Enrollment::create([
+            'user_id' => $studentFixed->id,
+            'subject_id' => $subjectFixed->id,
+            'course_id' => $fixedCourse->id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'schedule' => $fixedCourse->schedule,
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.enrollments'));
+
+        $response->assertOk();
+        $response->assertSee('Yêu cầu lịch học riêng');
+        $response->assertSee('Ghi danh lớp cố định');
+        $response->assertSee($studentCustom->name);
+        $response->assertSee($studentFixed->name);
+    }
+
+    public function test_admin_can_filter_enrollments_by_request_source(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $studentCustom = User::factory()->student()->create(['name' => 'Hoc Vien Theo Yeu Cau']);
+        $studentFixed = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        [, $subjectCustom] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
+        [, $subjectFixed] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+
+        $this->createPendingEnrollment($studentCustom, $subjectCustom);
+        $fixedCourse = $this->createInternalCourse($subjectFixed, null, 'T3-T5-T7, 18:00-20:00');
+
+        Enrollment::create([
+            'user_id' => $studentFixed->id,
+            'subject_id' => $subjectFixed->id,
+            'course_id' => $fixedCourse->id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'schedule' => $fixedCourse->schedule,
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.enrollments', [
+                'request_source' => Enrollment::REQUEST_SOURCE_FIXED_CLASS,
+            ]));
+
+        $response->assertOk();
+        $response->assertSee('Loại hồ sơ');
+        $response->assertSee($studentFixed->name);
+        $response->assertDontSee($studentCustom->name);
+    }
+
     public function test_admin_can_approve_enrollment(): void
     {
         $admin = User::factory()->admin()->create();
@@ -81,7 +146,7 @@ class AdminEnrollmentManagementTest extends TestCase
         $this->assertNotNull($enrollment->fresh()->reviewed_at);
     }
 
-    public function test_admin_can_schedule_enrollment_and_default_teacher_and_schedule_from_course(): void
+    public function test_custom_schedule_request_cannot_be_scheduled_directly_from_detail_form(): void
     {
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
@@ -91,6 +156,7 @@ class AdminEnrollmentManagementTest extends TestCase
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
         $response = $this
+            ->from(route('admin.enrollments.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.enrollments.review', $enrollment), [
                 'action' => 'schedule',
@@ -101,13 +167,12 @@ class AdminEnrollmentManagementTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
+        $response->assertSessionHasErrors('action');
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_SCHEDULED,
-            'course_id' => $course->id,
-            'assigned_teacher_id' => $teacher->id,
-            'schedule' => 'T2-T4-T6, 18:00-20:00',
-            'reviewed_by' => $admin->id,
+            'status' => Enrollment::STATUS_PENDING,
+            'course_id' => null,
+            'assigned_teacher_id' => null,
         ]);
     }
 
@@ -163,7 +228,7 @@ class AdminEnrollmentManagementTest extends TestCase
         ]);
     }
 
-    public function test_schedule_action_requires_class_selection(): void
+    public function test_custom_schedule_request_detail_guides_admin_to_create_new_class_in_phase_9(): void
     {
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
@@ -171,23 +236,33 @@ class AdminEnrollmentManagementTest extends TestCase
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
         $response = $this
-            ->from(route('admin.enrollments.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
-            ->post(route('admin.enrollments.review', $enrollment), [
-                'action' => 'schedule',
-                'course_id' => '',
-                'assigned_teacher_id' => '',
-                'schedule' => '',
-                'note' => '',
-            ]);
+            ->get(route('admin.enrollments.show', $enrollment));
 
-        $response->assertRedirect(route('admin.enrollments.show', $enrollment));
-        $response->assertSessionHasErrors('course_id');
-        $this->assertDatabaseHas('dang_ky', [
-            'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_PENDING,
-            'course_id' => null,
-        ]);
+        $response->assertOk();
+        $response->assertSee('Mở màn tạo lớp và xếp lịch phase 9');
+        $response->assertSee('Hồ sơ này không chọn lớp nội bộ có sẵn ở màn chi tiết');
+        $response->assertDontSee('Giảng viên phụ trách');
+        $response->assertDontSee('Lịch học chính thức');
+        $response->assertDontSee('Xếp lớp và chốt lịch');
+    }
+
+    public function test_admin_can_view_custom_schedule_request_detail_with_request_source_label(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->student()->create();
+        [, $subject] = $this->createCatalogSubject();
+        $enrollment = $this->createPendingEnrollment($student, $subject);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.enrollments.show', $enrollment));
+
+        $response->assertOk();
+        $response->assertSee('Yêu cầu lịch học riêng');
+        $response->assertSee('Thứ 2');
+        $response->assertSee('Thứ 4');
+        $response->assertSee('Thứ 6');
     }
 
     public function test_student_is_blocked_from_admin_enrollments(): void

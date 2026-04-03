@@ -46,6 +46,18 @@
                         <p class="mt-1 font-medium text-slate-900">{{ $scheduleChangeRequest->requestedScheduleLabel() }}</p>
                     </div>
                     <div>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Phong hien tai</p>
+                        <p class="mt-1 font-medium text-slate-900">
+                            {{ $scheduleChangeRequest->isClassScheduleRequest() ? $scheduleChangeRequest->currentRoomLabel() : 'Khong ap dung' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Phong de xuat</p>
+                        <p class="mt-1 font-medium text-slate-900">
+                            {{ $scheduleChangeRequest->isClassScheduleRequest() ? $scheduleChangeRequest->requestedRoomLabel() : 'Khong ap dung' }}
+                        </p>
+                    </div>
+                    <div>
                         <p class="text-xs uppercase tracking-wide text-slate-400">Ngay gui</p>
                         <p class="mt-1 font-medium text-slate-900">{{ optional($scheduleChangeRequest->created_at)->format('d/m/Y H:i') }}</p>
                     </div>

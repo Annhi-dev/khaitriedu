@@ -1,22 +1,23 @@
-@extends('layouts.app')
+@extends('layouts.student')
 @section('title', 'Chọn lớp học — ' . $subject->name)
+@section('eyebrow', 'Class Selection')
 @section('content')
 <div class="max-w-4xl mx-auto">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-primary-dark">Chọn lớp — {{ $subject->name }}</h1>
             <p class="text-gray-600 text-sm">{{ $subject->category?->name ?? '' }} • {{ $subject->durationLabel() }}</p>
+            <p class="mt-1 text-sm text-gray-500">Nếu chưa thấy lớp hợp lịch, bạn vẫn có thể gửi yêu cầu lịch học riêng cho admin.</p>
         </div>
-        <a href="{{ route('student.enroll.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
-            ← Quay lại
-        </a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('student.enroll.request-form', $subject) }}" class="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-100">
+                Gửi yêu cầu lịch học
+            </a>
+            <a href="{{ route('student.enroll.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                ← Quay lại
+            </a>
+        </div>
     </div>
-
-    @if($errors->any())
-        <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            @foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach
-        </div>
-    @endif
 
     {{-- Đã đăng ký rồi --}}
     @if($existingEnrollment)
@@ -26,9 +27,16 @@
                 Trạng thái: <strong>{{ $existingEnrollment->statusLabel() }}</strong>.
                 @if($existingEnrollment->classRoom)
                     Lớp: <strong>{{ $existingEnrollment->classRoom->subject->name ?? '—' }}</strong>
+                @elseif($existingEnrollment->start_time && $existingEnrollment->end_time)
+                    Bạn đã gửi khung giờ: <strong>{{ $existingEnrollment->start_time }} - {{ $existingEnrollment->end_time }}</strong>
                 @endif
             </p>
-            <a href="{{ route('student.enroll.my-classes') }}" class="mt-2 inline-block text-sm font-medium text-amber-700 underline">Xem lớp của tôi</a>
+            <div class="mt-3 flex flex-wrap gap-3 text-sm">
+                <a href="{{ route('student.enroll.my-classes') }}" class="font-medium text-amber-700 underline">Xem lớp của tôi</a>
+                @if(! $existingEnrollment->hasCourseAccess())
+                    <a href="{{ route('student.enroll.request-form', $subject) }}" class="font-medium text-cyan-700 underline">Cập nhật yêu cầu lịch học</a>
+                @endif
+            </div>
         </div>
     @endif
 
@@ -36,7 +44,11 @@
     @if($classes->isEmpty())
         <div class="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-gray-400">
             <i class="fas fa-door-closed text-4xl mb-3 block"></i>
-            Hiện không có lớp nào đang mở cho khóa này.
+            <p>Hiện không có lớp cố định nào đang mở cho khóa này.</p>
+            <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
+                <i class="fas fa-paper-plane"></i>
+                Gửi yêu cầu lịch học cho admin
+            </a>
         </div>
     @else
         <div class="space-y-4">
@@ -110,6 +122,17 @@
             </div>
             @endforeach
         </div>
+
+        @if(! $existingEnrollment || ! $existingEnrollment->hasCourseAccess())
+            <div class="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
+                <h2 class="text-lg font-semibold text-cyan-900">Không khớp lịch nào ở trên?</h2>
+                <p class="mt-2 text-sm leading-6 text-cyan-800">Bạn không cần chờ admin mở lớp mới đăng ký. Hãy gửi các ngày và khung giờ bạn có thể học để admin chủ động xếp lớp phù hợp.</p>
+                <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
+                    <i class="fas fa-calendar-plus"></i>
+                    Gửi yêu cầu lịch học
+                </a>
+            </div>
+        @endif
     @endif
 </div>
 @endsection

@@ -15,8 +15,6 @@ class SlotRegistration extends Model
     public const STATUS_NEEDS_RESELECT = 'needs_reselect';
     public const STATUS_REJECTED = 'rejected';
 
-    protected $table = 'slot_registrations';
-
     protected $fillable = [
         'student_id',
         'subject_id',

@@ -18,20 +18,23 @@ class TeacherController extends Controller
             return $redirect;
         }
 
-        $filters = $request->only(['search', 'status']);
+        $filters = $request->only(['search', 'status', 'department_id']);
         $teachers = $teacherService->paginateTeachers($filters);
+        $departments = $teacherService->departmentOptions();
 
-        return view('admin.teachers.index', compact('current', 'filters', 'teachers'));
+        return view('admin.teachers.index', compact('current', 'filters', 'teachers', 'departments'));
     }
 
-    public function create()
+    public function create(AdminTeacherService $teacherService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        return view('admin.teachers.create', compact('current'));
+        $departments = $teacherService->departmentOptions();
+
+        return view('admin.teachers.create', compact('current', 'departments'));
     }
 
     public function store(StoreTeacherRequest $request, AdminTeacherService $teacherService)
@@ -61,7 +64,7 @@ class TeacherController extends Controller
         ));
     }
 
-    public function edit(User $teacher)
+    public function edit(User $teacher, AdminTeacherService $teacherService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
@@ -69,8 +72,9 @@ class TeacherController extends Controller
         }
 
         $teacher = $this->resolveTeacher($teacher);
+        $departments = $teacherService->departmentOptions();
 
-        return view('admin.teachers.edit', compact('current', 'teacher'));
+        return view('admin.teachers.edit', compact('current', 'teacher', 'departments'));
     }
 
     public function update(UpdateTeacherRequest $request, User $teacher, AdminTeacherService $teacherService)

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo $__env->yieldContent('title', 'Quản trị hệ thống'); ?> - KhaiTriEdu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo e(asset('css/app.css')); ?>">
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-800">
+<?php
+    $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
+    $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
+    $sidebarBadges = $adminSidebarBadges ?? [];
+    $totalPendingItems = (int) ($sidebarBadges['teacher_applications_pending'] ?? 0) + (int) ($sidebarBadges['enrollments_pending'] ?? 0) + (int) ($sidebarBadges['schedule_change_requests_pending'] ?? 0);
+    $menuSections = [
+        [
+            'label' => 'Tổng quan',
+            'items' => [
+                ['label' => 'Dashboard', 'icon' => 'fas fa-gauge-high', 'route' => 'admin.dashboard', 'active' => request()->routeIs('admin.dashboard')],
+                ['label' => 'Báo cáo', 'icon' => 'fas fa-chart-column', 'route' => 'admin.report', 'active' => request()->routeIs('admin.report')],
+            ],
+        ],
+        [
+            'label' => 'Quản lý người dùng',
+            'items' => [
+                ['label' => 'Học viên', 'icon' => 'fas fa-user-graduate', 'route' => 'admin.students.index', 'active' => request()->routeIs('admin.students.*')],
+                ['label' => 'Giảng viên', 'icon' => 'fas fa-chalkboard-user', 'route' => 'admin.teachers.index', 'active' => request()->routeIs('admin.teachers.*')],
+                ['label' => 'Phòng ban', 'icon' => 'fas fa-building', 'route' => 'admin.departments.index', 'active' => request()->routeIs('admin.departments.*')],
+                ['label' => 'Tài khoản hệ thống', 'icon' => 'fas fa-users-gear', 'route' => 'admin.users', 'active' => request()->routeIs('admin.users*') || request()->routeIs('admin.user.*')],
+                [
+                    'label' => 'Ứng tuyển giảng viên',
+                    'icon' => 'fas fa-file-signature',
+                    'route' => 'admin.teacher-applications',
+                    'active' => request()->routeIs('admin.teacher-applications*'),
+                    'badge' => ($sidebarBadges['teacher_applications_pending'] ?? 0) ?: null,
+                ],
+            ],
+        ],
+        [
+            'label' => 'Quản lý đào tạo',
+            'items' => [
+                ['label' => 'Nhóm học', 'icon' => 'fas fa-layer-group', 'route' => 'admin.categories', 'active' => request()->routeIs('admin.categories*')],
+
+                ['label' => 'Khóa học', 'icon' => 'fas fa-laptop-code', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
+                ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.classes.index', 'active' => request()->routeIs('admin.classes.*')],
+                ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
+                ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
+                ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
+                [
+                    'label' => 'Đăng ký học',
+                    'icon' => 'fas fa-clipboard-check',
+                    'route' => 'admin.enrollments',
+                    'active' => request()->routeIs('admin.enrollments*'),
+                    'badge' => ($sidebarBadges['enrollments_pending'] ?? 0) ?: null,
+                ],
+                ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
+                [
+                    'label' => 'Yêu cầu đổi lịch',
+                    'icon' => 'fas fa-calendar-rotate',
+                    'route' => 'admin.schedule-change-requests.index',
+                    'active' => request()->routeIs('admin.schedule-change-requests.*'),
+                    'badge' => ($sidebarBadges['schedule_change_requests_pending'] ?? 0) ?: null,
+                ],
+            ],
+        ],
+    ];
+?>
+<div x-data="{ sidebarOpen: false }" class="relative min-h-screen">
+    <div id="app-wrapper" class="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] transition-all duration-300">
+        <aside id="main-sidebar" class="hidden lg:block bg-white border-r border-slate-200 shadow-sm h-screen sticky top-0 overflow-x-hidden overflow-y-auto transition-all duration-300">
+            <div class="px-6 py-6 border-b border-slate-100">
+                <a href="<?php echo e(route('admin.dashboard')); ?>" class="flex items-center gap-3">
+                    <div class="h-10 w-10 shrink-0 rounded-xl bg-cyan-100 flex items-center justify-center text-cyan-700">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <div class="sidebar-header-text whitespace-nowrap">
+                        <h1 class="text-lg font-bold text-slate-800">KhaiTriEdu</h1>
+                        <p class="text-xs text-slate-500">Admin Console</p>
+                    </div>
+                </a>
+            </div>
+            <nav class="px-4 py-6 space-y-6">
+                <?php $__currentLoopData = $menuSections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-3 sidebar-text whitespace-nowrap"><?php echo e($section['label']); ?></p>
+                        <div class="mt-2 space-y-1">
+                            <?php $__currentLoopData = $section['items']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
+                                    $active = $item['active'];
+                                    $isPlaceholder = empty($item['route']);
+                                    $classes = 'sidebar-menu-item flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200';
+                                    $classes .= $active
+                                        ? ' bg-cyan-50 text-cyan-700'
+                                        : ($isPlaceholder ? ' text-slate-400 bg-slate-50/80 cursor-not-allowed' : ' text-slate-600 hover:bg-slate-50 hover:text-cyan-600');
+                                ?>
+                                <?php if($isPlaceholder): ?>
+                                    <div class="<?php echo e($classes); ?>" title="<?php echo e($item['label']); ?>">
+                                        <i class="<?php echo e($item['icon']); ?> w-5 text-center text-sm text-slate-300 shrink-0 sidebar-icon overflow-visible"></i>
+                                        <span class="sidebar-text truncate whitespace-nowrap"><?php echo e($item['label']); ?></span>
+                                        <?php if(! empty($item['badge'])): ?>
+                                            <span class="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 sidebar-badge"><?php echo e($item['badge']); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <a href="<?php echo e(route($item['route'])); ?>" class="<?php echo e($classes); ?>" title="<?php echo e($item['label']); ?>">
+                                        <i class="<?php echo e($item['icon']); ?> w-5 text-center text-sm <?php echo e($active ? 'text-cyan-600' : 'text-slate-400'); ?> shrink-0 sidebar-icon overflow-visible"></i>
+                                        <span class="sidebar-text truncate whitespace-nowrap"><?php echo e($item['label']); ?></span>
+                                        <?php if(! empty($item['badge'])): ?>
+                                            <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 sidebar-badge"><?php echo e($item['badge']); ?></span>
+                                        <?php elseif($active): ?>
+                                            <span class="ml-auto h-2 w-2 rounded-full shadow bg-cyan-500 shrink-0 sidebar-badge"></span>
+                                        <?php endif; ?>
+                                    </a>
+                                <?php endif; ?>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </nav>
+        </aside>
+
+        <div class="min-w-0">
+            <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-lg hover:bg-slate-100">
+                            <i class="fas fa-bars text-slate-600"></i>
+                        </button>
+                        <!-- Desktop Collapse Toggle Button -->
+                        <button onclick="toggleSidebar()" class="hidden lg:block p-2 rounded-lg hover:bg-slate-100" title="Thu gọn/Mở rộng menu">
+                            <i class="fas fa-bars text-slate-600"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-xl font-semibold text-slate-800"><?php echo e($pageTitle); ?></h2>
+                            <p class="text-xs text-slate-500">Chào mừng trở lại, <?php echo e($adminUser?->name ?? 'Admin'); ?></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="<?php echo e(route('home')); ?>" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
+                            <i class="fas fa-house"></i>
+                            <span class="hidden sm:inline">Trang chủ</span>
+                        </a>
+                        <button class="relative p-2 rounded-full hover:bg-slate-100" title="Muc can xu ly">
+                            <i class="fas fa-bell text-slate-500"></i>
+                            <?php if($totalPendingItems > 0): ?>
+                                <span class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
+                                    <?php echo e($totalPendingItems > 99 ? '99+' : $totalPendingItems); ?>
+
+                                </span>
+                            <?php endif; ?>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
+                                <span class="text-sm font-semibold"><?php echo e(substr($adminUser?->name ?? 'A', 0, 1)); ?></span>
+                            </div>
+                            <span class="hidden sm:inline text-sm font-medium text-slate-700"><?php echo e($adminUser?->name ?? 'Admin'); ?></span>
+                            <form method="POST" action="<?php echo e(route('logout')); ?>" class="inline">
+                                <?php echo csrf_field(); ?>
+                                <button type="submit" class="ml-2 p-2 rounded-lg hover:bg-slate-100 hover:bg-red-50 cursor-pointer" title="Đăng xuất">
+                                    <i class="fas fa-sign-out-alt text-slate-500 hover:text-red-500"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <?php if(!request()->routeIs('admin.dashboard')): ?>
+                <div class="px-4 py-2 text-sm text-slate-500 bg-slate-50 border-b border-slate-200">
+                    <div class="container mx-auto">
+                        <a href="<?php echo e(route('admin.dashboard')); ?>" class="hover:text-cyan-600">Admin</a>
+                        <span class="mx-1">/</span>
+                        <span class="text-slate-800"><?php echo e($pageTitle); ?></span>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <div class="px-4 py-4 sm:px-6 lg:px-8">
+                <?php echo $__env->make('components.admin.alert', ['session' => session()], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            </div>
+
+            <main class="px-4 pb-10 sm:px-6 lg:px-8">
+                <?php echo $__env->yieldContent('content'); ?>
+            </main>
+
+            <footer class="border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+                &copy; <?php echo e(date('Y')); ?> KhaiTriEdu Admin Console
+            </footer>
+        </div>
+    </div>
+
+    <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50 bg-black/30 lg:hidden" @click="sidebarOpen = false"></div>
+    <aside x-show="sidebarOpen" x-cloak class="fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-slate-200 shadow-lg lg:hidden overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b">
+            <h2 class="text-lg font-bold text-slate-800">KhaiTriEdu</h2>
+            <button @click="sidebarOpen = false" class="p-2 rounded-lg hover:bg-slate-100">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="p-4 space-y-6">
+            <?php $__currentLoopData = $menuSections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div>
+                    <p class="text-xs font-semibold uppercase text-slate-400"><?php echo e($section['label']); ?></p>
+                    <div class="mt-2 space-y-1">
+                        <?php $__currentLoopData = $section['items']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
+                                $active = $item['active'];
+                                $isPlaceholder = empty($item['route']);
+                            ?>
+                            <?php if($isPlaceholder): ?>
+                                <div class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 bg-slate-50/80 cursor-not-allowed">
+                                    <i class="<?php echo e($item['icon']); ?> w-5"></i>
+                                    <span><?php echo e($item['label']); ?></span>
+                                    <?php if(! empty($item['badge'])): ?>
+                                        <span class="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500"><?php echo e($item['badge']); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php else: ?>
+                                <a href="<?php echo e(route($item['route'])); ?>" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium <?php echo e($active ? 'bg-cyan-50 text-cyan-700' : 'text-slate-600 hover:bg-slate-50'); ?>">
+                                    <i class="<?php echo e($item['icon']); ?> w-5"></i>
+                                    <span><?php echo e($item['label']); ?></span>
+                                    <?php if(! empty($item['badge'])): ?>
+                                        <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500"><?php echo e($item['badge']); ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+                </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </nav>
+    </aside>
+</div>
+
+<script>
+    function toggleSidebar() {
+        const wrapper = document.getElementById('app-wrapper');
+        if(wrapper) {
+            wrapper.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarState', wrapper.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        if(localStorage.getItem('sidebarState') === 'collapsed') {
+            const wrapper = document.getElementById('app-wrapper');
+            if(wrapper) wrapper.classList.add('sidebar-collapsed');
+        }
+    });
+</script>
+</body>
+</html>
+<?php /**PATH D:\XXamp\htdocs\khaitriedu-main\resources\views/layouts/admin.blade.php ENDPATH**/ ?>

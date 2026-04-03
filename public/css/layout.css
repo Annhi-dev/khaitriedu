@@ -1,0 +1,204 @@
+[x-cloak] {
+    display: none !important;
+}
+
+.transition-smooth {
+    transition: all 0.2s ease-in-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-down {
+    animation: fadeInDown 0.3s ease-out;
+}
+
+@media (min-width: 1024px) {
+    #app-wrapper.sidebar-collapsed {
+        grid-template-columns: 80px minmax(0, 1fr) !important;
+    }
+
+    #app-wrapper.sidebar-collapsed .sidebar-header-text,
+    #app-wrapper.sidebar-collapsed .sidebar-text,
+    #app-wrapper.sidebar-collapsed .sidebar-badge {
+        display: none !important;
+    }
+
+    #app-wrapper.sidebar-collapsed .sidebar-menu-item {
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    #app-wrapper.sidebar-collapsed .sidebar-icon {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+}
+
+:root {
+    --student-sidebar-expanded: 280px;
+    --student-sidebar-collapsed: 88px;
+}
+
+@media (min-width: 1024px) {
+    #student-shell {
+        grid-template-columns: var(--student-sidebar-expanded) minmax(0, 1fr);
+    }
+
+    #student-shell.student-sidebar-collapsed {
+        grid-template-columns: var(--student-sidebar-collapsed) minmax(0, 1fr);
+    }
+
+    #student-shell.student-sidebar-collapsed .student-brand-copy,
+    #student-shell.student-sidebar-collapsed .student-user-copy,
+    #student-shell.student-sidebar-collapsed .student-nav-text,
+    #student-shell.student-sidebar-collapsed .student-sidebar-note,
+    #student-shell.student-sidebar-collapsed .student-sidebar-footer {
+        display: none !important;
+    }
+
+    #student-shell.student-sidebar-collapsed .student-nav-link,
+    #student-shell.student-sidebar-collapsed .student-sidebar-action {
+        justify-content: center;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    #student-shell.student-sidebar-collapsed .student-nav-icon,
+    #student-shell.student-sidebar-collapsed .student-sidebar-action i {
+        margin-right: 0 !important;
+    }
+
+    #student-shell.student-sidebar-collapsed .student-user-panel {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        justify-content: center;
+    }
+}
+
+.dashboard-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8fafc;
+}
+
+.dashboard-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dashboard-header {
+    height: 64px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+}
+
+.dashboard-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    background-color: #f8fafc;
+}
+
+.sidebar-logo {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #1e293b;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    color: #64748b;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background-color: #f1f5f9;
+    color: #2563eb;
+}
+
+.nav-item.active {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border-right: 3px solid #2563eb;
+}
+
+.nav-icon {
+    width: 24px;
+    text-align: center;
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.content-card-wrapper {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    border: 1px solid #f1f5f9;
+}
+
+@media (max-width: 768px) {
+    .dashboard-sidebar {
+        position: fixed;
+        z-index: 50;
+        height: 100vh;
+        transform: translateX(-100%);
+    }
+
+    .sidebar-open .dashboard-sidebar {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+    }
+
+    .sidebar-open .sidebar-overlay {
+        display: block;
+    }
+}

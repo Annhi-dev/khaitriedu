@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EnrollmentController;
 use App\Http\Controllers\Admin\CourseTimeSlotController;
 use App\Http\Controllers\Admin\ClassRoomController;
@@ -49,6 +50,17 @@ Route::prefix('teachers')->name('teachers.')->group(function () {
     Route::post('/{teacher}/update', [TeacherController::class, 'update'])->name('update');
     Route::post('/{teacher}/lock', [TeacherController::class, 'lock'])->name('lock');
     Route::post('/{teacher}/unlock', [TeacherController::class, 'unlock'])->name('unlock');
+});
+
+Route::prefix('departments')->name('departments.')->group(function () {
+    Route::get('/', [DepartmentController::class, 'index'])->name('index');
+    Route::get('/create', [DepartmentController::class, 'create'])->name('create');
+    Route::post('/', [DepartmentController::class, 'store'])->name('store');
+    Route::get('/{department}/edit', [DepartmentController::class, 'edit'])->name('edit');
+    Route::post('/{department}/update', [DepartmentController::class, 'update'])->name('update');
+    Route::post('/{department}/teachers/assign', [DepartmentController::class, 'assignTeacher'])->name('teachers.assign');
+    Route::post('/{department}/deactivate', [DepartmentController::class, 'deactivate'])->name('deactivate');
+    Route::post('/{department}/activate', [DepartmentController::class, 'activate'])->name('activate');
 });
 
 Route::prefix('teacher-applications')->group(function () {
@@ -146,6 +158,8 @@ Route::prefix('schedules')->name('schedules.')->group(function () {
     Route::get('/queue', [ScheduleController::class, 'queue'])->name('queue');
     Route::get('/enrollments/{enrollment}', [ScheduleController::class, 'showEnrollment'])->name('enrollments.show');
     Route::post('/enrollments/{enrollment}', [ScheduleController::class, 'storeEnrollment'])->name('enrollments.store');
+    Route::get('/courses/{course}/open', [ScheduleController::class, 'showOpenCourse'])->name('courses.open');
+    Route::post('/courses/{course}/open', [ScheduleController::class, 'openCourse'])->name('courses.open.store');
 });
 
 Route::prefix('schedule-change-requests')->name('schedule-change-requests.')->group(function () {

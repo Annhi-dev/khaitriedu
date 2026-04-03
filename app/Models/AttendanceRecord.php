@@ -14,8 +14,6 @@ class AttendanceRecord extends Model
     public const STATUS_LATE = 'late';
     public const STATUS_EXCUSED = 'excused';
 
-    protected $table = 'attendance_records';
-
     protected $fillable = [
         'course_id',
         'class_room_id',
@@ -38,7 +36,7 @@ class AttendanceRecord extends Model
     {
         return [
             self::STATUS_PRESENT => 'Có mặt',
-            self::STATUS_ABSENT => 'Vắng mặt',
+            self::STATUS_ABSENT => 'Vắng không phép',
             self::STATUS_LATE => 'Đi trễ',
             self::STATUS_EXCUSED => 'Có phép',
         ];

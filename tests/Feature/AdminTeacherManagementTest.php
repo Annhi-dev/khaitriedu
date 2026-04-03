@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\Department;
 use App\Models\Enrollment;
 use App\Models\ScheduleChangeRequest;
 use App\Models\Subject;
@@ -45,15 +46,28 @@ class AdminTeacherManagementTest extends TestCase
     public function test_admin_can_search_and_filter_teachers(): void
     {
         $admin = User::factory()->admin()->create();
+        $targetDepartment = Department::create([
+            'code' => 'PH-DT-01',
+            'name' => 'Phong Dao tao 01',
+            'status' => Department::STATUS_ACTIVE,
+        ]);
+        $otherDepartment = Department::create([
+            'code' => 'PH-DT-02',
+            'name' => 'Phong Dao tao 02',
+            'status' => Department::STATUS_ACTIVE,
+        ]);
+
         $target = User::factory()->teacher()->locked()->create([
             'name' => 'Tran Minh Locked',
             'email' => 'teacher-locked@example.com',
             'phone' => '0911000111',
+            'department_id' => $targetDepartment->id,
         ]);
         $other = User::factory()->teacher()->create([
             'name' => 'Tran Minh Active',
             'email' => 'teacher-active@example.com',
             'phone' => '0911000222',
+            'department_id' => $otherDepartment->id,
         ]);
 
         $response = $this
@@ -61,6 +75,7 @@ class AdminTeacherManagementTest extends TestCase
             ->get(route('admin.teachers.index', [
                 'search' => 'Tran Minh',
                 'status' => User::STATUS_LOCKED,
+                'department_id' => $targetDepartment->id,
             ]));
 
         $response->assertOk();
@@ -71,6 +86,11 @@ class AdminTeacherManagementTest extends TestCase
     public function test_admin_can_create_teacher(): void
     {
         $admin = User::factory()->admin()->create();
+        $department = Department::create([
+            'code' => 'PH-GV-01',
+            'name' => 'Phong Giang Vien 01',
+            'status' => Department::STATUS_ACTIVE,
+        ]);
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
@@ -79,6 +99,7 @@ class AdminTeacherManagementTest extends TestCase
                 'username' => 'giangvienmoi',
                 'email' => 'giangvienmoi@example.com',
                 'phone' => '0912345678',
+                'department_id' => $department->id,
                 'password' => 'secret123',
                 'password_confirmation' => 'secret123',
                 'status' => User::STATUS_ACTIVE,
@@ -90,6 +111,7 @@ class AdminTeacherManagementTest extends TestCase
         $this->assertDatabaseHas('nguoi_dung', [
             'email' => 'giangvienmoi@example.com',
             'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
+            'department_id' => $department->id,
             'status' => User::STATUS_ACTIVE,
         ]);
     }
@@ -97,11 +119,22 @@ class AdminTeacherManagementTest extends TestCase
     public function test_admin_can_update_teacher(): void
     {
         $admin = User::factory()->admin()->create();
+        $departmentA = Department::create([
+            'code' => 'PH-SUA-01',
+            'name' => 'Phong Sua 01',
+            'status' => Department::STATUS_ACTIVE,
+        ]);
+        $departmentB = Department::create([
+            'code' => 'PH-SUA-02',
+            'name' => 'Phong Sua 02',
+            'status' => Department::STATUS_ACTIVE,
+        ]);
         $teacher = User::factory()->teacher()->create([
             'name' => 'Giang Vien Cu',
             'username' => 'giangviencu',
             'email' => 'giangviencu@example.com',
             'phone' => '0911111000',
+            'department_id' => $departmentA->id,
         ]);
 
         $response = $this
@@ -111,6 +144,7 @@ class AdminTeacherManagementTest extends TestCase
                 'username' => 'giangviendasua',
                 'email' => 'giangviendasua@example.com',
                 'phone' => '0912222333',
+                'department_id' => $departmentB->id,
                 'password' => '',
                 'password_confirmation' => '',
                 'status' => User::STATUS_INACTIVE,
@@ -123,6 +157,7 @@ class AdminTeacherManagementTest extends TestCase
             'username' => 'giangviendasua',
             'email' => 'giangviendasua@example.com',
             'phone' => '0912222333',
+            'department_id' => $departmentB->id,
             'status' => User::STATUS_INACTIVE,
         ]);
     }
@@ -241,10 +276,16 @@ class AdminTeacherManagementTest extends TestCase
     public function test_admin_cannot_create_teacher_with_duplicate_email_username_or_phone(): void
     {
         $admin = User::factory()->admin()->create();
+        $department = Department::create([
+            'code' => 'PH-DUP-01',
+            'name' => 'Phong Duplicate',
+            'status' => Department::STATUS_ACTIVE,
+        ]);
         User::factory()->teacher()->create([
             'username' => 'duplicate-teacher',
             'email' => 'duplicate-teacher@example.com',
             'phone' => '0913333444',
+            'department_id' => $department->id,
         ]);
 
         $response = $this
@@ -255,6 +296,7 @@ class AdminTeacherManagementTest extends TestCase
                 'username' => 'duplicate-teacher',
                 'email' => 'duplicate-teacher@example.com',
                 'phone' => '0913333444',
+                'department_id' => $department->id,
                 'password' => 'secret123',
                 'password_confirmation' => 'secret123',
                 'status' => User::STATUS_ACTIVE,

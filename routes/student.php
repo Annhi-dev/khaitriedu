@@ -15,5 +15,7 @@ Route::prefix('enroll')->name('enroll.')->group(function () {
     Route::get('/', [ClassEnrollController::class, 'index'])->name('index');
     Route::get('/my-classes', [ClassEnrollController::class, 'myClasses'])->name('my-classes');
     Route::get('/{subject}/select', [ClassEnrollController::class, 'selectClass'])->name('select');
+    Route::get('/{subject}/request', [ClassEnrollController::class, 'requestForm'])->name('request-form');
     Route::post('/{subject}/store', [ClassEnrollController::class, 'store'])->name('store');
+    Route::post('/{subject}/request', [ClassEnrollController::class, 'storeCustomRequest'])->name('request-store');
 });

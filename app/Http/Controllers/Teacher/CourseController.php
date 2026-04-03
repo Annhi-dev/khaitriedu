@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Grade;
+use App\Models\LessonProgress;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -46,7 +47,7 @@ class CourseController extends Controller
         $course = Course::where('teacher_id', $user->id)
             ->with([
                 'subject.category',
-                'modules',
+                'modules.lessons',
                 'enrollments' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
                 'enrollments.user',
             ])
@@ -62,7 +63,79 @@ class CourseController extends Controller
                 return $grade->enrollment_id . '-' . ($grade->module_id ?? 'summary');
             });
 
-        return view('teacher.course_show', compact('course', 'user', 'gradeMap'));
+        $lessonToModule = [];
+        $lessonIds = [];
+
+        foreach ($course->modules as $module) {
+            foreach ($module->lessons as $lesson) {
+                $lessonToModule[$lesson->id] = $module->id;
+                $lessonIds[] = $lesson->id;
+            }
+        }
+
+        $lessonIds = array_values(array_unique($lessonIds));
+        $studentIds = $course->enrollments->pluck('user_id')->filter()->unique()->values();
+
+        $completedByStudent = [];
+        $completedByStudentAndModule = [];
+
+        if ($studentIds->isNotEmpty() && $lessonIds !== []) {
+            $progressRows = LessonProgress::query()
+                ->whereIn('user_id', $studentIds)
+                ->whereIn('lesson_id', $lessonIds)
+                ->where('is_completed', true)
+                ->get(['user_id', 'lesson_id']);
+
+            foreach ($progressRows as $progress) {
+                $moduleId = $lessonToModule[$progress->lesson_id] ?? null;
+
+                if (! $moduleId) {
+                    continue;
+                }
+
+                $completedByStudent[$progress->user_id] = ($completedByStudent[$progress->user_id] ?? 0) + 1;
+                $completedByStudentAndModule[$progress->user_id][$moduleId] = ($completedByStudentAndModule[$progress->user_id][$moduleId] ?? 0) + 1;
+            }
+        }
+
+        $totalCourseLessons = count($lessonIds);
+        $studentModuleProgress = [];
+        $studentCourseProgress = [];
+
+        foreach ($course->enrollments as $enrollment) {
+            $studentId = $enrollment->user_id;
+
+            foreach ($course->modules as $module) {
+                $totalLessons = $module->lessons->count();
+                $completedLessons = $completedByStudentAndModule[$studentId][$module->id] ?? 0;
+
+                $studentModuleProgress[$enrollment->id][$module->id] = [
+                    'completed' => $completedLessons,
+                    'total' => $totalLessons,
+                    'percent' => $totalLessons > 0
+                        ? (int) round(($completedLessons / $totalLessons) * 100)
+                        : 0,
+                ];
+            }
+
+            $completedCourseLessons = $completedByStudent[$studentId] ?? 0;
+
+            $studentCourseProgress[$enrollment->id] = [
+                'completed' => $completedCourseLessons,
+                'total' => $totalCourseLessons,
+                'percent' => $totalCourseLessons > 0
+                    ? (int) round(($completedCourseLessons / $totalCourseLessons) * 100)
+                    : 0,
+            ];
+        }
+
+        return view('teacher.course_show', compact(
+            'course',
+            'user',
+            'gradeMap',
+            'studentModuleProgress',
+            'studentCourseProgress'
+        ));
     }
 
     public function updateGrades(Request $request)

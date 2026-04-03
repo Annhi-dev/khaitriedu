@@ -12,6 +12,8 @@ class ClassSchedule extends Model
 
     protected $fillable = [
         'lop_hoc_id',
+        'teacher_id',
+        'room_id',
         'day_of_week',
         'start_time',
         'end_time',
@@ -30,6 +32,21 @@ class ClassSchedule extends Model
     public function classRoom()
     {
         return $this->belongsTo(ClassRoom::class, 'lop_hoc_id');
+    }
+
+    public function teacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function room()
+    {
+        return $this->belongsTo(Room::class, 'room_id');
+    }
+
+    public function attendanceRecords()
+    {
+        return $this->hasMany(AttendanceRecord::class, 'class_schedule_id');
     }
 
     public function scheduleChangeRequests()

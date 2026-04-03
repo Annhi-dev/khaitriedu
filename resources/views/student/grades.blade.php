@@ -1,5 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.student')
 @section('title', 'Điểm số của tôi')
+@section('eyebrow', 'Academic Records')
 @section('content')
 <div class="max-w-6xl mx-auto">
   <div class="flex justify-between items-center mb-4">
@@ -9,9 +10,6 @@
     </div>
     <a href="{{ route('dashboard') }}" class="btn rounded-lg border border-gray-300 px-4 py-2">Quay lại dashboard</a>
   </div>
-
-  @if(session('status'))<div class="alert alert-success mb-3">{{ session('status') }}</div>@endif
-  @if(session('error'))<div class="alert alert-danger mb-3">{{ session('error') }}</div>@endif
 
   <div class="grid gap-4">
     @forelse($grades as $grade)

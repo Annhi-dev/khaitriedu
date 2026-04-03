@@ -13,9 +13,7 @@ class HomeController extends Controller
 {
     public function home()
     {
-        if (Auth::check()) {
-            return redirect()->route('dashboard');
-        }
+        $this->sessionUser();
 
         $studentCount = User::students()->count();
         $courseCount = Subject::visibleOnCatalog()->count();
@@ -39,7 +37,7 @@ class HomeController extends Controller
 
     public function dashboard()
     {
-        $user = Auth::user();
+        $user = $this->sessionUser();
 
         if (! $user) {
             return redirect()->route('login');
@@ -71,4 +69,3 @@ class HomeController extends Controller
         return redirect()->route('home');
     }
 }
-

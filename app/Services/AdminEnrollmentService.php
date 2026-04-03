@@ -15,6 +15,7 @@ class AdminEnrollmentService
     {
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
+        $requestSource = trim((string) ($filters['request_source'] ?? ''));
 
         return Enrollment::query()
             ->with(['user', 'subject.category', 'course.subject.category', 'assignedTeacher', 'reviewer'])
@@ -36,6 +37,21 @@ class AdminEnrollmentService
                 });
             })
             ->when($status !== '', fn (Builder $query) => $query->where('status', $status))
+            ->when($requestSource !== '', function (Builder $query) use ($requestSource) {
+                if ($requestSource === Enrollment::REQUEST_SOURCE_FIXED_CLASS) {
+                    $query->where(function (Builder $builder) {
+                        $builder->whereNotNull('lop_hoc_id')
+                            ->orWhere('status', Enrollment::STATUS_ENROLLED);
+                    });
+
+                    return;
+                }
+
+                if ($requestSource === Enrollment::REQUEST_SOURCE_CUSTOM_SCHEDULE) {
+                    $query->whereNull('lop_hoc_id')
+                        ->where('status', '!=', Enrollment::STATUS_ENROLLED);
+                }
+            })
             ->orderByRaw("case when status = '" . Enrollment::STATUS_PENDING . "' then 0 else 1 end")
             ->orderByDesc('submitted_at')
             ->orderByDesc('id')
@@ -83,6 +99,13 @@ class AdminEnrollmentService
     public function reviewEnrollment(Enrollment $enrollment, array $data, User $admin): string
     {
         $action = (string) $data['action'];
+
+        if ($action === 'schedule' && $this->shouldCreateNewClassInPhase9($enrollment)) {
+            throw ValidationException::withMessages([
+                'action' => 'Hồ sơ yêu cầu lịch học riêng cần xử lý ở phase 9 để tạo lớp mới phù hợp.',
+            ]);
+        }
+
         $selectedCourse = $this->resolveSelectedCourse($enrollment, $data['course_id'] ?? null);
         $assignedTeacherId = $data['assigned_teacher_id'] ?? null;
         $note = $data['note'] ?? null;
@@ -201,6 +224,15 @@ class AdminEnrollmentService
         $enrollment->save();
 
         return $message;
+    }
+
+    protected function shouldCreateNewClassInPhase9(Enrollment $enrollment): bool
+    {
+        return $enrollment->isCustomScheduleRequest()
+            && in_array($enrollment->normalizedStatus(), [
+                Enrollment::STATUS_PENDING,
+                Enrollment::STATUS_APPROVED,
+            ], true);
     }
 
     protected function resolveSelectedCourse(Enrollment $enrollment, ?int $courseId): ?Course

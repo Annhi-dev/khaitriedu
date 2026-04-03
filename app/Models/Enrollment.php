@@ -13,10 +13,13 @@ class Enrollment extends Model
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
+    public const STATUS_ENROLLED = 'enrolled';
     public const STATUS_SCHEDULED = 'scheduled';
     public const STATUS_ACTIVE = 'active';
     public const STATUS_COMPLETED = 'completed';
     public const LEGACY_STATUS_CONFIRMED = 'confirmed';
+    public const REQUEST_SOURCE_CUSTOM_SCHEDULE = 'custom_schedule';
+    public const REQUEST_SOURCE_FIXED_CLASS = 'fixed_class';
 
     protected $table = 'dang_ky';
 
@@ -43,6 +46,7 @@ class Enrollment extends Model
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
         'is_submitted' => 'boolean',
+        'preferred_days' => 'array',
     ];
 
     public static function filterableStatuses(): array
@@ -56,6 +60,7 @@ class Enrollment extends Model
             self::STATUS_PENDING => 'Chờ duyệt',
             self::STATUS_APPROVED => 'Đã duyệt',
             self::STATUS_REJECTED => 'Từ chối',
+            self::STATUS_ENROLLED => 'Đã ghi danh',
             self::STATUS_SCHEDULED => 'Đã xếp lớp',
             self::STATUS_ACTIVE => 'Đang học',
             self::STATUS_COMPLETED => 'Hoàn thành',
@@ -66,15 +71,33 @@ class Enrollment extends Model
     {
         return [
             self::LEGACY_STATUS_CONFIRMED,
+            self::STATUS_ENROLLED,
             self::STATUS_SCHEDULED,
             self::STATUS_ACTIVE,
             self::STATUS_COMPLETED,
         ];
     }
 
+    public static function requestSourceOptions(): array
+    {
+        return [
+            self::REQUEST_SOURCE_CUSTOM_SCHEDULE => 'Yêu cầu lịch học riêng',
+            self::REQUEST_SOURCE_FIXED_CLASS => 'Ghi danh lớp cố định',
+        ];
+    }
+
     public function scopeSubmitted(Builder $query): Builder
     {
         return $query->where('is_submitted', true);
+    }
+
+    public function scopeForUserSubject(Builder $query, int $userId, int $subjectId): Builder
+    {
+        return $query->where('user_id', $userId)
+            ->where(function (Builder $builder) use ($subjectId) {
+                $builder->where('subject_id', $subjectId)
+                    ->orWhereHas('course', fn (Builder $courseQuery) => $courseQuery->where('subject_id', $subjectId));
+            });
     }
 
     public function normalizedStatus(): string
@@ -89,6 +112,34 @@ class Enrollment extends Model
         return self::statusOptions()[$this->normalizedStatus()] ?? ucfirst((string) $this->status);
     }
 
+    public function requestSourceKey(): string
+    {
+        return $this->isFixedClassEnrollment()
+            ? self::REQUEST_SOURCE_FIXED_CLASS
+            : self::REQUEST_SOURCE_CUSTOM_SCHEDULE;
+    }
+
+    public function requestSourceLabel(): string
+    {
+        return self::requestSourceOptions()[$this->requestSourceKey()] ?? 'Chưa phân loại';
+    }
+
+    public function requestSourceBadgeType(): string
+    {
+        return $this->isFixedClassEnrollment() ? 'success' : 'info';
+    }
+
+    public function isFixedClassEnrollment(): bool
+    {
+        return $this->lop_hoc_id !== null
+            || $this->normalizedStatus() === self::STATUS_ENROLLED;
+    }
+
+    public function isCustomScheduleRequest(): bool
+    {
+        return ! $this->isFixedClassEnrollment();
+    }
+
     public function hasCourseAccess(): bool
     {
         return in_array($this->status, self::courseAccessStatuses(), true);
@@ -97,6 +148,11 @@ class Enrollment extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function course()
@@ -122,5 +178,15 @@ class Enrollment extends Model
     public function classRoom()
     {
         return $this->belongsTo(ClassRoom::class, 'lop_hoc_id');
+    }
+
+    public function grades()
+    {
+        return $this->hasMany(Grade::class);
+    }
+
+    public function attendanceRecords()
+    {
+        return $this->hasMany(AttendanceRecord::class);
     }
 }

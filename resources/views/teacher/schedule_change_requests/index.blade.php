@@ -72,6 +72,12 @@
                     </div>
                 </div>
 
+                @if ($scheduleChangeRequest->isClassScheduleRequest())
+                    <div class="mt-4 text-sm text-slate-600">
+                        <p><span class="font-semibold text-slate-800">Phòng đề xuất:</span> {{ $scheduleChangeRequest->requestedRoomLabel() }}</p>
+                    </div>
+                @endif
+
                 <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
                     <p class="font-semibold text-slate-800">Lý do</p>
                     <p class="mt-2 leading-6">{{ $scheduleChangeRequest->reason }}</p>

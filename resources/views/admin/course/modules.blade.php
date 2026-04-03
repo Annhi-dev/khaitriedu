@@ -27,9 +27,9 @@
             @if ($modules->count())
                 <form method="post" action="{{ route('admin.courses.modules.reorder', $course) }}" class="mt-5 space-y-4">
                     @csrf
-                    @foreach ($modules as $module)
+                    @foreach ($modules as $listedModule)
                         @php
-                            $statusClasses = $module->status === \App\Models\Module::STATUS_PUBLISHED
+                            $statusClasses = $listedModule->status === \App\Models\Module::STATUS_PUBLISHED
                                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                 : 'border-amber-200 bg-amber-50 text-amber-700';
                         @endphp
@@ -37,23 +37,23 @@
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-3">
-                                        <h3 class="text-sm font-semibold text-slate-900">{{ $module->title }}</h3>
-                                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $module->statusLabel() }}</span>
+                                        <h3 class="text-sm font-semibold text-slate-900">{{ $listedModule->title }}</h3>
+                                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $listedModule->statusLabel() }}</span>
                                     </div>
-                                    <p class="mt-2 text-sm leading-6 text-slate-600">{{ $module->content ?: 'Chưa có mô tả cho module này.' }}</p>
+                                    <p class="mt-2 text-sm leading-6 text-slate-600">{{ $listedModule->content ?: 'Chưa có mô tả cho module này.' }}</p>
                                     <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                                        <span>{{ $module->durationLabel() }}</span>
-                                        <span>{{ $module->lessons_count }} bài học</span>
-                                        <span>{{ $module->quizzes_count }} quiz</span>
+                                        <span>{{ $listedModule->durationLabel() }}</span>
+                                        <span>{{ $listedModule->lessons_count }} bài học</span>
+                                        <span>{{ $listedModule->quizzes_count }} quiz</span>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <div>
                                         <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Thứ tự</label>
-                                        <input type="number" min="1" name="positions[{{ $module->id }}]" value="{{ $module->position }}" class="w-24 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+                                        <input type="number" min="1" name="positions[{{ $listedModule->id }}]" value="{{ $listedModule->position }}" class="w-24 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
                                     </div>
-                                    <a href="{{ route('admin.courses.modules.edit', [$course, $module]) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Sửa</a>
-                                    <form method="post" action="{{ route('admin.courses.modules.delete', [$course, $module]) }}" onsubmit="return confirm('Xóa module này? Nếu đang có bài học hoặc quiz thì hệ thống sẽ chuyển sang ẩn thay vì xóa cứng.');">
+                                    <a href="{{ route('admin.courses.modules.edit', [$course, $listedModule]) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Sửa</a>
+                                    <form method="post" action="{{ route('admin.courses.modules.delete', [$course, $listedModule]) }}" onsubmit="return confirm('Xóa module này? Nếu đang có bài học hoặc quiz thì hệ thống sẽ chuyển sang ẩn thay vì xóa cứng.');">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">Xóa</button>
                                     </form>
@@ -76,7 +76,7 @@
                 <h2 class="text-lg font-semibold text-slate-900">Thêm module mới</h2>
                 <form method="post" action="{{ route('admin.courses.modules.create', $course) }}" class="mt-5 space-y-4">
                     @csrf
-                    @include('admin.course._module_form')
+                    @include('admin.course._module_form', ['module' => null, 'defaultPosition' => ((int) $modules->max('position')) + 1])
                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700">Lưu module</button>
                 </form>
             </section>
@@ -92,3 +92,4 @@
     </div>
 </div>
 @endsection
+

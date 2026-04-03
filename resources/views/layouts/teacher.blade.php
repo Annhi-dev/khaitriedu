@@ -9,6 +9,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900" x-data="{ mobileNavOpen: false }">
     @php $teacherUser = $current ?? Auth::user(); @endphp
@@ -96,13 +97,23 @@
                         </div>
                     </div>
 
-                    <div class="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 md:flex">
-                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/10 font-semibold text-cyan-700">
-                            {{ strtoupper(substr($teacherUser?->name ?? 'T', 0, 1)) }}
-                        </span>
-                        <div>
-                            <p class="font-medium text-slate-800">{{ $teacherUser?->name }}</p>
-                            <p class="text-xs text-slate-500">{{ $teacherUser?->roleLabel() }}</p>
+                    <div class="flex items-center gap-3">
+                        <a
+                            href="{{ route('home') }}"
+                            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                        >
+                            <i class="fas fa-house"></i>
+                            <span class="hidden sm:inline">Trang chủ</span>
+                        </a>
+
+                        <div class="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 md:flex">
+                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/10 font-semibold text-cyan-700">
+                                {{ strtoupper(substr($teacherUser?->name ?? 'T', 0, 1)) }}
+                            </span>
+                            <div>
+                                <p class="font-medium text-slate-800">{{ $teacherUser?->name }}</p>
+                                <p class="text-xs text-slate-500">{{ $teacherUser?->roleLabel() }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -136,8 +147,5 @@
         </main>
     </div>
 
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </body>
 </html>
