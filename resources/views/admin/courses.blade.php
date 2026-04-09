@@ -230,7 +230,7 @@
           </div>
           <div class="flex flex-wrap gap-2 mt-3">
             {{-- Nút thiết lập lịch → chuyển thành lớp học --}}
-            <a href="{{ route('admin.classes.create', ['subject_id' => $course->subject_id]) }}"
+            <a href="{{ route('admin.classes.create', ['subject_id' => $course->subject_id, 'course_id' => $course->id]) }}"
                class="inline-flex items-center gap-1.5 rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
               <i class="fas fa-calendar-plus text-xs"></i>
               Thiết lập lịch → Tạo lớp

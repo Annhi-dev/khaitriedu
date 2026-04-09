@@ -4,8 +4,8 @@
 <div class="max-w-4xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900">{{ $class->subject->name ?? 'Lớp học' }}</h1>
-            <p class="mt-1 text-sm text-slate-500">Thuộc Môn học / Khóa học — ID: {{ $class->id }}</p>
+            <h1 class="text-2xl font-bold text-slate-900">{{ $class->course->title ?? ($class->subject->name ?? 'Lớp học') }}</h1>
+            <p class="mt-1 text-sm text-slate-500">{{ $class->subject->name ?? 'Chưa có môn học' }} — ID lớp: {{ $class->id }}</p>
         </div>
         <div class="flex gap-2">
             <a href="{{ route('admin.classes.index') }}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Quay lại</a>
@@ -38,6 +38,10 @@
                         @php $badge = match($class->status) { 'open' => 'bg-green-100 text-green-700', 'full' => 'bg-amber-100 text-amber-700', 'completed' => 'bg-blue-100 text-blue-700', default => 'bg-slate-100 text-slate-600' }; @endphp
                         <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $badge }}">{{ $class->statusLabel() }}</span>
                     </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-slate-500">Khóa học</dt>
+                    <dd class="font-medium">{{ $class->course->title ?? 'Chưa gắn khóa học' }}</dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-slate-500">Giảng viên</dt>

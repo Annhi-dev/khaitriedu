@@ -104,14 +104,21 @@ class StudentEnrollmentService
             }
 
             $existingEnrollment = $this->findSubjectEnrollment($student->id, $subject->id);
+            $existingClassEnrollment = Enrollment::query()
+                ->where('user_id', $student->id)
+                ->where('lop_hoc_id', $classRoom->id)
+                ->latest('id')
+                ->first();
 
-            if ($existingEnrollment && $existingEnrollment->hasCourseAccess() && (int) $existingEnrollment->lop_hoc_id === (int) $classRoom->id) {
+            if ($existingClassEnrollment && $existingClassEnrollment->hasCourseAccess()) {
                 return 'Ban da ghi danh vao lop co dinh nay roi.';
             }
 
-            if ($existingEnrollment && $existingEnrollment->hasCourseAccess()) {
+            if ($existingEnrollment && $existingEnrollment->hasCourseAccess() && (int) $existingEnrollment->lop_hoc_id !== (int) $classRoom->id) {
                 throw new EnrollmentOperationException('Ban da co lop cho khoa hoc nay. Neu muon doi lop, vui long lien he admin.');
             }
+
+            $targetEnrollment = $existingClassEnrollment ?? $existingEnrollment;
 
             $payload = [
                 'subject_id' => $subject->id,
@@ -131,8 +138,8 @@ class StudentEnrollmentService
                 'reviewed_at' => null,
             ];
 
-            if ($existingEnrollment) {
-                $existingEnrollment->fill($payload)->save();
+            if ($targetEnrollment) {
+                $targetEnrollment->fill($payload)->save();
             } else {
                 Enrollment::create(array_merge($payload, [
                     'user_id' => $student->id,

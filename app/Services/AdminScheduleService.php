@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\ClassRoom;
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Notification;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AdminScheduleService
@@ -101,6 +105,7 @@ class AdminScheduleService
             'courses' => $courses,
             'waitingCourses' => $waitingCourses,
             'teachers' => $this->teacherOptions(),
+            'rooms' => $this->roomOptions(),
             'suggestedCourseTitle' => $this->suggestedCourseTitle($enrollment),
             'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
         ];
@@ -120,146 +125,203 @@ class AdminScheduleService
             'course' => $course,
             'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
             'studentsNeeded' => max(0, Course::minimumStudentsToOpen() - (int) $course->scheduled_students_count),
+            'rooms' => $this->roomOptions(),
         ];
     }
 
     public function scheduleEnrollment(Enrollment $enrollment, array $data, User $admin): string
     {
-        $enrollment->loadMissing(['subject', 'user']);
-        $course = $this->resolveCourse($enrollment, $data);
+        return DB::transaction(function () use ($enrollment, $data, $admin): string {
+            $enrollment = Enrollment::query()
+                ->lockForUpdate()
+                ->findOrFail($enrollment->id);
 
-        if ($this->shouldCreateNewClass($enrollment) || $course->isPendingOpen()) {
-            return $this->savePendingOpenEnrollment($enrollment, $course, $data, $admin);
-        }
+            $enrollment->loadMissing(['subject', 'user']);
+            $course = $this->resolveCourse($enrollment, $data, true);
 
-        $teacherId = $data['teacher_id'] ?? $course->teacher_id;
-        $meetingDays = $this->resolveMeetingDays($course, $data);
-        $startDate = $data['start_date'] ?? optional($course->start_date)?->format('Y-m-d');
-        $endDate = $data['end_date'] ?? optional($course->end_date)?->format('Y-m-d');
-        $startTime = $data['start_time'] ?? $course->start_time;
-        $endTime = $data['end_time'] ?? $course->end_time;
-        $capacity = $data['capacity'] ?? $course->capacity ?? 20;
-
-        foreach ([
-            'teacher_id' => $teacherId,
-            'day_of_week' => $meetingDays,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-        ] as $field => $value) {
-            if ($value === null || $value === [] || $value === '') {
-                throw ValidationException::withMessages([
-                    $field => 'Vui lòng cung cấp đầy đủ thông tin lịch học chính thức.',
-                ]);
+            if ($this->shouldCreateNewClass($enrollment) || $course->isPendingOpen()) {
+                return $this->savePendingOpenEnrollment($enrollment, $course, $data, $admin);
             }
-        }
 
-        $this->ensureTeacherIsValid((int) $teacherId);
-        $this->ensureTeacherAvailability($course->id, (int) $teacherId, $meetingDays, (string) $startDate, (string) $endDate, (string) $startTime, (string) $endTime);
-        $this->ensureStudentAvailability($enrollment, $course->id, $meetingDays, (string) $startDate, (string) $endDate, (string) $startTime, (string) $endTime);
-        $this->ensureCapacity($course, (int) $capacity, $enrollment);
+            $teacherId = $data['teacher_id'] ?? $course->teacher_id;
+            $meetingDays = $this->resolveMeetingDays($course, $data);
+            $startDate = $data['start_date'] ?? optional($course->start_date)?->format('Y-m-d');
+            $endDate = $data['end_date'] ?? optional($course->end_date)?->format('Y-m-d');
+            $startTime = $data['start_time'] ?? $course->start_time;
+            $endTime = $data['end_time'] ?? $course->end_time;
+            $capacity = $data['capacity'] ?? $course->capacity ?? 20;
+            $roomId = $data['room_id'] ?? null;
 
-        $course->fill([
-            'teacher_id' => (int) $teacherId,
-            'day_of_week' => $meetingDays[0] ?? null,
-            'meeting_days' => $meetingDays,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'start_time' => (string) $startTime,
-            'end_time' => (string) $endTime,
-            'capacity' => (int) $capacity,
-            'status' => Course::STATUS_SCHEDULED,
-        ]);
-        $course->schedule = $this->buildScheduleSummary($course);
-        $course->save();
+            foreach ([
+                'teacher_id' => $teacherId,
+                'room_id' => $roomId,
+                'day_of_week' => $meetingDays,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+            ] as $field => $value) {
+                if ($value === null || $value === [] || $value === '') {
+                    throw ValidationException::withMessages([
+                        $field => 'Vui lòng cung cấp đầy đủ thông tin lịch học chính thức.',
+                    ]);
+                }
+            }
 
-        $enrollment->update([
-            'course_id' => $course->id,
-            'subject_id' => $course->subject_id,
-            'assigned_teacher_id' => (int) $teacherId,
-            'schedule' => $course->schedule,
-            'status' => Enrollment::STATUS_SCHEDULED,
-            'note' => $data['note'] ?? $enrollment->note,
-            'reviewed_by' => $admin->id,
-            'reviewed_at' => now(),
-        ]);
+            $this->ensureTeacherIsValid((int) $teacherId);
+            $this->ensureRoomIsValid((int) $roomId);
+            $this->ensureTeacherAvailability($course->id, (int) $teacherId, $meetingDays, (string) $startDate, (string) $endDate, (string) $startTime, (string) $endTime);
+            $this->ensureRoomAvailability((int) $roomId, $meetingDays, (string) $startTime, (string) $endTime, $this->findExistingClassRoomForCourse($course->id)?->id);
+            $this->ensureStudentAvailability($enrollment, $course->id, $meetingDays, (string) $startDate, (string) $endDate, (string) $startTime, (string) $endTime);
+            $this->ensureCapacity($course, (int) $capacity, $enrollment);
 
-        return $course->wasRecentlyCreated
-            ? 'Đã tạo lớp học mới và xếp lịch thành công cho học viên.'
-            : 'Đã xếp lịch chính thức cho học viên.';
+            $course->fill([
+                'teacher_id' => (int) $teacherId,
+                'day_of_week' => $meetingDays[0] ?? null,
+                'meeting_days' => $meetingDays,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'start_time' => (string) $startTime,
+                'end_time' => (string) $endTime,
+                'capacity' => (int) $capacity,
+                'status' => Course::STATUS_SCHEDULED,
+            ]);
+            $course->schedule = $this->buildScheduleSummary($course);
+            $course->save();
+
+            $classRoom = $this->syncClassRoomForCourse(
+                $course,
+                (int) $roomId,
+                (int) $teacherId,
+                $meetingDays,
+                (string) $startTime,
+                (string) $endTime,
+                (string) $startDate,
+            );
+
+            $enrollmentPayload = [
+                'course_id' => $course->id,
+                'subject_id' => $course->subject_id,
+                'lop_hoc_id' => $classRoom->id,
+                'assigned_teacher_id' => (int) $teacherId,
+                'schedule' => $course->schedule,
+                'status' => Enrollment::STATUS_SCHEDULED,
+                'note' => $data['note'] ?? $enrollment->note,
+                'reviewed_by' => $admin->id,
+                'reviewed_at' => now(),
+            ];
+
+            $enrollment->update($enrollmentPayload);
+            $course->enrollments()
+                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->update([
+                    'lop_hoc_id' => $classRoom->id,
+                    'assigned_teacher_id' => (int) $teacherId,
+                    'schedule' => $course->schedule,
+                ]);
+
+            $this->refreshClassStatusByCapacity($classRoom);
+
+            return $course->wasRecentlyCreated
+                ? 'Đã tạo lớp học mới và xếp lịch thành công cho học viên.'
+                : 'Đã xếp lịch chính thức cho học viên.';
+        });
     }
 
     public function openPendingCourse(Course $course, array $data, User $admin): string
     {
-        $course->loadMissing(['teacher', 'subject', 'enrollments.user'])->loadCount([
-            'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
-        ]);
+        return DB::transaction(function () use ($course, $data, $admin): string {
+            $course = Course::query()
+                ->lockForUpdate()
+                ->findOrFail($course->id);
 
-        if (! $course->isPendingOpen()) {
-            throw ValidationException::withMessages([
-                'course' => 'Lớp này không ở trạng thái chờ mở.',
+            $course->loadMissing(['teacher', 'subject', 'enrollments.user'])->loadCount([
+                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
             ]);
-        }
 
-        if ((int) $course->scheduled_students_count < Course::minimumStudentsToOpen()) {
-            throw ValidationException::withMessages([
-                'course' => 'Lớp chưa đủ tối thiểu ' . Course::minimumStudentsToOpen() . ' học viên để mở.',
-            ]);
-        }
-
-        $meetingDays = $course->meetingDayValues();
-        $startDate = (string) $data['start_date'];
-        $endDate = (string) $data['end_date'];
-        $startTime = (string) $course->start_time;
-        $endTime = (string) $course->end_time;
-        $teacherId = (int) $course->teacher_id;
-
-        foreach ([
-            'teacher_id' => $teacherId,
-            'day_of_week' => $meetingDays,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-        ] as $field => $value) {
-            if ($value === null || $value === [] || $value === '') {
+            if (! $course->isPendingOpen()) {
                 throw ValidationException::withMessages([
-                    $field => 'Vui lòng hoàn thiện đầy đủ lịch học trước khi mở lớp.',
+                    'course' => 'Lớp này không ở trạng thái chờ mở.',
                 ]);
             }
-        }
 
-        $this->ensureTeacherIsValid($teacherId);
-        $this->ensureTeacherAvailability($course->id, $teacherId, $meetingDays, $startDate, $endDate, $startTime, $endTime);
+            if ((int) $course->scheduled_students_count < Course::minimumStudentsToOpen()) {
+                throw ValidationException::withMessages([
+                    'course' => 'Lớp chưa đủ tối thiểu ' . Course::minimumStudentsToOpen() . ' học viên để mở.',
+                ]);
+            }
 
-        $enrollments = $course->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
-            ->get();
+            $meetingDays = $course->meetingDayValues();
+            $startDate = (string) $data['start_date'];
+            $endDate = (string) $data['end_date'];
+            $startTime = (string) $course->start_time;
+            $endTime = (string) $course->end_time;
+            $teacherId = (int) $course->teacher_id;
+            $roomId = (int) $data['room_id'];
 
-        foreach ($enrollments as $enrollment) {
-            $this->ensureStudentAvailability($enrollment, $course->id, $meetingDays, $startDate, $endDate, $startTime, $endTime);
-        }
+            foreach ([
+                'teacher_id' => $teacherId,
+                'room_id' => $roomId,
+                'day_of_week' => $meetingDays,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+            ] as $field => $value) {
+                if ($value === null || $value === [] || $value === '') {
+                    throw ValidationException::withMessages([
+                        $field => 'Vui lòng hoàn thiện đầy đủ lịch học trước khi mở lớp.',
+                    ]);
+                }
+            }
 
-        $course->fill([
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'status' => Course::STATUS_SCHEDULED,
-        ]);
-        $course->schedule = $this->buildScheduleSummary($course);
-        $course->save();
+            $this->ensureTeacherIsValid($teacherId);
+            $this->ensureRoomIsValid($roomId);
+            $this->ensureTeacherAvailability($course->id, $teacherId, $meetingDays, $startDate, $endDate, $startTime, $endTime);
+            $this->ensureRoomAvailability($roomId, $meetingDays, $startTime, $endTime, $this->findExistingClassRoomForCourse($course->id)?->id);
 
-        $course->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
-            ->update([
-                'schedule' => $course->schedule,
-                'reviewed_by' => $admin->id,
-                'reviewed_at' => now(),
+            $enrollments = $course->enrollments()
+                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($enrollments as $enrollment) {
+                $this->ensureStudentAvailability($enrollment, $course->id, $meetingDays, $startDate, $endDate, $startTime, $endTime);
+            }
+
+            $course->fill([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => Course::STATUS_SCHEDULED,
             ]);
+            $course->schedule = $this->buildScheduleSummary($course);
+            $course->save();
 
-        $this->notifyStudentsCourseOpened($course);
+            $classRoom = $this->syncClassRoomForCourse(
+                $course,
+                $roomId,
+                $teacherId,
+                $meetingDays,
+                $startTime,
+                $endTime,
+                $startDate,
+            );
 
-        return 'Đã chốt ngày khai giảng và mở lớp thành công.';
+            $course->enrollments()
+                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->update([
+                    'lop_hoc_id' => $classRoom->id,
+                    'assigned_teacher_id' => $teacherId,
+                    'schedule' => $course->schedule,
+                    'reviewed_by' => $admin->id,
+                    'reviewed_at' => now(),
+                ]);
+
+            $this->refreshClassStatusByCapacity($classRoom);
+            $this->notifyStudentsCourseOpened($course);
+
+            return 'Đã chốt ngày khai giảng và mở lớp thành công.';
+        });
     }
 
     public function teacherOptions(): Collection
@@ -284,6 +346,14 @@ class AdminScheduleService
     {
         return Course::query()
             ->orderBy('title')
+            ->get();
+    }
+
+    public function roomOptions(): Collection
+    {
+        return Room::query()
+            ->where('status', Room::STATUS_ACTIVE)
+            ->orderBy('name')
             ->get();
     }
 
@@ -361,11 +431,17 @@ class AdminScheduleService
         return $course->meetingDayValues();
     }
 
-    protected function resolveCourse(Enrollment $enrollment, array $data): Course
+    protected function resolveCourse(Enrollment $enrollment, array $data, bool $lockForUpdate = false): Course
     {
         if ($this->shouldCreateNewClass($enrollment)) {
             if (! empty($data['course_id'])) {
-                $course = Course::query()->findOrFail($data['course_id']);
+                $courseQuery = Course::query();
+
+                if ($lockForUpdate) {
+                    $courseQuery->lockForUpdate();
+                }
+
+                $course = $courseQuery->findOrFail($data['course_id']);
 
                 if ((int) $course->subject_id !== (int) $enrollment->subject_id) {
                     throw ValidationException::withMessages([
@@ -394,7 +470,13 @@ class AdminScheduleService
         }
 
         if (! empty($data['course_id'])) {
-            $course = Course::query()->findOrFail($data['course_id']);
+            $courseQuery = Course::query();
+
+            if ($lockForUpdate) {
+                $courseQuery->lockForUpdate();
+            }
+
+            $course = $courseQuery->findOrFail($data['course_id']);
             if ((int) $course->subject_id !== (int) $enrollment->subject_id) {
                 throw ValidationException::withMessages([
                     'course_id' => 'Lớp học được chọn không thuộc đúng khóa học mà học viên đã đăng ký.',
@@ -467,6 +549,15 @@ class AdminScheduleService
         }
     }
 
+    protected function ensureRoomIsValid(int $roomId): void
+    {
+        if (! Room::query()->where('status', Room::STATUS_ACTIVE)->whereKey($roomId)->exists()) {
+            throw ValidationException::withMessages([
+                'room_id' => 'Phòng học được chọn không hợp lệ hoặc đang tạm ngưng.',
+            ]);
+        }
+    }
+
     protected function ensureTeacherAvailability(?int $excludeCourseId, int $teacherId, array $meetingDays, string $startDate, string $endDate, string $startTime, string $endTime): void
     {
         $conflict = Course::query()
@@ -515,6 +606,15 @@ class AdminScheduleService
         if ($conflict) {
             throw ValidationException::withMessages([
                 'start_date' => 'Học viên đã có lớp khác trùng lịch trong khung thời gian này.',
+            ]);
+        }
+    }
+
+    protected function ensureRoomAvailability(int $roomId, array $meetingDays, string $startTime, string $endTime, ?int $excludeClassRoomId = null): void
+    {
+        if (ClassRoom::roomHasConflict($roomId, $meetingDays, $startTime, $endTime, $excludeClassRoomId)) {
+            throw ValidationException::withMessages([
+                'room_id' => 'Phòng học đã có lớp khác trùng vào khung giờ này.',
             ]);
         }
     }
@@ -595,5 +695,104 @@ class AdminScheduleService
                 'link' => route('student.schedule'),
             ]);
         }
+    }
+
+    protected function findExistingClassRoomForCourse(int $courseId): ?ClassRoom
+    {
+        return ClassRoom::query()
+            ->where('course_id', $courseId)
+            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    protected function syncClassRoomForCourse(
+        Course $course,
+        int $roomId,
+        int $teacherId,
+        array $meetingDays,
+        string $startTime,
+        string $endTime,
+        ?string $startDate = null
+    ): ClassRoom {
+        $classRoom = ClassRoom::query()
+            ->where('course_id', $course->id)
+            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->first();
+
+        $payload = [
+            'subject_id' => $course->subject_id,
+            'course_id' => $course->id,
+            'name' => $course->title,
+            'room_id' => $roomId,
+            'teacher_id' => $teacherId,
+            'duration' => $course->subject?->duration,
+            'status' => ClassRoom::STATUS_OPEN,
+        ];
+
+        if ($startDate) {
+            $payload['start_date'] = $startDate;
+        }
+
+        if (! $classRoom) {
+            $classRoom = ClassRoom::query()->create($payload);
+        } else {
+            $classRoom->fill($payload)->save();
+        }
+
+        $normalizedMeetingDays = array_values(array_unique(array_filter($meetingDays)));
+
+        $existingSchedules = $classRoom->schedules()
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('day_of_week');
+
+        foreach ($normalizedMeetingDays as $dayOfWeek) {
+            $schedule = $existingSchedules->get($dayOfWeek);
+
+            if ($schedule) {
+                $schedule->fill([
+                    'teacher_id' => $teacherId,
+                    'room_id' => $roomId,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                ])->save();
+
+                continue;
+            }
+
+            ClassSchedule::query()->create([
+                'lop_hoc_id' => $classRoom->id,
+                'teacher_id' => $teacherId,
+                'room_id' => $roomId,
+                'day_of_week' => $dayOfWeek,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+            ]);
+        }
+
+        $classRoom->schedules()
+            ->whereNotIn('day_of_week', $normalizedMeetingDays)
+            ->delete();
+
+        return $classRoom->fresh(['room', 'schedules']);
+    }
+
+    protected function refreshClassStatusByCapacity(ClassRoom $classRoom): void
+    {
+        $classRoom->loadCount('enrollments');
+        $classRoom->loadMissing('room');
+
+        if (! $classRoom->room || $classRoom->status === ClassRoom::STATUS_COMPLETED || $classRoom->status === ClassRoom::STATUS_CLOSED) {
+            return;
+        }
+
+        $classRoom->update([
+            'status' => (int) $classRoom->enrollments_count >= (int) $classRoom->room->capacity
+                ? ClassRoom::STATUS_FULL
+                : ClassRoom::STATUS_OPEN,
+        ]);
     }
 }

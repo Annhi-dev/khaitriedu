@@ -5,17 +5,15 @@ namespace App\Http\Controllers;
 use App\Exceptions\EnrollmentOperationException;
 use App\Http\Requests\Student\StoreStudentScheduleRequest;
 use App\Models\Category;
-use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\Module;
-use App\Models\Option;
 use App\Models\Quiz;
-use App\Models\QuizAnswer;
 use App\Models\Review;
 use App\Models\Subject;
+use App\Services\CourseQuizService;
 use App\Services\StudentEnrollmentService;
 use Illuminate\Http\Request;
 
@@ -182,7 +180,7 @@ class CourseController extends Controller
         return view('courses.quiz', compact('course', 'quiz', 'user'));
     }
 
-    public function submitQuiz(Request $request, $course, $quiz)
+    public function submitQuiz(Request $request, $course, $quiz, CourseQuizService $quizService)
     {
         $user = $this->sessionUser();
         [$course, $enrollment, $redirect] = $this->resolveInternalClassAccess((int) $course, $user);
@@ -202,50 +200,13 @@ class CourseController extends Controller
         }
 
         $answers = $request->input('answers', []);
-        $totalPoints = 0;
-        $earnedPoints = 0;
-
-        foreach ($quiz->questions as $question) {
-            $totalPoints += $question->points;
-            $selected = $answers[$question->id] ?? null;
-
-            if ($question->type === 'short_answer') {
-                $isCorrect = false;
-            } else {
-                $option = Option::find($selected);
-                $isCorrect = $option ? (bool) $option->is_correct : false;
-
-                if ($isCorrect) {
-                    $earnedPoints += $question->points;
-                }
-            }
-
-            QuizAnswer::create([
-                'user_id' => $user->id,
-                'quiz_id' => $quiz->id,
-                'question_id' => $question->id,
-                'option_id' => $selected,
-                'answer_text' => is_array($selected) ? json_encode($selected) : $selected,
-                'is_correct' => $isCorrect,
-                'attempt' => QuizAnswer::where('user_id', $user->id)->where('quiz_id', $quiz->id)->count() + 1,
-            ]);
+        if (! is_array($answers)) {
+            $answers = [];
         }
 
-        $score = $totalPoints ? round($earnedPoints / $totalPoints * 100, 2) : 0;
-        $passed = $score >= ($quiz->passing_score ?: 70);
+        $result = $quizService->submit($user, $course, $quiz, $answers);
 
-        if ($passed) {
-            Certificate::create([
-                'user_id' => $user->id,
-                'course_id' => $course->id,
-                'certificate_number' => 'KT' . time() . rand(100, 999),
-                'score' => $score,
-                'issued_at' => now(),
-                'status' => 'issued',
-            ]);
-        }
-
-        return redirect()->route('courses.show', $course->id)->with('status', "Quiz hoan thanh: $score%. " . ($passed ? 'Dat chung chi.' : 'Khong dat.'));
+        return redirect()->route('courses.show', $course->id)->with('status', 'Quiz hoan thanh: ' . $result['score'] . '%. ' . ($result['passed'] ? 'Dat chung chi.' : 'Khong dat.'));
     }
 
     public function redirectEnroll($id)

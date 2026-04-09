@@ -134,6 +134,21 @@
                     @error('teacher_id')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 
+                <div>
+                    <label class="text-sm font-medium text-slate-700">
+                        {{ $forceCreateNewClass ? 'Phong hoc du kien (tuy chon)' : 'Phong hoc chinh thuc' }}
+                    </label>
+                    <select name="room_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                        <option value="">{{ $forceCreateNewClass ? 'Se chot khi mo lop' : 'Chon phong hoc' }}</option>
+                        @foreach ($rooms as $room)
+                            <option value="{{ $room->id }}" @selected((string) old('room_id') === (string) $room->id)>
+                                {{ $room->name }}{{ $room->code ? ' (' . $room->code . ')' : '' }} - suc chua {{ $room->capacity }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('room_id')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
+                </div>
+
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="text-sm font-medium text-slate-700">Ngay hoc trong tuan</label>

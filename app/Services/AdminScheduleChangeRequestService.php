@@ -12,6 +12,7 @@ use App\Models\ScheduleChangeRequest;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AdminScheduleChangeRequestService
@@ -54,68 +55,76 @@ class AdminScheduleChangeRequestService
 
     public function review(ScheduleChangeRequest $scheduleChangeRequest, array $data, User $admin): string
     {
-        $scheduleChangeRequest->loadMissing([
-            'teacher',
-            'course.enrollments.user',
-            'classRoom.subject.category',
-            'classRoom.room',
-            'classRoom.course.enrollments',
-            'classRoom.enrollments.user',
-            'classSchedule.room',
-            'requestedRoom',
-        ]);
+        return DB::transaction(function () use ($scheduleChangeRequest, $data, $admin): string {
+            $scheduleChangeRequest = ScheduleChangeRequest::query()
+                ->lockForUpdate()
+                ->with([
+                    'teacher',
+                    'course.enrollments.user',
+                    'classRoom.subject.category',
+                    'classRoom.room',
+                    'classRoom.course.enrollments',
+                    'classRoom.enrollments.user',
+                    'classSchedule.room',
+                    'requestedRoom',
+                ])
+                ->findOrFail($scheduleChangeRequest->id);
 
-        if (! $scheduleChangeRequest->isPending()) {
-            throw ValidationException::withMessages([
-                'action' => 'Yêu cầu này đã được xử lý trước đó.',
-            ]);
-        }
+            if (! $scheduleChangeRequest->isPending()) {
+                throw ValidationException::withMessages([
+                    'action' => 'Yêu cầu này đã được xử lý trước đó.',
+                ]);
+            }
 
-        if (! $scheduleChangeRequest->course && ! $scheduleChangeRequest->classSchedule) {
-            throw ValidationException::withMessages([
-                'action' => 'Lịch gắn với yêu cầu đổi lịch không còn tồn tại.',
-            ]);
-        }
+            if (! $scheduleChangeRequest->course && ! $scheduleChangeRequest->classSchedule) {
+                throw ValidationException::withMessages([
+                    'action' => 'Lịch gắn với yêu cầu đổi lịch không còn tồn tại.',
+                ]);
+            }
 
-        if ($data['action'] === 'approve') {
-            if ($scheduleChangeRequest->classSchedule) {
-                $this->ensureTeacherAvailabilityForClassSchedule($scheduleChangeRequest);
-                $this->ensureStudentsAvailabilityForClassSchedule($scheduleChangeRequest);
-                $this->ensureRequestedRoomAvailabilityForClassSchedule($scheduleChangeRequest);
-                $newSchedule = $this->applyApprovedClassSchedule($scheduleChangeRequest);
-            } else {
-                $this->ensureTeacherAvailability($scheduleChangeRequest);
-                $this->ensureStudentsAvailability($scheduleChangeRequest);
-                $newSchedule = $this->applyApprovedSchedule($scheduleChangeRequest);
+            if ($data['action'] === 'approve') {
+                if ($scheduleChangeRequest->classSchedule) {
+                    $this->ensureTeacherAvailabilityForClassSchedule($scheduleChangeRequest);
+                    $this->ensureStudentsAvailabilityForClassSchedule($scheduleChangeRequest);
+                    $this->ensureRequestedRoomAvailabilityForClassSchedule($scheduleChangeRequest);
+                    $newSchedule = $this->applyApprovedClassSchedule($scheduleChangeRequest);
+                } else {
+                    $this->ensureTeacherAvailability($scheduleChangeRequest);
+                    $this->ensureStudentsAvailability($scheduleChangeRequest);
+                    $newSchedule = $this->applyApprovedSchedule($scheduleChangeRequest);
+                }
+
+                $scheduleChangeRequest->update([
+                    'status' => ScheduleChangeRequest::STATUS_APPROVED,
+                    'admin_note' => $data['admin_note'] ?? null,
+                    'reviewed_by' => $admin->id,
+                    'reviewed_at' => now(),
+                ]);
+
+                $this->notifyTeacher($scheduleChangeRequest, true);
+
+                return 'Đã duyệt yêu cầu đổi lịch và cập nhật lịch mới: ' . $newSchedule;
             }
 
             $scheduleChangeRequest->update([
-                'status' => ScheduleChangeRequest::STATUS_APPROVED,
-                'admin_note' => $data['admin_note'] ?? null,
+                'status' => ScheduleChangeRequest::STATUS_REJECTED,
+                'admin_note' => $data['admin_note'],
                 'reviewed_by' => $admin->id,
                 'reviewed_at' => now(),
             ]);
 
-            $this->notifyTeacher($scheduleChangeRequest, true);
+            $this->notifyTeacher($scheduleChangeRequest, false);
 
-            return 'Đã duyệt yêu cầu đổi lịch và cập nhật lịch mới: ' . $newSchedule;
-        }
-
-        $scheduleChangeRequest->update([
-            'status' => ScheduleChangeRequest::STATUS_REJECTED,
-            'admin_note' => $data['admin_note'],
-            'reviewed_by' => $admin->id,
-            'reviewed_at' => now(),
-        ]);
-
-        $this->notifyTeacher($scheduleChangeRequest, false);
-
-        return 'Đã từ chối yêu cầu đổi lịch của giảng viên.';
+            return 'Đã từ chối yêu cầu đổi lịch của giảng viên.';
+        });
     }
 
     protected function applyApprovedSchedule(ScheduleChangeRequest $scheduleChangeRequest): string
     {
-        $course = $scheduleChangeRequest->course;
+        $course = Course::query()
+            ->lockForUpdate()
+            ->findOrFail($scheduleChangeRequest->course_id);
+
         $newSchedule = $this->buildScheduleLabel($scheduleChangeRequest);
 
         $course->fill([
@@ -215,8 +224,17 @@ class AdminScheduleChangeRequestService
 
     protected function applyApprovedClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): string
     {
-        $classSchedule = $scheduleChangeRequest->classSchedule;
-        $classRoom = $scheduleChangeRequest->classRoom;
+        $classSchedule = ClassSchedule::query()
+            ->lockForUpdate()
+            ->findOrFail($scheduleChangeRequest->class_schedule_id);
+
+        $classRoom = null;
+
+        if ($scheduleChangeRequest->class_room_id) {
+            $classRoom = ClassRoom::query()
+                ->lockForUpdate()
+                ->find($scheduleChangeRequest->class_room_id);
+        }
 
         $attributes = [
             'day_of_week' => $scheduleChangeRequest->requested_day_of_week,

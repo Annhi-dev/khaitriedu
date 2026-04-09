@@ -141,6 +141,7 @@
 
     <!-- Footer hiện đại -->
     <footer class="bg-white border-t border-gray-200 mt-auto">
+        @php $socialLinks = config('site.social_links'); @endphp
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <!-- Cột 1 -->
@@ -175,9 +176,9 @@
                 <div>
                     <h4 class="font-semibold text-gray-800 mb-4">Kết nối</h4>
                     <div class="flex space-x-4 mb-4">
-                        <a href="https://www.facebook.com/profile.php?id=61575515763147" target="_blank" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-facebook"></i></a>
-                        <a href="https://www.youtube.com/channel/UCPrE7RBNFZHZAxJzvCxvMSg" target="_blank" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-youtube"></i></a>
-                        <a href="https://zalo.me/84867852853" target="_blank" class="hover:opacity-75 transition">
+                        <a href="{{ $socialLinks['facebook'] }}" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-facebook"></i></a>
+                        <a href="{{ $socialLinks['youtube'] }}" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-primary transition text-xl"><i class="fab fa-youtube"></i></a>
+                        <a href="{{ $socialLinks['zalo'] }}" target="_blank" rel="noopener noreferrer" class="hover:opacity-75 transition">
                             <img src="{{ asset('images/zalo.png') }}" alt="Zalo" class="w-6 h-6">
                         </a>
                     </div>

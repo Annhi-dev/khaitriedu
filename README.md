@@ -1,59 +1,225 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# KhaiTriEdu
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+KhaiTriEdu is a Laravel 12 education management website for public course browsing and role-based administration for `admin`, `teacher`, and `student` accounts.
 
-## About Laravel
+It is built to support a real training workflow: public landing pages, subject and course catalogs, enrollments, class scheduling, quizzes, certificates, teacher applications, and dashboard views for each role.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Core Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Public website pages: home, about, courses, teachers, blog, help, terms, privacy, contact, and teacher application
+- Role-based portals for `admin`, `teacher`, and `student`
+- Subject and course management
+- Enrollment flow for fixed classes and custom schedule requests
+- Class scheduling and room assignment
+- Quiz submission and certificate viewing
+- Teacher application review and account activation
+- Attendance, grades, and schedule change workflows
+- Dashboard summaries and reporting screens
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech Stack
 
-## Learning Laravel
+- Laravel 12
+- PHP 8.2+
+- Blade templates
+- Vite
+- SQLite by default for local development
+- MySQL / MariaDB compatible schema
+- PHPUnit 11
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Project Structure
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- `app/Http/Controllers` - public, admin, teacher, and student controllers
+- `app/Services` - business logic extracted from controllers
+- `app/Http/Requests` - request validation classes
+- `app/Models` - Eloquent models for education domain entities
+- `database/migrations` - schema definitions
+- `database/seeders` - demo data
+- `resources/views` - Blade UI for public pages and portals
+- `routes` - route entry points for web and role-based areas
 
-## Laravel Sponsors
+## Requirements
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- PHP 8.2 or newer
+- Composer 2
+- Node.js and npm
+- A supported database engine
 
-### Premium Partners
+## Installation
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+1. Clone the repository and move into the project directory.
+2. Install PHP dependencies:
 
-## Contributing
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. Install frontend dependencies:
 
-## Code of Conduct
+```bash
+npm install
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+4. Copy the environment file:
 
-## Security Vulnerabilities
+```bash
+copy .env.example .env
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+5. Generate the application key:
 
-## License
+```bash
+php artisan key:generate
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+6. Configure the database, mail, and site settings in `.env`.
+7. Run migrations and seed the demo content:
+
+```bash
+php artisan migrate --seed
+```
+
+8. Create the storage symlink if the app serves uploaded files:
+
+```bash
+php artisan storage:link
+```
+
+9. Build frontend assets for production or start the Vite dev server locally.
+
+## Environment Setup
+
+The application reads its runtime settings from `.env`.
+
+Recommended values to review:
+
+- `APP_NAME`
+- `APP_ENV`
+- `APP_DEBUG`
+- `APP_URL`
+- `DB_CONNECTION`, `DB_DATABASE`, `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`
+- `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
+- `QUEUE_CONNECTION`
+- `SESSION_DRIVER`
+- `CACHE_STORE`
+- `SITE_CONTACT_RECIPIENT`
+- `SITE_CONTACT_ADDRESS`
+- `SITE_CONTACT_PHONE`
+- `SITE_CONTACT_HOURS`
+- `SITE_CONTACT_EMAILS`
+- `SITE_FACEBOOK_URL`
+- `SITE_YOUTUBE_URL`
+- `SITE_ZALO_URL`
+- `SITE_MAP_EMBED_URL`
+
+By default, mail is configured to use the `log` mailer for local development.
+
+## Database Setup
+
+The project works with the default Laravel migration flow.
+
+Local SQLite is already supported, but you can switch to MySQL or MariaDB by updating the database environment variables and running:
+
+```bash
+php artisan migrate --seed
+```
+
+Seeded demo data includes:
+
+- Admin accounts
+- Teacher accounts
+- Student accounts
+- Sample categories, subjects, courses, modules, lessons, and blog announcements
+- Sample rooms
+
+## Run Locally
+
+Start the backend:
+
+```bash
+php artisan serve
+```
+
+Run the Vite frontend watcher:
+
+```bash
+npm run dev
+```
+
+If you need queue workers locally, run:
+
+```bash
+php artisan queue:listen
+```
+
+## Test Instructions
+
+Run the full test suite:
+
+```bash
+php artisan test
+```
+
+You can also run focused feature tests while working on a specific flow.
+
+## Roles
+
+### Admin
+
+- Manage users, teachers, students, departments, rooms, subjects, courses, classes, schedules, enrollments, teacher applications, and reports
+- Review enrollment requests and create class schedules
+- Review schedule change requests and operational workflows
+
+### Teacher
+
+- View assigned classes and schedules
+- Record attendance, grades, and evaluations
+- Submit schedule change requests
+- Inspect teaching progress and related student data
+
+### Student
+
+- Browse public subjects and courses
+- Submit fixed-class enrollments or custom schedule requests
+- View personal schedules, grades, and certificates
+- Take quizzes tied to enrolled courses
+
+## Demo Accounts
+
+The seeder currently provides sample accounts.
+
+Default password for seeded demo users: `123456`
+
+Examples:
+
+- Admin: `admin@gmail.com`
+- Admin: `admin2@gmail.com`
+- Teacher: `gv1@gmail.com` through `gv10@gmail.com`
+- Student: `hv1@gmail.com` through `hv10@gmail.com`
+
+If you change the seed data, update this section to match the new demo set.
+
+## Screenshots
+
+Add production screenshots here after the UI is finalized.
+
+- Homepage screenshot
+- Admin dashboard screenshot
+- Teacher portal screenshot
+- Student portal screenshot
+
+## Deployment Notes
+
+- Set `APP_ENV=production` and `APP_DEBUG=false`
+- Configure a real database, cache, queue, and mail transport
+- Set the site contact env values before deploying
+- Run `php artisan optimize`
+- Run `php artisan migrate --force`
+- Run `php artisan storage:link`
+- Build frontend assets with `npm run build`
+- Make sure a queue worker is running if you rely on queued jobs or mail
+
+## Notes
+
+- The project preserves Vietnamese UI content where it already exists.
+- Some controllers have already been partially refactored into services. Keep that direction when extending the codebase.
+- Use Laravel conventions for new modules, requests, services, and tests.

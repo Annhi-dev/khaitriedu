@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\Enrollment;
 use App\Models\User;
+use App\Services\StudentScheduleService;
 
 class ScheduleController extends Controller
 {
-    public function index()
+    public function index(StudentScheduleService $scheduleService)
     {
         [$user, $redirect] = $this->requireRole(User::ROLE_STUDENT);
 
@@ -16,13 +16,8 @@ class ScheduleController extends Controller
             return $redirect;
         }
 
-        $enrollments = Enrollment::where('user_id', $user->id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
-            ->whereNotNull('course_id')
-            ->with(['course.subject', 'assignedTeacher'])
-            ->orderByDesc('id')
-            ->get();
+        $viewData = $scheduleService->scheduleData($user);
 
-        return view('student.schedule', compact('user', 'enrollments'));
+        return view('student.schedule', ['user' => $user] + $viewData);
     }
 }

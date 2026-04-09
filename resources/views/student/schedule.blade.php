@@ -16,6 +16,14 @@
       @php
         $course = $enrollment->course;
         $waitingOpen = $course?->isPendingOpen();
+        $classRoom = $enrollment->classRoom;
+        $attendanceSummary = $classRoom ? ($attendanceSummaries->get($classRoom->id) ?? null) : null;
+        $classmates = $classRoom
+            ? $classRoom->enrollments
+                ->filter(fn ($classEnrollment) => (int) $classEnrollment->user_id !== (int) $enrollment->user_id && $classEnrollment->user !== null)
+                ->map(fn ($classEnrollment) => $classEnrollment->user)
+                ->values()
+            : collect();
       @endphp
       <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -37,6 +45,56 @@
             @if ($waitingOpen)
               <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 Lop nay da duoc ghep lich nhung chua chot ngay khai giang. Admin se thong bao cho ban ngay khi lop du toi thieu 5 hoc vien va duoc mo chinh thuc.
+              </div>
+            @endif
+
+            @if (! $waitingOpen && $classRoom)
+              <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p class="text-sm font-semibold text-emerald-800">Thong ke diem danh</p>
+                  @if ($attendanceSummary)
+                    <div class="mt-3 grid grid-cols-2 gap-2 text-sm text-emerald-900">
+                      <p><strong>Tong buoi:</strong> {{ $attendanceSummary['total'] }}</p>
+                      <p><strong>Ty le co mat:</strong> {{ $attendanceSummary['present_rate'] }}%</p>
+                      <p><strong>Co mat:</strong> {{ $attendanceSummary['present'] }}</p>
+                      <p><strong>Di tre:</strong> {{ $attendanceSummary['late'] }}</p>
+                      <p><strong>Co phep:</strong> {{ $attendanceSummary['excused'] }}</p>
+                      <p><strong>Vang:</strong> {{ $attendanceSummary['absent'] }}</p>
+                    </div>
+
+                    <div class="mt-3 border-t border-emerald-200 pt-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Lan diem danh gan day</p>
+                      <ul class="mt-2 space-y-1 text-xs text-emerald-900">
+                        @foreach ($attendanceSummary['recent'] as $attendanceItem)
+                          <li>
+                            {{ $attendanceItem->attendance_date?->format('d/m/Y') ?? 'Chua ro ngay' }}:
+                            {{ $attendanceItem->statusLabel() }}
+                          </li>
+                        @endforeach
+                      </ul>
+                    </div>
+                  @else
+                    <p class="mt-2 text-sm text-emerald-800">Giang vien chua diem danh lop nay.</p>
+                  @endif
+                </div>
+
+                <div class="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+                  <p class="text-sm font-semibold text-sky-800">Ban hoc cung lop</p>
+                  @if ($classmates->isNotEmpty())
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      @foreach ($classmates->take(8) as $classmate)
+                        <span class="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-medium text-sky-800">
+                          {{ $classmate->name }}
+                        </span>
+                      @endforeach
+                    </div>
+                    @if ($classmates->count() > 8)
+                      <p class="mt-2 text-xs text-sky-700">Va {{ $classmates->count() - 8 }} ban khac trong lop.</p>
+                    @endif
+                  @else
+                    <p class="mt-2 text-sm text-sky-800">Hien chua co them hoc vien nao khac trong lop nay.</p>
+                  @endif
+                </div>
               </div>
             @endif
           </div>

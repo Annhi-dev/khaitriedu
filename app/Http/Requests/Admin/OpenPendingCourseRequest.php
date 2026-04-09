@@ -16,6 +16,7 @@ class OpenPendingCourseRequest extends FormRequest
         $this->merge([
             'start_date' => $this->input('start_date') ?: null,
             'end_date' => $this->input('end_date') ?: null,
+            'room_id' => $this->filled('room_id') ? (int) $this->input('room_id') : null,
         ]);
     }
 
@@ -24,6 +25,7 @@ class OpenPendingCourseRequest extends FormRequest
         return [
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'room_id' => ['required', 'exists:rooms,id'],
         ];
     }
 }

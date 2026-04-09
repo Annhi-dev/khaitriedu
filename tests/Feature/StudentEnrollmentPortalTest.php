@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -115,6 +116,52 @@ class StudentEnrollmentPortalTest extends TestCase
         $this->assertNull($updatedEnrollment->preferred_days);
     }
 
+    public function test_student_fixed_class_enrollment_reuses_existing_record_for_same_class(): void
+    {
+        $student = User::factory()->student()->create();
+        $teacher = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject();
+        $classRoom = $this->createOpenClassRoom($subject, $teacher);
+
+        $pendingEnrollment = Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'lop_hoc_id' => $classRoom->id,
+            'status' => Enrollment::STATUS_PENDING,
+            'start_time' => '17:30',
+            'end_time' => '19:30',
+            'preferred_days' => ['Tuesday', 'Thursday'],
+            'preferred_schedule' => 'Muon hoc cung lop nay.',
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $student->id])
+            ->post(route('student.enroll.store', $subject), [
+                'lop_hoc_id' => $classRoom->id,
+            ]);
+
+        $response->assertRedirect(route('student.enroll.my-classes'));
+        $response->assertSessionHas('status');
+
+        $this->assertDatabaseCount('dang_ky', 1);
+        $this->assertDatabaseHas('dang_ky', [
+            'id' => $pendingEnrollment->id,
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'course_id' => $classRoom->course_id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'start_time' => null,
+            'end_time' => null,
+            'preferred_schedule' => null,
+        ]);
+
+        $this->assertNull($pendingEnrollment->fresh()->preferred_days);
+    }
+
     public function test_student_portal_keeps_approved_status_when_updating_custom_schedule_request(): void
     {
         $student = User::factory()->student()->create();
@@ -157,6 +204,38 @@ class StudentEnrollmentPortalTest extends TestCase
         $this->assertNull($updatedEnrollment->note);
         $this->assertSame($admin->id, $updatedEnrollment->reviewed_by);
         $this->assertNotNull($updatedEnrollment->reviewed_at);
+    }
+
+    public function test_database_prevents_duplicate_enrollment_for_same_student_and_class(): void
+    {
+        $student = User::factory()->student()->create();
+        $teacher = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject();
+        $classRoom = $this->createOpenClassRoom($subject, $teacher);
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'course_id' => $classRoom->course_id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'course_id' => $classRoom->course_id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
     }
 
     private function createCatalogSubject(string $name = 'Tieng Anh giao tiep'): array

@@ -20,29 +20,50 @@
         <form method="POST" action="{{ route('admin.classes.store') }}" id="create-class-form">
             @csrf
 
+            @php
+                $preSubjectId = (string) old('subject_id', request('subject_id'));
+                $preCourseId = (string) old('course_id', request('course_id'));
+            @endphp
+
             <div class="grid gap-5 md:grid-cols-2">
                 {{-- Môn học --}}
                 <div class="md:col-span-2">
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Môn học <span class="text-red-500">*</span></label>
-                    @php $preSubjectId = old('subject_id', request('subject_id')); @endphp
-                    <select name="subject_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                    <select id="subject_id" name="subject_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
                         <option value="">Chọn môn học...</option>
                         @foreach($subjects as $subject)
-                            <option value="{{ $subject->id }}" @selected($preSubjectId == $subject->id)>
+                            <option value="{{ $subject->id }}" @selected($preSubjectId === (string) $subject->id)>
                                 {{ $subject->name }}{{ $subject->category ? ' — ' . $subject->category->name : '' }}
                             </option>
                         @endforeach
                     </select>
-                    @if(request('subject_id'))
-                        <p class="mt-1 text-xs text-green-600">✅ Môn học đã được điền sẵn từ khóa học bạn chọn.</p>
+                    @if(request('subject_id') || request('course_id'))
+                        <p class="mt-1 text-xs text-green-600">✅ Môn học đã được gợi ý theo dữ liệu bạn vừa chọn.</p>
                     @endif
+                </div>
+
+                {{-- Khóa học --}}
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium text-slate-700">Khóa học <span class="text-red-500">*</span></label>
+                    <select id="course_id" name="course_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                        <option value="">Chọn khóa học...</option>
+                        @foreach($courses as $course)
+                            <option
+                                value="{{ $course->id }}"
+                                data-subject-id="{{ $course->subject_id }}"
+                                @selected($preCourseId === (string) $course->id)
+                            >
+                                {{ $course->title }}{{ $course->subject ? ' — ' . $course->subject->name : '' }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 {{-- Giảng viên --}}
                 <div>
-                    <label class="mb-1.5 block text-sm font-medium text-slate-700">Giảng viên</label>
-                    <select name="teacher_id" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
-                        <option value="">Chưa phân công</option>
+                    <label class="mb-1.5 block text-sm font-medium text-slate-700">Giảng viên <span class="text-red-500">*</span></label>
+                    <select name="teacher_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                        <option value="">Chọn giảng viên...</option>
                         @foreach($teachers as $teacher)
                             <option value="{{ $teacher->id }}" @selected(old('teacher_id') == $teacher->id)>{{ $teacher->name }}</option>
                         @endforeach
@@ -51,9 +72,9 @@
 
                 {{-- Phòng học --}}
                 <div>
-                    <label class="mb-1.5 block text-sm font-medium text-slate-700">Phòng học</label>
-                    <select name="room_id" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
-                        <option value="">Chưa chọn phòng</option>
+                    <label class="mb-1.5 block text-sm font-medium text-slate-700">Phòng học <span class="text-red-500">*</span></label>
+                    <select name="room_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                        <option value="">Chọn phòng học...</option>
                         @foreach($rooms as $room)
                             <option value="{{ $room->id }}" @selected(old('room_id') == $room->id)>
                                 {{ $room->name }} ({{ $room->code }}) — Sức chứa: {{ $room->capacity }}
@@ -104,6 +125,44 @@
     const days = @json(\App\Models\ClassSchedule::$dayOptions);
     const container = document.getElementById('schedule-rows');
     const addBtn = document.getElementById('add-schedule-btn');
+    const subjectSelect = document.getElementById('subject_id');
+    const courseSelect = document.getElementById('course_id');
+
+    function syncCourseOptionsBySubject() {
+        const subjectId = subjectSelect.value;
+        let hasVisibleSelected = false;
+
+        Array.from(courseSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                return;
+            }
+
+            const optionSubjectId = option.dataset.subjectId;
+            const visible = !subjectId || optionSubjectId === subjectId;
+            option.hidden = !visible;
+
+            if (visible && option.selected) {
+                hasVisibleSelected = true;
+            }
+        });
+
+        if (!hasVisibleSelected) {
+            courseSelect.value = '';
+        }
+    }
+
+    function syncSubjectByCourse() {
+        const selected = courseSelect.options[courseSelect.selectedIndex];
+        const optionSubjectId = selected ? selected.dataset.subjectId : null;
+
+        if (!optionSubjectId) {
+            return;
+        }
+
+        subjectSelect.value = optionSubjectId;
+        syncCourseOptionsBySubject();
+    }
 
     function addRow() {
         const key = idx++;
@@ -127,6 +186,12 @@
     }
 
     addBtn.addEventListener('click', addRow);
+    subjectSelect.addEventListener('change', syncCourseOptionsBySubject);
+    courseSelect.addEventListener('change', syncSubjectByCourse);
+
+    syncCourseOptionsBySubject();
+    syncSubjectByCourse();
+
     // Thêm sẵn 1 row mặc định
     addRow();
 })();

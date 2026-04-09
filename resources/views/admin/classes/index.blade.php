@@ -57,8 +57,8 @@
                 @forelse($classes as $class)
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-4 py-3">
-                        <div class="font-medium text-slate-800">{{ $class->subject->name ?? '—' }}</div>
-                        <div class="text-xs text-slate-500">Môn học</div>
+                        <div class="font-medium text-slate-800">{{ $class->course->title ?? 'Chưa gắn khóa học' }}</div>
+                        <div class="text-xs text-slate-500">{{ $class->subject->name ?? 'Chưa gắn môn học' }}</div>
                     </td>
                     <td class="px-4 py-3 text-slate-700">{{ $class->teacher->name ?? 'Chưa phân công' }}</td>
                     <td class="px-4 py-3 text-slate-700">{{ $class->room->name ?? 'Chưa chọn' }}</td>

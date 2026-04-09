@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\ClassRoom;
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Notification;
+use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -278,6 +281,7 @@ class AdminScheduleManagementTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
+        $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
         $waitingCourse = $this->createInternalCourse($subject, $teacher, [
@@ -307,6 +311,7 @@ class AdminScheduleManagementTest extends TestCase
         $response = $this
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'room_id' => $room->id,
                 'start_date' => '2026-04-20',
                 'end_date' => '2026-06-20',
             ]);
@@ -319,6 +324,25 @@ class AdminScheduleManagementTest extends TestCase
         $this->assertSame('2026-06-20', $waitingCourse->end_date?->format('Y-m-d'));
         $this->assertStringContainsString('20/04/2026', $waitingCourse->schedule);
 
+        $classRoom = ClassRoom::query()->where('course_id', $waitingCourse->id)->first();
+        $this->assertNotNull($classRoom);
+        $this->assertSame($room->id, $classRoom->room_id);
+        $this->assertSame($teacher->id, $classRoom->teacher_id);
+        $this->assertDatabaseHas('lich_hoc', [
+            'lop_hoc_id' => $classRoom->id,
+            'room_id' => $room->id,
+            'teacher_id' => $teacher->id,
+            'day_of_week' => 'Monday',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+        ]);
+
+        $this->assertDatabaseHas('dang_ky', [
+            'course_id' => $waitingCourse->id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+        ]);
+
         $this->assertSame(Course::minimumStudentsToOpen(), Notification::query()->where('type', 'success')->count());
         $this->assertDatabaseHas('thong_bao', [
             'type' => 'success',
@@ -330,6 +354,7 @@ class AdminScheduleManagementTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
+        $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
         $waitingCourse = $this->createInternalCourse($subject, $teacher, [
@@ -356,6 +381,7 @@ class AdminScheduleManagementTest extends TestCase
             ->from(route('admin.schedules.courses.open', $waitingCourse))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'room_id' => $room->id,
                 'start_date' => '2026-04-20',
                 'end_date' => '2026-06-20',
             ]);
@@ -369,6 +395,7 @@ class AdminScheduleManagementTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
+        $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
         $this->createInternalCourse($subject, $teacher, [
@@ -406,6 +433,7 @@ class AdminScheduleManagementTest extends TestCase
             ->from(route('admin.schedules.courses.open', $waitingCourse))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'room_id' => $room->id,
                 'start_date' => '2026-04-15',
                 'end_date' => '2026-05-15',
             ]);
@@ -415,11 +443,83 @@ class AdminScheduleManagementTest extends TestCase
         $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
     }
 
+    public function test_admin_cannot_open_waiting_class_when_room_has_conflicting_time_slot(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacherA = User::factory()->teacher()->create();
+        $teacherB = User::factory()->teacher()->create();
+        $room = $this->createRoom();
+        [, $subject] = $this->createCatalogSubject();
+
+        $existingCourse = $this->createInternalCourse($subject, $teacherA, [
+            'title' => 'Lop dang su dung phong',
+            'day_of_week' => 'Wednesday',
+            'meeting_days' => ['Wednesday'],
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-05-01',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+            'status' => Course::STATUS_SCHEDULED,
+        ]);
+
+        $existingClass = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $existingCourse->id,
+            'room_id' => $room->id,
+            'teacher_id' => $teacherA->id,
+            'start_date' => '2026-04-01',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $existingClass->id,
+            'teacher_id' => $teacherA->id,
+            'room_id' => $room->id,
+            'day_of_week' => 'Wednesday',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+        ]);
+
+        $waitingCourse = $this->createInternalCourse($subject, $teacherB, [
+            'title' => 'Lop cho mo',
+            'day_of_week' => 'Wednesday',
+            'meeting_days' => ['Wednesday'],
+            'start_time' => '19:00',
+            'end_time' => '21:00',
+            'status' => Course::STATUS_PENDING_OPEN,
+        ]);
+
+        foreach (range(1, Course::minimumStudentsToOpen()) as $index) {
+            $student = User::factory()->student()->create();
+
+            $this->createEnrollment($student, $subject, [
+                'course_id' => $waitingCourse->id,
+                'assigned_teacher_id' => $teacherB->id,
+                'status' => Enrollment::STATUS_SCHEDULED,
+            ]);
+        }
+
+        $response = $this
+            ->from(route('admin.schedules.courses.open', $waitingCourse))
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'room_id' => $room->id,
+                'start_date' => '2026-04-15',
+                'end_date' => '2026-05-15',
+            ]);
+
+        $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
+        $response->assertSessionHasErrors('room_id');
+        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+    }
+
     public function test_admin_cannot_open_waiting_class_when_student_has_conflicting_time_slot(): void
     {
         $admin = User::factory()->admin()->create();
         $teacherA = User::factory()->teacher()->create();
         $teacherB = User::factory()->teacher()->create();
+        $room = $this->createRoom();
         $student = User::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
 
@@ -470,6 +570,7 @@ class AdminScheduleManagementTest extends TestCase
             ->from(route('admin.schedules.courses.open', $waitingCourse))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.schedules.courses.open.store', $waitingCourse), [
+                'room_id' => $room->id,
                 'start_date' => '2026-04-16',
                 'end_date' => '2026-05-16',
             ]);
@@ -589,6 +690,20 @@ class AdminScheduleManagementTest extends TestCase
             'teacher_id' => $teacher?->id,
             'capacity' => 20,
             'status' => Course::STATUS_DRAFT,
+        ], $overrides));
+    }
+
+    private function createRoom(array $overrides = []): Room
+    {
+        $code = $overrides['code'] ?? 'P' . fake()->unique()->numberBetween(100, 999);
+
+        return Room::create(array_merge([
+            'code' => $code,
+            'name' => 'Phong ' . $code,
+            'type' => 'offline',
+            'location' => 'Tang 2',
+            'capacity' => 25,
+            'status' => Room::STATUS_ACTIVE,
         ], $overrides));
     }
 }

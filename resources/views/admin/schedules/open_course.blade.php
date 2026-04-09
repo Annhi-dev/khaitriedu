@@ -56,6 +56,19 @@
             <form method="post" action="{{ route('admin.schedules.courses.open.store', $course) }}" class="space-y-4">
                 @csrf
                 <div>
+                    <label class="text-sm font-medium text-slate-700">Phong hoc chinh thuc</label>
+                    <select name="room_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                        <option value="">Chon phong hoc</option>
+                        @foreach ($rooms as $room)
+                            <option value="{{ $room->id }}" @selected((string) old('room_id') === (string) $room->id)>
+                                {{ $room->name }}{{ $room->code ? ' (' . $room->code . ')' : '' }} - suc chua {{ $room->capacity }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('room_id')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
                     <label class="text-sm font-medium text-slate-700">Ngay bat dau</label>
                     <input type="date" name="start_date" value="{{ old('start_date') }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                     @error('start_date')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
