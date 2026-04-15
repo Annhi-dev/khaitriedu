@@ -2,6 +2,15 @@
 @section('title', 'Chi tiết giảng viên')
 @section('content')
 @php
+    $teacherSpecialty = $teacher->specialtyLabel();
+    $teachingSubjects = $courses
+        ->pluck('subject.name')
+        ->filter()
+        ->unique()
+        ->values();
+    $teachingSubjectCount = $teachingSubjects->count();
+    $teachingPreview = $teachingSubjects->take(3)->implode(' · ');
+    $teachingOverflow = max($teachingSubjectCount - 3, 0);
     $statusClasses = match ($teacher->status) {
         \App\Models\User::STATUS_ACTIVE => 'border-emerald-200 bg-emerald-50 text-emerald-700',
         \App\Models\User::STATUS_INACTIVE => 'border-amber-200 bg-amber-50 text-amber-700',
@@ -13,14 +22,36 @@
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
             <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Hồ sơ giảng viên</p>
-            <h1 class="mt-1 text-3xl font-semibold text-slate-900">{{ $teacher->name }}</h1>
+            <h1 class="mt-1 text-3xl font-semibold text-slate-900">{{ $teacher->displayName() }}</h1>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
                 <span>{{ $teacher->email }}</span>
                 <span class="text-slate-300">|</span>
                 <span>{{ $teacher->phone ?: 'Chưa có số điện thoại' }}</span>
                 <span class="text-slate-300">|</span>
                 <span>{{ $teacher->department?->name ?: 'Chưa gán phòng ban' }}</span>
+                @if ($teacherSpecialty)
+                    <span class="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">Chuyên môn: {{ $teacherSpecialty }}</span>
+                @endif
                 <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $teacher->statusLabel() }}</span>
+            </div>
+            <div class="mt-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 px-4 py-4">
+                <p class="text-xs uppercase tracking-[0.2em] text-cyan-700">Chuyên môn</p>
+                @if ($teacherSpecialty)
+                    <p class="mt-2 text-sm font-semibold text-slate-800">{{ $teacherSpecialty }}</p>
+                @endif
+                @if ($teachingSubjects->isNotEmpty())
+                    <p class="mt-2 text-sm leading-6 text-slate-700">
+                        @if ($teacherSpecialty)
+                            <span class="text-xs uppercase tracking-wide text-slate-400">Đang giảng dạy:</span>
+                        @endif
+                        {{ $teachingPreview }}
+                        @if ($teachingOverflow > 0)
+                            +{{ $teachingOverflow }} chuyên môn khác
+                        @endif
+                    </p>
+                @else
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Chưa có chuyên môn giảng dạy.</p>
+                @endif
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-3">
@@ -44,12 +75,12 @@
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <h2 class="text-lg font-semibold text-slate-900">Thông tin cá nhân</h2>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $teacher->taught_courses_count }} lớp phụ trách</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ number_format($teachingSubjectCount) }} chuyên môn</span>
             </div>
             <div class="mt-5 grid gap-4 md:grid-cols-2">
                 <div>
                     <p class="text-xs uppercase tracking-wide text-slate-400">Họ và tên</p>
-                    <p class="mt-1 text-sm font-medium text-slate-900">{{ $teacher->name }}</p>
+                    <p class="mt-1 text-sm font-medium text-slate-900">{{ $teacher->displayName() }}</p>
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-slate-400">Tên đăng nhập</p>
@@ -82,11 +113,11 @@
             <h2 class="text-lg font-semibold text-slate-900">Thống kê nhanh</h2>
             <div class="mt-4 grid gap-3">
                 <div class="rounded-2xl bg-slate-50 px-4 py-4">
-                    <p class="text-xs uppercase tracking-wide text-slate-500">Lớp đang phụ trách</p>
-                    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $courses->count() }}</p>
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Chuyên môn</p>
+                    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $teachingSubjectCount }}</p>
                 </div>
                 <div class="rounded-2xl bg-slate-50 px-4 py-4">
-                    <p class="text-xs uppercase tracking-wide text-slate-500">Học viên phụ trách</p>
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Học viên theo chuyên môn</p>
                     <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $studentCount }}</p>
                 </div>
                 <div class="rounded-2xl bg-slate-50 px-4 py-4">
@@ -100,12 +131,11 @@
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-3">
             <h2 class="text-lg font-semibold text-slate-900">Kinh nghiệm và hồ sơ năng lực</h2>
-            <span class="text-sm text-slate-500">Lấy từ hồ sơ ứng tuyển nếu có</span>
         </div>
         <div class="mt-5 grid gap-4 md:grid-cols-2">
             <div class="rounded-2xl border border-slate-200 px-4 py-4">
                 <p class="text-xs uppercase tracking-wide text-slate-400">Kinh nghiệm</p>
-                <p class="mt-2 text-sm leading-6 text-slate-700">{{ $application?->experience ?: 'Chưa có dữ liệu kinh nghiệm trong hệ thống.' }}</p>
+                <p class="mt-2 text-sm leading-6 text-slate-700">{{ $application?->experience ?: 'Chưa có thông tin kinh nghiệm từ hồ sơ ứng tuyển.' }}</p>
             </div>
             <div class="rounded-2xl border border-slate-200 px-4 py-4">
                 <p class="text-xs uppercase tracking-wide text-slate-400">Mô tả / chuyên môn</p>
@@ -116,18 +146,16 @@
 
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-3">
-            <h2 class="text-lg font-semibold text-slate-900">Lớp và khóa học đang phụ trách</h2>
-            <span class="text-sm text-slate-500">Hiển thị từ các lớp đã gán teacher_id</span>
+            <h2 class="text-lg font-semibold text-slate-900">Chuyên môn giảng dạy</h2>
         </div>
         <div class="mt-5 grid gap-4">
             @forelse ($courses as $course)
                 <div class="rounded-2xl border border-slate-200 px-4 py-4">
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                            <p class="text-sm font-semibold text-slate-900">{{ $course->title }}</p>
+                            <p class="text-sm font-semibold text-slate-900">{{ $course->subject?->name ?? $course->title ?? 'Chưa xác định' }}</p>
                             <div class="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-                                <p>Khóa học: {{ $course->subject->name ?? 'Chưa xác định' }}</p>
-                                <p>Nhóm học: {{ $course->subject->category->name ?? 'Chưa xác định' }}</p>
+                                <p>Nhóm học: {{ $course->subject?->category?->name ?? 'Chưa xác định' }}</p>
                                 <p>Lịch dạy: {{ $course->schedule ?: 'Chưa có lịch cụ thể' }}</p>
                                 <p>Số học viên: {{ $course->enrollments_count }}</p>
                             </div>
@@ -135,7 +163,7 @@
                     </div>
                 </div>
             @empty
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Giảng viên chưa được phân công lớp học nào.</div>
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Giảng viên chưa được phân công chuyên môn nào.</div>
             @endforelse
         </div>
     </section>
@@ -143,16 +171,14 @@
     <div class="grid gap-6 xl:grid-cols-2">
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-slate-900">Học viên đang phụ trách</h2>
-                <span class="text-sm text-slate-500">Dựa trên các enrollment thuộc lớp của giảng viên</span>
+                <h2 class="text-lg font-semibold text-slate-900">Học viên đang học theo chuyên môn</h2>
             </div>
             <div class="mt-5 grid gap-4">
                 @forelse ($enrollments->take(8) as $enrollment)
                     <div class="rounded-2xl border border-slate-200 px-4 py-4">
                         <p class="text-sm font-semibold text-slate-900">{{ $enrollment->user->name ?? 'Học viên' }}</p>
                         <div class="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-                            <p>Lớp: {{ $enrollment->course->title ?? 'Chưa xếp lớp' }}</p>
-                            <p>Khóa học: {{ $enrollment->course->subject->name ?? 'Chưa xác định' }}</p>
+                            <p>Chuyên môn: {{ $enrollment->course?->subject?->name ?? 'Chưa xác định' }}</p>
                             <p>Trạng thái enrollment: {{ $enrollment->status }}</p>
                             <p>Lịch chính thức: {{ $enrollment->schedule ?: 'Chưa có lịch cụ thể' }}</p>
                         </div>
@@ -166,12 +192,11 @@
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <h2 class="text-lg font-semibold text-slate-900">Yêu cầu đổi lịch gần đây</h2>
-                <span class="text-sm text-slate-500">Nếu giảng viên đã gửi request trong hệ thống</span>
             </div>
             <div class="mt-5 grid gap-4">
                 @forelse ($scheduleChangeRequests as $request)
                     <div class="rounded-2xl border border-slate-200 px-4 py-4">
-                        <p class="text-sm font-semibold text-slate-900">{{ $request->course->title ?? 'Lớp học' }}</p>
+                        <p class="text-sm font-semibold text-slate-900">{{ $request->course?->subject?->name ?? $request->course?->title ?? 'Chuyên môn' }}</p>
                         <div class="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                             <p>Ngày đề xuất: {{ optional($request->requested_date)->format('d/m/Y') ?: 'Chưa chọn' }}</p>
                             <p>Khung giờ mới: {{ trim(($request->requested_start_time ?: '--') . ' - ' . ($request->requested_end_time ?: '--')) }}</p>

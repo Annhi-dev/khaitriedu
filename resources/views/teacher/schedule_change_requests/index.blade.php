@@ -10,7 +10,6 @@
             <div>
                 <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-700">History</p>
                 <h2 class="mt-2 text-2xl font-semibold text-slate-900">Lịch sử yêu cầu đổi lịch</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-500">Theo dõi tất cả đề xuất mà bạn đã gửi cho admin, bao gồm cả yêu cầu từ lớp nội bộ và lớp học theo course.</p>
             </div>
             <a href="{{ route('teacher.schedules.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800">
                 Gửi yêu cầu mới

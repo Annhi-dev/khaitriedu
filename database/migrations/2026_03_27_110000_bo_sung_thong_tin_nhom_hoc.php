@@ -32,6 +32,5 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Compatibility migration: do not drop shared columns used by the study-group module.
     }
 };

@@ -31,6 +31,7 @@ class AdminCourseModuleService
         return $course->modules()->create([
             'title' => $data['title'],
             'content' => $data['content'] ?? null,
+            'session_count' => $data['session_count'] ?? null,
             'duration' => $data['duration'] ?? null,
             'status' => $data['status'],
             'position' => $position,
@@ -44,6 +45,7 @@ class AdminCourseModuleService
         $module->update([
             'title' => $data['title'],
             'content' => $data['content'] ?? null,
+            'session_count' => $data['session_count'] ?? null,
             'duration' => $data['duration'] ?? null,
             'status' => $data['status'],
             'position' => $data['position'] ?? $module->position,
@@ -56,20 +58,11 @@ class AdminCourseModuleService
     {
         $this->ensureModuleBelongsToCourse($course, $module);
 
-        if ($module->lessons()->exists() || $module->quizzes()->exists()) {
-            $module->update(['status' => Module::STATUS_UNPUBLISHED]);
-
-            return [
-                'type' => 'error',
-                'message' => 'Module đang có bài học hoặc quiz liên kết nên đã được chuyển sang trạng thái ẩn thay vì xóa cứng.',
-            ];
-        }
-
         $module->delete();
 
         return [
             'type' => 'status',
-            'message' => 'Module đã được xóa.',
+            'message' => 'Module và toàn bộ dữ liệu liên quan đã được xóa.',
         ];
     }
 

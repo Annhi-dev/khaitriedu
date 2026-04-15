@@ -40,7 +40,7 @@ class AdminScheduleManagementTest extends TestCase
             ]));
 
         $response->assertOk();
-        $response->assertSee('Phase 9');
+        $response->assertSee('Xếp lịch');
         $response->assertSee($pendingEnrollment->user->name);
         $response->assertSee($subject->name);
     }
@@ -102,12 +102,128 @@ class AdminScheduleManagementTest extends TestCase
             ]));
 
         $response->assertOk();
-        $response->assertSee('Phase 9');
+        $response->assertSee('Xếp lịch');
         $response->assertViewHas('schedules', function ($schedules) use ($courseA, $courseB) {
             $ids = $schedules->getCollection()->pluck('id');
 
             return $ids->contains($courseA->id) && ! $ids->contains($courseB->id);
         });
+    }
+
+    public function test_admin_can_view_active_seed_courses_on_schedule_overview(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Active']);
+        [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+        $room = $this->createRoom();
+        $course = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'Khóa 26 - ANH VĂN KHUNG 6 BẬC',
+            'schedule' => 'Tối T2-T4-T6, 18:00 - 20:15',
+            'status' => Course::STATUS_ACTIVE,
+        ]);
+        $classRoom = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'name' => $course->title,
+            'room_id' => $room->id,
+            'teacher_id' => $teacher->id,
+            'start_date' => '2026-04-01',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $classRoom->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'day_of_week' => 'Monday',
+            'start_time' => '18:00',
+            'end_time' => '20:15',
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.schedules.index'));
+
+        $response->assertOk();
+        $response->assertSee($course->title);
+        $response->assertSee($course->schedule);
+        $response->assertSee($teacher->name);
+        $response->assertSee(route('admin.classes.show', $classRoom));
+        $response->assertSee(route('admin.schedules.courses.show', $course));
+        $response->assertSee('Xem lịch chi tiết');
+    }
+
+    public function test_admin_can_view_schedule_detail_page_with_classroom_sessions_and_students(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Detail']);
+        $student = User::factory()->student()->create(['name' => 'Student Detail']);
+        $room = $this->createRoom(['name' => 'Phong 201', 'code' => 'P201']);
+        [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+
+        $course = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'Khóa 26 - ANH VĂN THIẾU NHI',
+            'schedule' => 'Tối T2-T4-T6, 18:00 - 20:15 | Từ 23/03/2026 đến 23/04/2026',
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday', 'Wednesday', 'Friday'],
+            'start_date' => '2026-03-23',
+            'end_date' => '2026-04-23',
+            'start_time' => '18:00',
+            'end_time' => '20:15',
+            'status' => Course::STATUS_ACTIVE,
+        ]);
+
+        $classRoom = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'name' => $course->title,
+            'room_id' => $room->id,
+            'teacher_id' => $teacher->id,
+            'start_date' => '2026-03-23',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $classRoom->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'day_of_week' => 'Monday',
+            'start_time' => '18:00',
+            'end_time' => '20:15',
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $classRoom->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'day_of_week' => 'Wednesday',
+            'start_time' => '18:00',
+            'end_time' => '20:15',
+        ]);
+
+        $this->createEnrollment($student, $subject, [
+            'course_id' => $course->id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_SCHEDULED,
+            'schedule' => $course->schedule,
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.schedules.courses.show', $course));
+
+        $response->assertOk();
+        $response->assertSee('Chi tiết lịch học');
+        $response->assertSee($course->title);
+        $response->assertSee($teacher->name);
+        $response->assertSee($room->name);
+        $response->assertSee('Thứ 2');
+        $response->assertSee('18:00 - 20:15');
+        $response->assertSee($student->name);
+        $response->assertSee(route('admin.classes.show', $classRoom));
     }
 
     public function test_custom_schedule_request_cannot_use_existing_open_class_in_phase_9(): void
@@ -598,7 +714,7 @@ class AdminScheduleManagementTest extends TestCase
                 'new_course_description' => 'Lop moi cho hoc vien yeu cau lich rieng',
                 'day_of_week' => ['Thursday'],
                 'start_time' => '18:30',
-                'end_time' => '20:30',
+                'end_time' => '20:45',
                 'capacity' => 12,
                 'note' => 'Da luu cho teacher',
             ]);
@@ -609,7 +725,7 @@ class AdminScheduleManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Tin hoc van phong - Khóa học 1');
-        $response->assertSee('18:30 - 20:30');
+        $response->assertSee('18:30 - 20:45');
         $response->assertSee('Hoc Vien Da Xep');
     }
 
@@ -631,7 +747,7 @@ class AdminScheduleManagementTest extends TestCase
                 'new_course_description' => 'Lop moi cho hoc vien yeu cau lich rieng',
                 'day_of_week' => ['Friday'],
                 'start_time' => '17:00',
-                'end_time' => '19:00',
+                'end_time' => '19:15',
                 'capacity' => 25,
                 'note' => 'Da luu cho student',
             ]);
@@ -642,10 +758,95 @@ class AdminScheduleManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($subject->name);
-        $response->assertSee('17:00 - 19:00');
+        $response->assertSee('17:00 - 19:15');
         $response->assertSee('Teacher Schedule');
         $response->assertSee('Dang cho mo lop');
         $response->assertDontSee('Vao lop hoc');
+    }
+
+    public function test_admin_course_teacher_update_syncs_teacher_schedule_pages(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacherA = User::factory()->teacher()->create(['name' => 'Teacher Alpha']);
+        $teacherB = User::factory()->teacher()->create(['name' => 'Teacher Beta']);
+        [, $subject] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
+
+        $course = $this->createInternalCourse($subject, $teacherA, [
+            'title' => 'Lop Teacher Alpha',
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday'],
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-05-01',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+            'schedule' => 'Thu 2, 18:00 - 20:00 | Tu 01/04/2026 den 01/05/2026',
+            'status' => Course::STATUS_SCHEDULED,
+        ]);
+
+        $classRoom = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'teacher_id' => $teacherA->id,
+            'start_date' => '2026-04-01',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        $schedule = ClassSchedule::create([
+            'lop_hoc_id' => $classRoom->id,
+            'teacher_id' => $teacherA->id,
+            'day_of_week' => 'Monday',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.courses.update', $course), [
+                'title' => $course->title,
+                'description' => $course->description,
+                'price' => 0,
+                'subject_id' => $subject->id,
+                'teacher_id' => $teacherB->id,
+                'schedule' => $course->schedule,
+            ]);
+
+        $response->assertRedirect(route('admin.course.show', $course));
+
+        $course->refresh();
+        $classRoom->refresh();
+        $schedule->refresh();
+
+        $this->assertSame($teacherB->id, $course->teacher_id);
+        $this->assertSame($teacherB->id, $classRoom->teacher_id);
+        $this->assertSame($teacherB->id, $schedule->teacher_id);
+
+        $this->assertDatabaseHas('lop_hoc', [
+            'id' => $classRoom->id,
+            'teacher_id' => $teacherB->id,
+        ]);
+
+        $this->assertDatabaseHas('lich_hoc', [
+            'id' => $schedule->id,
+            'teacher_id' => $teacherB->id,
+        ]);
+
+        $oldTeacherResponse = $this
+            ->withSession(['user_id' => $teacherA->id])
+            ->get(route('teacher.schedules.index'));
+
+        $oldTeacherResponse->assertOk();
+        $oldTeacherResponse->assertDontSee('Lop Teacher Alpha');
+        $oldTeacherResponse->assertSee('Khung gio');
+
+        $newTeacherResponse = $this
+            ->withSession(['user_id' => $teacherB->id])
+            ->get(route('teacher.schedules.index'));
+
+        $newTeacherResponse->assertOk();
+        $newTeacherResponse->assertSee('Lop Teacher Alpha');
+        $newTeacherResponse->assertSee('Khung gio');
+        $newTeacherResponse->assertSee('Xem chi tiet');
     }
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array

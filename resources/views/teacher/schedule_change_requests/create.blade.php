@@ -1,7 +1,7 @@
 @extends('layouts.teacher')
 
 @section('title', 'Gửi Yêu Cầu Đổi Lịch')
-@section('eyebrow', 'Legacy Course Flow')
+@section('eyebrow', 'Yêu cầu đổi lịch')
 
 @section('content')
 @php
@@ -24,7 +24,6 @@
         </a>
 
         <h2 class="mt-5 text-2xl font-semibold text-slate-900">Gửi yêu cầu đổi lịch cho lớp học hiện tại</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-500">Luồng này được giữ lại để tương thích phần course hiện có trong hệ thống. Với lớp nội bộ mới, bạn nên gửi yêu cầu trực tiếp từ màn Lịch giảng dạy.</p>
 
         <div class="mt-6 grid gap-4 text-sm text-slate-600 md:grid-cols-2">
             <p><strong>Lớp học:</strong> {{ $course->title }}</p>
@@ -33,18 +32,10 @@
             <p><strong>Lịch hiện tại:</strong> {{ $course->formattedSchedule() }}</p>
         </div>
 
-        <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-            <p class="font-semibold text-slate-800">Lưu ý</p>
-            <ul class="mt-2 space-y-2 leading-6">
-                <li>1. Admin sẽ là người duyệt và quyết định cập nhật lịch chính thức.</li>
-                <li>2. Chỉ nên gửi khi lịch hiện tại thực sự cần thay đổi.</li>
-                <li>3. Nếu đã có yêu cầu pending, hãy chờ admin xử lý trước khi gửi thêm.</li>
-            </ul>
-        </div>
     </section>
 
     <aside class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 class="text-2xl font-semibold text-slate-900">Thông tin đề xuất mới</h2>
+        <h2 class="text-2xl font-semibold text-slate-900">Đề xuất lịch mới</h2>
         <form method="post" action="{{ route('teacher.schedule-change-requests.store', $course) }}" class="mt-5 space-y-4">
             @csrf
             <div>
@@ -71,7 +62,7 @@
                 </div>
                 <div>
                     <label class="text-sm font-medium text-slate-700">Giờ kết thúc</label>
-                    <input type="time" name="requested_end_time" value="{{ old('requested_end_time', $course->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                    <input type="time" name="requested_end_time" value="{{ old('requested_end_time', $course->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none" readonly>
                 </div>
             </div>
 

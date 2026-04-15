@@ -24,8 +24,8 @@ class AdminTeacherService
 
         return User::query()
             ->teachers()
-            ->with('department')
-            ->withCount(['taughtCourses', 'scheduleChangeRequests'])
+            ->with(['department'])
+            ->withCount(['scheduleChangeRequests'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
                     $builder->where('name', 'like', '%' . $search . '%')
@@ -40,6 +40,16 @@ class AdminTeacherService
             ->orderByDesc('id')
             ->paginate(15)
             ->withQueryString();
+    }
+
+    public function summary(): array
+    {
+        return [
+            'total' => User::query()->teachers()->count(),
+            'active' => User::query()->teachers()->where('status', User::STATUS_ACTIVE)->count(),
+            'locked' => User::query()->teachers()->where('status', User::STATUS_LOCKED)->count(),
+            'assigned' => User::query()->teachers()->whereNotNull('department_id')->count(),
+        ];
     }
 
     public function createTeacher(array $data): User
@@ -90,7 +100,7 @@ class AdminTeacherService
 
     public function getTeacherDetail(User $teacher): array
     {
-        $teacher->loadMissing('department')->loadCount(['taughtCourses', 'scheduleChangeRequests']);
+        $teacher->loadMissing('department')->loadCount(['scheduleChangeRequests']);
 
         $courses = Course::with(['subject.category'])
             ->withCount('enrollments')

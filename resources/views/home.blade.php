@@ -3,9 +3,9 @@
 @section('title', 'KhaiTriEdu - Học trực tuyến thông minh')
 
 @section('content')
-    <!-- Hero Section -->
+    
     <div class="relative bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white overflow-hidden">
-        <!-- Animated blob background -->
+        
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
             <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <!-- Categories Section -->
+    
     <div class="container mx-auto px-4 py-16">
         <div class="text-center mb-12">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Khám phá <span class="text-primary">nhóm ngành</span></h2>
@@ -103,7 +103,7 @@
         </div>
     </div>
 
-    <!-- Features Section -->
+    
     <div class="container mx-auto px-4 py-20">
         <div class="text-center mb-12">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Tại sao chọn <span class="text-primary">KhaiTriEdu</span>?</h2>
@@ -134,13 +134,13 @@
         </div>
     </div>
 
-    <!-- Featured Courses -->
+    
     <div class="bg-gray-50 py-20">
         <div class="container mx-auto px-4">
             <div class="text-center mb-12">
                 <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Khóa học <span class="text-primary">nổi bật</span></h2>
                 <div class="w-24 h-1 bg-primary mx-auto mt-4 rounded-full"></div>
-                <p class="text-gray-600 mt-4">Những khóa học được quan tâm nhiều và đang được admin xếp lớp linh hoạt</p>
+                <p class="text-gray-600 mt-4">Những khóa học được quan tâm nhiều và đang được ghép lớp linh hoạt</p>
             </div>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 @forelse($courses as $course)
@@ -164,7 +164,7 @@
 
                             <div class="p-6">
                                 <h4 class="text-lg font-bold mb-2 line-clamp-2 text-gray-800 group-hover:text-primary transition">{{ $course->name }}</h4>
-                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ $course->description ?? 'Khóa học được thiết kế để admin xếp lớp theo lịch phù hợp của học viên.' }}</p>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ $course->description ?? 'Khóa học được thiết kế linh hoạt theo lịch học của học viên.' }}</p>
 
                                 <div class="grid grid-cols-2 gap-3 mb-4 pb-4 border-b">
                                     <div class="text-center rounded-xl bg-blue-50 p-3">
@@ -206,7 +206,7 @@
         </div>
     </div>
 
-    <!-- Team Section -->
+    
     <div class="container mx-auto px-4 py-20">
         <div class="text-center mb-12">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Đội ngũ <span class="text-primary">giảng viên</span></h2>
@@ -216,15 +216,14 @@
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             @forelse($teachers as $teacher)
                 @php
-                    preg_match('/\((.+)\)/', $teacher->name, $matches);
-                    $field = $matches[1] ?? 'Giảng viên chuyên nghiệp';
+                    $field = $teacher->specialtyLabel() ?? 'Giảng viên chuyên nghiệp';
                 @endphp
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition group">
                     <div class="relative overflow-hidden h-64 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
                         <img src="https://randomuser.me/api/portraits/men/{{ $loop->index + 10 }}.jpg" alt="Teacher" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                     </div>
                     <div class="p-6 text-center">
-                        <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $teacher->name }}</h3>
+                        <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $teacher->displayName() }}</h3>
                         <p class="text-primary font-semibold mb-3">{{ $field }}</p>
                         <p class="text-gray-600 text-sm mb-4">Hơn 8 năm kinh nghiệm, đã đào tạo hơn 500+ học viên.</p>
                         <div class="flex justify-center gap-2">
@@ -253,7 +252,7 @@
         </div>
     </div>
 
-    <!-- Stats Counter -->
+    
     <div class="bg-gradient-to-r from-blue-900 to-blue-700 py-16 text-white">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" x-data="{
@@ -303,14 +302,14 @@
         </div>
     </div>
 
-    <!-- How It Works -->
+    
     <div class="container mx-auto px-4 py-20">
         <div class="text-center mb-12">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Cách <span class="text-primary">hoạt động</span></h2>
             <p class="text-gray-600 mt-2">Chỉ 3 bước đơn giản để bắt đầu hành trình học tập</p>
         </div>
         <div class="grid md:grid-cols-3 gap-8 relative">
-            <!-- Connecting lines (desktop) -->
+            
             <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-primary/30 -translate-y-1/2 z-0"></div>
             <div class="relative z-10 text-center">
                 <div class="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-lg">1</div>
@@ -330,7 +329,7 @@
         </div>
     </div>
 
-    <!-- Testimonials -->
+    
     <div class="bg-blue-50 py-20">
         <div class="container mx-auto px-4">
             <div class="text-center mb-12">
@@ -378,7 +377,7 @@
         </div>
     </div>
 
-    <!-- CTA Section -->
+    
     <div class="container mx-auto px-4 py-20">
         <div class="bg-gradient-to-r from-blue-900 to-blue-700 rounded-3xl p-12 text-center relative overflow-hidden">
             <div class="absolute inset-0 opacity-10">

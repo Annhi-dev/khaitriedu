@@ -1,28 +1,65 @@
 @props(['route', 'searchPlaceholder' => 'Tìm kiếm...', 'statuses' => [], 'additionalFilters' => null])
+@php
+    $hasStatuses = count($statuses) > 0;
+    $hasAdditionalFilters = isset($additionalFilters) && trim((string) $additionalFilters) !== '';
+@endphp
 
-<form method="get" action="{{ $route }}" class="space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Tìm kiếm</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ $searchPlaceholder }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+<form method="get" action="{{ $route }}">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Bộ lọc</p>
+                <h2 class="mt-2 text-2xl font-semibold text-slate-900">Tìm nhanh dữ liệu</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">
+                    Lọc theo từ khóa, trạng thái và các tiêu chí bổ sung để xử lý nhanh hơn.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ $route }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                    Xóa lọc
+                </a>
+                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                    Áp dụng
+                </button>
+            </div>
         </div>
-        @if(count($statuses))
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
-            <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
-                <option value="">Tất cả</option>
-                @foreach($statuses as $value => $label)
-                    <option value="{{ $value }}" @selected(request('status') == $value)>{{ $label }}</option>
-                @endforeach
-            </select>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            <div>
+                <label class="mb-2 block text-sm font-medium text-slate-700">Tìm kiếm</label>
+                <div class="relative">
+                    <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="{{ $searchPlaceholder }}"
+                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pl-11 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                    >
+                </div>
+            </div>
+
+            @if ($hasStatuses)
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Trạng thái</label>
+                    <select
+                        name="status"
+                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                    >
+                        <option value="">Tất cả</option>
+                        @foreach ($statuses as $value => $label)
+                            <option value="{{ $value }}" @selected(request('status') == $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
+            @if ($hasAdditionalFilters)
+                <div class="lg:col-span-2">
+                    {{ $additionalFilters }}
+                </div>
+            @endif
         </div>
-        @endif
-        @if($additionalFilters)
-            {{ $additionalFilters }}
-        @endif
-        <div class="flex items-end gap-2">
-            <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">Lọc</button>
-            <a href="{{ $route }}" class="border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-xl text-sm font-medium transition">Xóa lọc</a>
-        </div>
-    </div>
+    </section>
 </form>

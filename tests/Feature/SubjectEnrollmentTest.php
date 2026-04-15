@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
@@ -44,7 +46,7 @@ class SubjectEnrollmentTest extends TestCase
             ->withSession(['user_id' => $student->id])
             ->post(route('khoa-hoc.enroll', $subject->id), [
                 'start_time' => '18:00',
-                'end_time' => '20:00',
+                'end_time' => '20:15',
                 'preferred_days' => ['Monday', 'Wednesday', 'Friday'],
             ]);
 
@@ -93,6 +95,33 @@ class SubjectEnrollmentTest extends TestCase
             'is_submitted' => true,
         ]);
 
+        $module = Module::create([
+            'course_id' => $course->id,
+            'title' => 'Listening',
+            'content' => 'Nghe hội thoại cơ bản và bắt ý chính.',
+            'session_count' => 5,
+            'position' => 1,
+            'status' => Module::STATUS_PUBLISHED,
+        ]);
+
+        Lesson::create([
+            'module_id' => $module->id,
+            'title' => 'Buổi 1',
+            'description' => 'Làm quen với chủ đề và từ khóa.',
+            'content' => 'Nội dung buổi 1.',
+            'order' => 1,
+            'duration' => 45,
+        ]);
+
+        Lesson::create([
+            'module_id' => $module->id,
+            'title' => 'Buổi 2',
+            'description' => 'Luyện nghe chi tiết.',
+            'content' => 'Nội dung buổi 2.',
+            'order' => 2,
+            'duration' => 45,
+        ]);
+
         $response = $this
             ->withSession(['user_id' => $student->id])
             ->get(route('courses.show', $course->id));
@@ -100,6 +129,9 @@ class SubjectEnrollmentTest extends TestCase
         $response->assertOk();
         $response->assertSee($course->title);
         $response->assertSee('Lộ trình trong lớp học');
+        $response->assertSee('Listening');
+        $response->assertSee('5 buổi');
+        $response->assertSee('Nghe hội thoại cơ bản và bắt ý chính.');
     }
 
     public function test_admin_must_use_phase_9_to_schedule_custom_request(): void
@@ -121,7 +153,7 @@ class SubjectEnrollmentTest extends TestCase
         ]);
 
         $response = $this
-            ->from(route('admin.enrollments.show', $enrollment))
+            ->from(route('admin.enrollments.custom.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.enrollments.review', $enrollment), [
                 'action' => 'schedule',
@@ -131,7 +163,7 @@ class SubjectEnrollmentTest extends TestCase
                 'note' => '',
             ]);
 
-        $response->assertRedirect(route('admin.enrollments.show', $enrollment));
+        $response->assertRedirect(route('admin.enrollments.custom.show', $enrollment));
         $response->assertSessionHasErrors('action');
 
         $this->assertDatabaseHas('dang_ky', [
@@ -154,7 +186,7 @@ class SubjectEnrollmentTest extends TestCase
         ]);
 
         [, $subject] = $this->createCatalogSubject();
-        $course = $this->createInternalCourse($subject, $teacher, 'T2-T4-T6, 18:00-20:00');
+        $course = $this->createInternalCourse($subject, $teacher, 'T2-T4-T6, 18:00-20:15');
 
         $enrollment = Enrollment::create([
             'user_id' => $student->id,
@@ -164,7 +196,7 @@ class SubjectEnrollmentTest extends TestCase
         ]);
 
         $response = $this
-            ->from(route('admin.enrollments.show', $enrollment))
+            ->from(route('admin.enrollments.custom.show', $enrollment))
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.enrollments.review', $enrollment), [
                 'action' => 'schedule',
@@ -174,7 +206,7 @@ class SubjectEnrollmentTest extends TestCase
                 'note' => '',
             ]);
 
-        $response->assertRedirect(route('admin.enrollments.show', $enrollment));
+        $response->assertRedirect(route('admin.enrollments.custom.show', $enrollment));
         $response->assertSessionHasErrors('action');
 
         $this->assertDatabaseHas('dang_ky', [
@@ -215,7 +247,7 @@ class SubjectEnrollmentTest extends TestCase
             ->withSession(['user_id' => $student->id])
             ->post(route('khoa-hoc.enroll', $subject->id), [
                 'start_time' => '18:00',
-                'end_time' => '20:00',
+                'end_time' => '20:15',
                 'preferred_days' => ['Tuesday', 'Thursday'],
             ]);
 
@@ -225,7 +257,7 @@ class SubjectEnrollmentTest extends TestCase
         $updatedEnrollment = $enrollment->fresh();
         $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
         $this->assertSame('18:00', $updatedEnrollment->start_time);
-        $this->assertSame('20:00', $updatedEnrollment->end_time);
+        $this->assertSame('20:15', $updatedEnrollment->end_time);
         $this->assertSame(['Tuesday', 'Thursday'], $updatedEnrollment->preferred_days);
         $this->assertNull($updatedEnrollment->note);
         $this->assertSame($admin->id, $updatedEnrollment->reviewed_by);

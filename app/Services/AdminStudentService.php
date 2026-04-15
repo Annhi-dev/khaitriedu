@@ -37,6 +37,16 @@ class AdminStudentService
             ->withQueryString();
     }
 
+    public function summary(): array
+    {
+        return [
+            'total' => User::query()->students()->count(),
+            'active' => User::query()->students()->where('status', User::STATUS_ACTIVE)->count(),
+            'locked' => User::query()->students()->where('status', User::STATUS_LOCKED)->count(),
+            'enrolled' => User::query()->students()->has('enrollments')->count(),
+        ];
+    }
+
     public function createStudent(array $data): User
     {
         return User::create([

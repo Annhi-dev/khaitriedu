@@ -50,6 +50,5 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Compatibility migration: do not drop shared tables created by earlier migrations.
     }
 };

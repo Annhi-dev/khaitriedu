@@ -5,7 +5,6 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Tạo lớp học mới</h1>
-            <p class="mt-1 text-sm text-slate-500">Chọn khóa học, phòng, giảng viên và thêm lịch học hàng tuần.</p>
         </div>
         <a href="{{ route('admin.classes.index') }}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Quay lại</a>
     </div>
@@ -26,7 +25,7 @@
             @endphp
 
             <div class="grid gap-5 md:grid-cols-2">
-                {{-- Môn học --}}
+                
                 <div class="md:col-span-2">
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Môn học <span class="text-red-500">*</span></label>
                     <select id="subject_id" name="subject_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
@@ -37,12 +36,9 @@
                             </option>
                         @endforeach
                     </select>
-                    @if(request('subject_id') || request('course_id'))
-                        <p class="mt-1 text-xs text-green-600">✅ Môn học đã được gợi ý theo dữ liệu bạn vừa chọn.</p>
-                    @endif
                 </div>
 
-                {{-- Khóa học --}}
+                
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Khóa học <span class="text-red-500">*</span></label>
                     <select id="course_id" name="course_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
@@ -59,18 +55,18 @@
                     </select>
                 </div>
 
-                {{-- Giảng viên --}}
+                
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Giảng viên <span class="text-red-500">*</span></label>
                     <select name="teacher_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
                         <option value="">Chọn giảng viên...</option>
                         @foreach($teachers as $teacher)
-                            <option value="{{ $teacher->id }}" @selected(old('teacher_id') == $teacher->id)>{{ $teacher->name }}</option>
+                            <option value="{{ $teacher->id }}" @selected(old('teacher_id') == $teacher->id)>{{ $teacher->displayName() }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                {{-- Phòng học --}}
+                
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Phòng học <span class="text-red-500">*</span></label>
                     <select name="room_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
@@ -83,20 +79,20 @@
                     </select>
                 </div>
 
-                {{-- Ngày bắt đầu --}}
+                
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Ngày bắt đầu</label>
                     <input type="date" name="start_date" value="{{ old('start_date') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
                 </div>
 
-                {{-- Ghi chú --}}
+                
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Ghi chú</label>
-                    <input type="text" name="note" value="{{ old('note') }}" placeholder="Ghi chú nội bộ..." class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+                    <input type="text" name="note" value="{{ old('note') }}" placeholder="Ghi chú" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
                 </div>
             </div>
 
-            {{-- Lịch học hàng tuần --}}
+            
             <div class="mt-6">
                 <div class="flex items-center justify-between mb-3">
                     <label class="text-sm font-semibold text-slate-700">Lịch học hàng tuần</label>
@@ -106,9 +102,8 @@
                 </div>
 
                 <div id="schedule-rows" class="space-y-3">
-                    {{-- JS sẽ thêm rows vào đây --}}
+                    
                 </div>
-                <p class="mt-2 text-xs text-slate-400">Thêm từng buổi học trong tuần (ví dụ: Thứ 2 08:00–10:00, Thứ 4 08:00–10:00)</p>
             </div>
 
             <div class="mt-6 border-t border-slate-200 pt-5 flex justify-end gap-3">
@@ -192,7 +187,6 @@
     syncCourseOptionsBySubject();
     syncSubjectByCourse();
 
-    // Thêm sẵn 1 row mặc định
     addRow();
 })();
 </script>

@@ -16,7 +16,7 @@ class UpdateRoomRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        /** @var \App\Models\Room|null $room */
+        
         $room = $this->route('room');
 
         $this->merge([
@@ -32,7 +32,7 @@ class UpdateRoomRequest extends FormRequest
 
     public function rules(): array
     {
-        /** @var \App\Models\Room|null $room */
+        
         $room = $this->route('room');
 
         return [

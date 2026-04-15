@@ -95,7 +95,6 @@
 
             <div class="student-sidebar-note mt-8 rounded-3xl border border-cyan-400/10 bg-cyan-400/5 p-4 text-sm text-slate-300">
                 <p class="font-semibold text-white">Góc học tập cá nhân</p>
-                <p class="mt-2 leading-6 text-slate-400">Theo dõi đăng ký, lịch học và kết quả ngay trong một giao diện cố định, gọn và dễ dùng.</p>
             </div>
 
             <div class="mt-auto pt-8">
@@ -150,7 +149,6 @@
                         </button>
 
                         <div class="min-w-0">
-                            <p class="text-xs uppercase tracking-[0.24em] text-slate-400">@yield('eyebrow', 'Student Workspace')</p>
                             <h1 class="truncate text-xl font-semibold text-slate-900">{{ $pageTitle }}</h1>
                         </div>
                     </div>

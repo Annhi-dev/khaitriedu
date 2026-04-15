@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <!-- Why Join KhaiTriEdu -->
+    
     <div class="mb-20 bg-blue-50 p-12 rounded-2xl">
         <h2 class="text-4xl font-bold text-gray-800 mb-12 text-center">Tại sao gia nhập KhaiTriEdu?</h2>
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -70,7 +70,7 @@
         </div>
     </div>
 
-    <!-- Application Info -->
+    
     <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Quy trình ứng tuyển</h2>
         <div class="space-y-6">

@@ -45,13 +45,11 @@ function resendOtp() {
     const countdown = document.getElementById('countdown');
     const countdownTimeEl = document.getElementById('countdownTime');
 
-    // Disable button and show countdown
     btn.disabled = true;
     btn.classList.add('text-gray-400');
     btn.classList.remove('text-primary', 'hover:text-primary-dark');
     countdown.classList.remove('hidden');
 
-    // Start countdown
     countdownTime = 60;
     countdownTimeEl.textContent = countdownTime;
 
@@ -68,7 +66,6 @@ function resendOtp() {
         }
     }, 1000);
 
-    // Send AJAX request
     fetch('{{ route("verify.email.resend") }}', {
         method: 'POST',
         headers: {
@@ -82,21 +79,18 @@ function resendOtp() {
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            // Show success message
             const successDiv = document.createElement('div');
             successDiv.className = 'mt-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm';
             successDiv.textContent = data.message;
             document.querySelector('.card').appendChild(successDiv);
             setTimeout(() => successDiv.remove(), 5000);
         } else if (data.error) {
-            // Show error message
             const errorDiv = document.createElement('div');
             errorDiv.className = 'mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm';
             errorDiv.textContent = data.error;
             document.querySelector('.card').appendChild(errorDiv);
             setTimeout(() => errorDiv.remove(), 5000);
 
-            // Reset countdown if error
             clearInterval(countdownInterval);
             btn.disabled = false;
             btn.classList.remove('text-gray-400');
@@ -106,7 +100,6 @@ function resendOtp() {
     })
     .catch(error => {
         console.error('Error:', error);
-        // Reset countdown on error
         clearInterval(countdownInterval);
         btn.disabled = false;
         btn.classList.remove('text-gray-400');

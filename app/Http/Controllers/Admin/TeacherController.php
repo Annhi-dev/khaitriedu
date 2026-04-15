@@ -20,9 +20,10 @@ class TeacherController extends Controller
 
         $filters = $request->only(['search', 'status', 'department_id']);
         $teachers = $teacherService->paginateTeachers($filters);
+        $summary = $teacherService->summary();
         $departments = $teacherService->departmentOptions();
 
-        return view('admin.teachers.index', compact('current', 'filters', 'teachers', 'departments'));
+        return view('admin.teachers.index', compact('current', 'filters', 'teachers', 'departments', 'summary'));
     }
 
     public function create(AdminTeacherService $teacherService)

@@ -3,22 +3,23 @@
 namespace Database\Seeders;
 
 use App\Models\Announcement;
+use App\Models\Course;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CourseCurriculumService;
+use App\Services\CourseScheduleSyncService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
+    
     public function run(): void
     {
-        // base user
         $admin = User::updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
@@ -76,6 +77,11 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        $teachers = User::query()
+            ->teachers()
+            ->orderBy('id')
+            ->get(['id', 'name']);
+
         $data = [
             'Ngoại ngữ - Tin học' => [
                 'ANH VĂN THIẾU NHI',
@@ -116,6 +122,8 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
+        $courseIndex = 0;
+
         foreach ($data as $categoryName => $courses) {
             $category = \App\Models\Category::create([
                 'name' => $categoryName,
@@ -126,6 +134,8 @@ class DatabaseSeeder extends Seeder
 
             foreach ($courses as $courseTitle) {
                 $subjectPrice = rand(15, 60) * 100000; // 1,500,000 to 6,000,000
+                $teacherId = $this->resolveTeacherIdForCourse($categoryName, $courseTitle, $teachers, $courseIndex);
+
                 $subject = \App\Models\Subject::create([
                     'name' => $courseTitle,
                     'description' => 'Chương trình đào tạo chuẩn kỹ năng ' . $courseTitle,
@@ -141,34 +151,23 @@ class DatabaseSeeder extends Seeder
                     'description' => 'Khóa 26 - ' . $courseTitle,
                     'price' => $subjectPrice,
                     'schedule' => 'Tối T2-T4-T6, 18:00 - 20:30',
-                    'teacher_id' => User::where('role_id', Role::idByName('teacher'))->inRandomOrder()->first()?->id ?? 1,
+                    'teacher_id' => $teacherId,
                     'capacity' => 20,
                     'status' => 'active',
                 ]);
 
-                for ($mi = 1; $mi <= 2; $mi++) {
-                    $module = \App\Models\Module::create([
-                        'course_id' => $course->id,
-                        'title' => 'Module ' . $mi . ' của ' . $courseTitle,
-                        'content' => 'Nội dung module ' . $mi,
-                        'position' => $mi,
-                    ]);
-
-                    for ($li = 1; $li <= 2; $li++) {
-                        \App\Models\Lesson::create([
-                            'module_id' => $module->id,
-                            'title' => 'Bài học ' . $li . ' của ' . $module->title,
-                            'description' => 'Mô tả bài học ' . $li,
-                            'content' => 'Nội dung chi tiết bài học',
-                            'order' => $li,
-                            'duration' => 45,
-                        ]);
-                    }
-                }
+                app(CourseCurriculumService::class)->syncCourse($course);
+                $courseIndex++;
             }
         }
 
-        // Blog posts (Announcements)
+        Course::query()
+            ->with(['subject.category', 'classRooms.schedules'])
+            ->where('title', 'like', 'Khóa 26 - %')
+            ->orderBy('id')
+            ->get()
+            ->whenNotEmpty(fn ($courses) => app(CourseScheduleSyncService::class)->syncCourses($courses));
+
         $announcements = [
             ['title' => 'Bí quyết học lập trình hiệu quả', 'message' => 'Hướng dẫn toàn diện giúp bạn học lập trình nhanh hơn, nhớ lâu hơn và giải quyết bài tập khó khăn.', 'published_at' => now()->subDays(2), 'is_pinned' => true],
             ['title' => 'Nguyên tắc thiết kế UI/UX hiện đại', 'message' => 'Tìm hiểu về những nguyên tắc cốt lõi của thiết kế giao diện người dùng đẹp và thân thiện.', 'published_at' => now()->subDays(5), 'is_pinned' => false],
@@ -192,7 +191,6 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Realistic Room Seeding (auto-generated codes and room types)
         $roomTypes = ['theory', 'practice'];
         $locations = ['Tầng 1 - Khu A', 'Tầng 2 - Khu A', 'Tầng 1 - Khu B', 'Tầng 3 - Khu C'];
         
@@ -209,5 +207,58 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+    }
+
+    protected function resolveTeacherIdForCourse(
+        string $categoryName,
+        string $courseTitle,
+        Collection $teachers,
+        int $courseIndex
+    ): ?int {
+        $title = Str::ascii(Str::upper($categoryName . ' ' . $courseTitle));
+        $specialties = match (true) {
+            Str::contains($title, ['ANH VAN', 'TIN HOC', 'CONG NGHE THONG TIN', 'LAP RAP', 'SUA CHUA']) => [
+                'Lập trình',
+                'Thiết kế Web',
+            ],
+            Str::contains($title, ['KE TOAN', 'THUE', 'KINH DOANH', 'BAT DONG SAN', 'DAU THAU']) => [
+                'Kinh doanh',
+                'Marketing Digital',
+            ],
+            Str::contains($title, ['GIAO VIEN', 'SU PHAM', 'MAM NON', 'BAO MAU', 'VAN THU', 'GIAO DUC', 'TRUNG CAP', 'LIEN THONG', 'THAC SI', 'CAO HOC', 'DAI HOC', 'VAN BANG 2']) => [
+                'Phát triển Cá nhân',
+                'Kinh doanh',
+            ],
+            Str::contains($title, ['DIEN', 'MAY', 'THIET KE DO HOA', 'CHAM SOC DA', 'PHA CHE', 'CHE BIEN']) => [
+                'Thiết kế Web',
+                'Marketing Digital',
+                'Phát triển Cá nhân',
+            ],
+            default => [
+                'Lập trình',
+                'Thiết kế Web',
+                'Marketing Digital',
+                'Kinh doanh',
+                'Phát triển Cá nhân',
+            ],
+        };
+
+        foreach ($specialties as $specialty) {
+            $pool = $teachers->filter(function (User $teacher) use ($specialty) {
+                return Str::contains($teacher->name, '(' . $specialty . ')');
+            })->values();
+
+            if ($pool->isNotEmpty()) {
+                $selectedTeacher = $pool->get($courseIndex % $pool->count());
+
+                if ($selectedTeacher) {
+                    return (int) $selectedTeacher->id;
+                }
+            }
+        }
+
+        $fallbackTeacher = $teachers->get($courseIndex % max(1, $teachers->count()));
+
+        return $fallbackTeacher ? (int) $fallbackTeacher->id : null;
     }
 }

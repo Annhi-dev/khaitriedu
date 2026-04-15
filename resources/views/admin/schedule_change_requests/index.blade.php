@@ -2,8 +2,6 @@
 @section('title', 'Yêu cầu đổi lịch')
 @section('content')
 <div class="space-y-6">
-    <span class="sr-only">Phase 10</span>
-
     <x-admin.page-header title="Yêu cầu đổi lịch" subtitle="Các đề xuất đổi lịch từ giảng viên đang chờ admin xử lý" />
 
     <x-admin.filter-bar route="{{ route('admin.schedule-change-requests.index') }}" searchPlaceholder="Giảng viên, lớp học, lý do..." :statuses="['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối']" />
@@ -15,7 +13,7 @@
                     <div>
                         <h3 class="font-semibold text-slate-800">{{ $requestItem->targetTitle() }}</h3>
                         <p class="text-sm text-slate-500">{{ $requestItem->subjectName() }}</p>
-                        <p class="text-sm text-slate-500">Giảng viên: {{ $requestItem->teacher?->name }}</p>
+                        <p class="text-sm text-slate-500">Giảng viên: {{ $requestItem->teacher?->displayName() }}</p>
                     </div>
                     <x-admin.badge :type="match($requestItem->status) {'pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger', default => 'default'}" :text="$requestItem->statusLabel()" />
                 </div>

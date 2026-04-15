@@ -263,6 +263,8 @@ class AdminScheduleChangeRequestService
 
     protected function ensureTeacherAvailabilityForClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): void
     {
+        $requestedRange = $this->requestedDateRange($scheduleChangeRequest);
+
         $conflict = ClassSchedule::query()
             ->whereKeyNot($scheduleChangeRequest->class_schedule_id)
             ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
@@ -272,7 +274,15 @@ class AdminScheduleChangeRequestService
                 $query->where('teacher_id', $scheduleChangeRequest->teacher_id)
                     ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED]);
             })
-            ->first();
+            ->with(['classRoom.course.subject'])
+            ->get()
+            ->first(function (ClassSchedule $classSchedule) use ($requestedRange) {
+                if ($requestedRange === null) {
+                    return true;
+                }
+
+                return $classSchedule->classRoom?->overlapsDateRange($requestedRange[0], $requestedRange[1]);
+            });
 
         if ($conflict) {
             throw ValidationException::withMessages([
@@ -284,6 +294,7 @@ class AdminScheduleChangeRequestService
     protected function ensureStudentsAvailabilityForClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): void
     {
         $classRoom = $scheduleChangeRequest->classRoom;
+        $requestedRange = $this->requestedDateRange($scheduleChangeRequest);
 
         if (! $classRoom) {
             return;
@@ -312,8 +323,15 @@ class AdminScheduleChangeRequestService
             })
             ->with(['classRoom.enrollments' => function ($query) use ($studentIds) {
                 $query->whereIn('user_id', $studentIds)->with('user');
-            }])
-            ->first();
+            }, 'classRoom.course.subject'])
+            ->get()
+            ->first(function (ClassSchedule $classSchedule) use ($requestedRange) {
+                if ($requestedRange === null) {
+                    return true;
+                }
+
+                return $classSchedule->classRoom?->overlapsDateRange($requestedRange[0], $requestedRange[1]);
+            });
 
         if ($conflict) {
             $conflictingEnrollment = $conflict->classRoom?->enrollments->first();
@@ -330,6 +348,7 @@ class AdminScheduleChangeRequestService
     {
         $requestedRoomId = (int) ($scheduleChangeRequest->requested_room_id ?? 0);
         $currentRoomId = (int) ($scheduleChangeRequest->classSchedule?->room_id ?: $scheduleChangeRequest->classRoom?->room_id);
+        $requestedRange = $this->requestedDateRange($scheduleChangeRequest);
 
         if ($requestedRoomId === 0 || $requestedRoomId === $currentRoomId) {
             return;
@@ -352,13 +371,34 @@ class AdminScheduleChangeRequestService
             ->whereHas('classRoom', function (Builder $query) {
                 $query->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED]);
             })
-            ->first();
+            ->with(['classRoom.course.subject'])
+            ->get()
+            ->first(function (ClassSchedule $classSchedule) use ($requestedRange) {
+                if ($requestedRange === null) {
+                    return true;
+                }
+
+                return $classSchedule->classRoom?->overlapsDateRange($requestedRange[0], $requestedRange[1]);
+            });
 
         if ($conflict) {
             throw ValidationException::withMessages([
                 'action' => 'Phong hoc de xuat dang trung lich voi mot lop khac.',
             ]);
         }
+    }
+
+    protected function requestedDateRange(ScheduleChangeRequest $scheduleChangeRequest): ?array
+    {
+        if (! $scheduleChangeRequest->requested_date) {
+            return null;
+        }
+
+        $startDate = $scheduleChangeRequest->requested_date->copy()->startOfDay();
+        $endDateSource = $scheduleChangeRequest->requested_end_date ?: $scheduleChangeRequest->requested_date;
+        $endDate = $endDateSource->copy()->endOfDay();
+
+        return [$startDate, $endDate];
     }
 
     protected function syncLinkedCourseScheduleForClassRoom(?ClassRoom $classRoom, ScheduleChangeRequest $scheduleChangeRequest): void

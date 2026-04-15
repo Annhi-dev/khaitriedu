@@ -180,6 +180,22 @@ class Enrollment extends Model
         return $this->belongsTo(ClassRoom::class, 'lop_hoc_id');
     }
 
+    public function currentClassRoom(): ?ClassRoom
+    {
+        if ($this->classRoom) {
+            return $this->classRoom;
+        }
+
+        return $this->course?->currentClassRoom();
+    }
+
+    public function currentClassRoomLabel(): string
+    {
+        return $this->currentClassRoom()?->displayName()
+            ?? $this->course?->title
+            ?? 'Chưa xếp lớp';
+    }
+
     public function grades()
     {
         return $this->hasMany(Grade::class);

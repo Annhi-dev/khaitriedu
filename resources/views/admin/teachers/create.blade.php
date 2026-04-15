@@ -5,7 +5,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-3xl font-semibold text-slate-900">Tạo giảng viên mới</h1>
-            <p class="mt-2 text-sm leading-6 text-slate-600">Admin tạo tài khoản giảng viên để phục vụ phân công lớp, lịch dạy và các phase quản lý sau.</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Admin tạo tài khoản giảng viên để phục vụ phân công chuyên môn, lịch dạy và các bước quản lý sau.</p>
         </div>
         <a href="{{ route('admin.teachers.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Quay lại danh sách</a>
     </div>

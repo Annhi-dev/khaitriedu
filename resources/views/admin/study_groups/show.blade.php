@@ -7,7 +7,7 @@
         : 'border-amber-200 bg-amber-50 text-amber-700';
     $createCourseUrl = $category->defaultSubject
         ? route('admin.courses', ['subject_id' => $category->defaultSubject->id, 'return_to_category_id' => $category->id])
-        : route('admin.subjects.create-page', ['category_id' => $category->id, 'return_to_category_id' => $category->id]);
+        : route('admin.courses', ['return_to_category_id' => $category->id]);
     $courseFlowReady = $category->defaultSubject !== null;
 @endphp
 <div class="space-y-6">
@@ -81,12 +81,9 @@
                         <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $category->courses_count }}</p>
                         <p class="mt-1 text-xs text-slate-500">Số khóa học đang thuộc nhóm học này.</p>
                     </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <p class="text-xs uppercase tracking-wide text-slate-400">Luồng tạo khóa học</p>
-                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $courseFlowReady ? 'Sẵn sàng' : 'Cần khởi tạo' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">
-                            {{ $courseFlowReady ? 'Bạn có thể tạo khóa học mới trực tiếp từ nhóm này.' : 'Nhóm này cần tạo khung khóa gốc trước khi thêm khóa học.' }}
-                        </p>
+                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $courseFlowReady ? 'Sẵn sàng' : 'Tự nhập' }}</p>
                     </div>
                 </div>
             </section>
@@ -108,7 +105,6 @@
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Danh sách khóa học trong nhóm</h2>
-                <p class="text-sm text-slate-500">Mỗi dòng bên dưới là một khóa học thực tế đang nằm trong nhóm học này. Nếu nhóm chưa có khóa nào, hệ thống sẽ hiển thị khung hiện có để bạn tiếp tục tạo mới.</p>
             </div>
             <a href="{{ $createCourseUrl }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Tạo khóa học mới</a>
         </div>
@@ -123,7 +119,7 @@
                                 <p class="mt-2 text-sm leading-6 text-slate-600">{{ $course->description ?: 'Chưa có mô tả cho khóa học này.' }}</p>
                                 <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
                                     <span>Thuộc khung: {{ $course->subject?->name ?? 'Chưa gắn' }}</span>
-                                    <span>Giảng viên: {{ $course->teacher?->name ?? 'Chưa phân công' }}</span>
+                                    <span>Giảng viên: {{ $course->teacher?->displayName() ?? 'Chưa phân công' }}</span>
                                     <span>Lịch: {{ $course->formattedSchedule() }}</span>
                                     <span>{{ $course->enrollments_count ?? 0 }} học viên đã xếp</span>
                                 </div>
@@ -138,7 +134,6 @@
                         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-slate-900">{{ $subject->name }}</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $subject->description ?: 'Đây là khung đang được dùng để khởi tạo khóa học cho nhóm này.' }}</p>
                                 <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
                                     <span>{{ $subject->courses_count }} khóa học đang gắn phía dưới</span>
                                     <span>{{ $subject->statusLabel() }}</span>
@@ -148,7 +143,6 @@
                         </div>
                     </div>
                 @empty
-                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nhóm học này chưa có khóa học nào được liên kết.</div>
                 @endforelse
             @endif
         </div>

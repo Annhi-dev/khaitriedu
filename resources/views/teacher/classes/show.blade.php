@@ -1,7 +1,6 @@
 @extends('layouts.teacher')
 
 @section('title', 'Chi Tiết Lớp')
-@section('eyebrow', 'Class Detail')
 
 @section('content')
 @php
@@ -18,7 +17,9 @@
                 </a>
                 <p class="mt-4 text-xs uppercase tracking-[0.22em] text-slate-400">Class #{{ $classRoom->id }}</p>
                 <h2 class="mt-2 text-3xl font-semibold text-slate-900">{{ $classRoom->displayName() }}</h2>
-                <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-500">{{ $classRoom->note ?: 'Không gian điều phối dành cho giảng viên: xem học viên, lưu điểm danh, nhập điểm thủ công và đánh giá thái độ học tập.' }}</p>
+                @if ($classRoom->note)
+                    <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-500">{{ $classRoom->note }}</p>
+                @endif
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
@@ -63,7 +64,6 @@
         <div class="flex items-center justify-between gap-4">
             <div>
                 <h3 class="text-2xl font-semibold text-slate-900">Danh sách học viên</h3>
-                <p class="mt-2 text-sm text-slate-500">Các học viên đang thuộc lớp này theo xếp lớp của admin.</p>
             </div>
             <span class="rounded-full bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700">{{ $enrollments->count() }} học viên</span>
         </div>
@@ -102,7 +102,6 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h3 class="text-2xl font-semibold text-slate-900">Điểm danh theo buổi</h3>
-                <p class="mt-2 text-sm text-slate-500">Chọn lịch học và ngày diễn ra để lưu trạng thái có mặt, vắng có phép, vắng không phép hoặc đi trễ.</p>
             </div>
             <form method="GET" action="{{ route('teacher.classes.show', $classRoom) }}" class="grid gap-3 sm:grid-cols-[220px_180px_auto]">
                 <input type="hidden" name="tab" value="attendance">
@@ -148,7 +147,7 @@
                                         </select>
                                     </td>
                                     <td class="px-4 py-4">
-                                        <input type="text" name="attendance[{{ $enrollment->user_id }}][note]" value="{{ $record->note ?? '' }}" class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Ghi chú thêm nếu cần">
+                                        <input type="text" name="attendance[{{ $enrollment->user_id }}][note]" value="{{ $record->note ?? '' }}" class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Ghi chú">
                                     </td>
                                 </tr>
                             @endforeach
@@ -171,11 +170,10 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h3 class="text-2xl font-semibold text-slate-900">Bảng điểm thủ công</h3>
-                <p class="mt-2 text-sm text-slate-500">Chọn tên bài kiểm tra và nhập điểm trực tiếp cho từng học viên trong lớp.</p>
             </div>
             <form method="GET" action="{{ route('teacher.classes.show', $classRoom) }}" class="grid gap-3 sm:grid-cols-[280px_auto]">
                 <input type="hidden" name="tab" value="grades">
-                <input type="text" name="test_name" list="grade-test-names" value="{{ $selectedTestName }}" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Ví dụ: Kiểm tra giữa kỳ">
+                <input type="text" name="test_name" list="grade-test-names" value="{{ $selectedTestName }}" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Tên bài kiểm tra">
                 <datalist id="grade-test-names">
                     @foreach ($testNames as $testName)
                         <option value="{{ $testName }}"></option>
@@ -215,7 +213,7 @@
                                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $grade->grade ?? 'Chưa chấm' }}</span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <input type="text" name="grades[{{ $enrollment->user_id }}][feedback]" value="{{ $grade->feedback ?? '' }}" class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Phản hồi ngắn cho học viên">
+                                    <input type="text" name="grades[{{ $enrollment->user_id }}][feedback]" value="{{ $grade->feedback ?? '' }}" class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Phản hồi">
                                 </td>
                             </tr>
                         @endforeach
@@ -234,7 +232,6 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <h3 class="text-2xl font-semibold text-slate-900">Đánh giá học viên</h3>
-                    <p class="mt-2 text-sm text-slate-500">Ghi nhận nhận xét định tính và điểm thái độ học tập cho từng học viên.</p>
                 </div>
                 <form method="GET" action="{{ route('teacher.classes.show', $classRoom) }}" class="grid gap-3 sm:grid-cols-[260px_auto]">
                     <input type="hidden" name="tab" value="evaluations">
@@ -266,7 +263,7 @@
 
                     <div>
                         <label class="text-sm font-medium text-slate-700">Nhận xét</label>
-                        <textarea name="comments" rows="8" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Ghi nhận điểm mạnh, điểm cần cải thiện, thái độ học tập và đề xuất hỗ trợ tiếp theo...">{{ $currentEvaluation?->comments }}</textarea>
+                        <textarea name="comments" rows="8" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Nhận xét">{{ $currentEvaluation?->comments }}</textarea>
                     </div>
 
                     <div class="flex justify-end">
@@ -284,7 +281,6 @@
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h3 class="text-2xl font-semibold text-slate-900">Lịch sử đánh giá</h3>
-                    <p class="mt-2 text-sm text-slate-500">Các nhận xét gần nhất đã lưu cho lớp này.</p>
                 </div>
                 <span class="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">{{ $evaluationHistory->count() }} bản ghi</span>
             </div>

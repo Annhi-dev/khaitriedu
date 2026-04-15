@@ -36,7 +36,6 @@
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ isset($student) ? 'Mật khẩu mới' : 'Mật khẩu' }}</label>
             <input type="password" name="password" {{ isset($student) ? '' : 'required' }} class="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500">
             @error('password')<p class="text-rose-500 text-sm mt-1">{{ $message }}</p>@enderror
-            <p class="text-xs text-slate-500 mt-1">{{ isset($student) ? 'Để trống nếu không đổi mật khẩu.' : 'Tối thiểu 6 ký tự.' }}</p>
         </div>
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Xác nhận mật khẩu</label>

@@ -23,7 +23,7 @@
 </div>
 
 <div class="container mx-auto px-4 py-20">
-    <!-- Search and Filter -->
+    
     <div class="mb-12">
         <div class="flex flex-col md:flex-row gap-4">
             <input type="text" placeholder="Tìm kiếm bài viết..." class="flex-1 border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary">
@@ -37,7 +37,7 @@
         </div>
     </div>
 
-    <!-- Featured Post -->
+    
     @if ($featured)
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-16">
             <div class="grid md:grid-cols-2">
@@ -59,7 +59,7 @@
         </div>
     @endif
 
-    <!-- Blog Grid -->
+    
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         @forelse($gridPosts as $post)
             @php
@@ -95,7 +95,7 @@
         @endforelse
     </div>
 
-    <!-- Pagination -->
+    
     <div class="mt-16 flex items-center justify-center gap-2">
         <button class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Trước</button>
         <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>

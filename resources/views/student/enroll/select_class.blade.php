@@ -1,13 +1,12 @@
 @extends('layouts.student')
 @section('title', 'Chọn lớp học — ' . $subject->name)
-@section('eyebrow', 'Class Selection')
+@section('eyebrow', 'Chọn lớp')
 @section('content')
 <div class="max-w-4xl mx-auto">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-primary-dark">Chọn lớp — {{ $subject->name }}</h1>
             <p class="text-gray-600 text-sm">{{ $subject->category?->name ?? '' }} • {{ $subject->durationLabel() }}</p>
-            <p class="mt-1 text-sm text-gray-500">Nếu chưa thấy lớp hợp lịch, bạn vẫn có thể gửi yêu cầu lịch học riêng cho admin.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('student.enroll.request-form', $subject) }}" class="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-100">
@@ -19,14 +18,14 @@
         </div>
     </div>
 
-    {{-- Đã đăng ký rồi --}}
+    
     @if($existingEnrollment)
         <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
             <p class="font-semibold text-amber-800">Bạn đã đăng ký khóa học này</p>
             <p class="mt-1 text-sm text-amber-700">
                 Trạng thái: <strong>{{ $existingEnrollment->statusLabel() }}</strong>.
                 @if($existingEnrollment->classRoom)
-                    Lớp: <strong>{{ $existingEnrollment->classRoom->subject->name ?? '—' }}</strong>
+                    Lớp: <strong>{{ $existingEnrollment->classRoom->displayName() }}</strong>
                 @elseif($existingEnrollment->start_time && $existingEnrollment->end_time)
                     Bạn đã gửi khung giờ: <strong>{{ $existingEnrollment->start_time }} - {{ $existingEnrollment->end_time }}</strong>
                 @endif
@@ -40,14 +39,14 @@
         </div>
     @endif
 
-    {{-- Danh sách lớp --}}
+    
     @if($classes->isEmpty())
         <div class="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-gray-400">
             <i class="fas fa-door-closed text-4xl mb-3 block"></i>
-            <p>Hiện không có lớp cố định nào đang mở cho khóa này.</p>
+            <p>Hiện chưa có lớp đang mở cho khóa này.</p>
             <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
                 <i class="fas fa-paper-plane"></i>
-                Gửi yêu cầu lịch học cho admin
+                Gửi yêu cầu lịch học
             </a>
         </div>
     @else
@@ -72,7 +71,7 @@
                         <div class="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
                             <div>
                                 <span class="font-medium text-gray-500">Giảng viên:</span>
-                                {{ $class->teacher?->name ?? 'Chưa phân công' }}
+                                {{ $class->teacher?->displayName() ?? 'Chưa phân công' }}
                             </div>
                             <div>
                                 <span class="font-medium text-gray-500">Phòng:</span>
@@ -125,8 +124,7 @@
 
         @if(! $existingEnrollment || ! $existingEnrollment->hasCourseAccess())
             <div class="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
-                <h2 class="text-lg font-semibold text-cyan-900">Không khớp lịch nào ở trên?</h2>
-                <p class="mt-2 text-sm leading-6 text-cyan-800">Bạn không cần chờ admin mở lớp mới đăng ký. Hãy gửi các ngày và khung giờ bạn có thể học để admin chủ động xếp lớp phù hợp.</p>
+                <h2 class="text-lg font-semibold text-cyan-900">Chưa thấy lớp phù hợp?</h2>
                 <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
                     <i class="fas fa-calendar-plus"></i>
                     Gửi yêu cầu lịch học

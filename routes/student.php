@@ -10,7 +10,6 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule');
 Route::get('/grades', [GradeController::class, 'index'])->name('grades');
 
-// ─── Đăng ký lớp học ─────────────────────────────────────────────────────────
 Route::prefix('enroll')->name('enroll.')->group(function () {
     Route::get('/', [ClassEnrollController::class, 'index'])->name('index');
     Route::get('/my-classes', [ClassEnrollController::class, 'myClasses'])->name('my-classes');

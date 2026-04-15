@@ -23,7 +23,7 @@
             </div>
             <div class="mt-4 space-y-2 text-sm text-slate-600">
                 <p><i class="fas fa-calendar-alt w-5"></i> Lịch: {{ $course->schedule ?: 'Chưa chốt' }}</p>
-                <p><i class="fas fa-chalkboard-user w-5"></i> Giảng viên: {{ $course->teacher?->name ?? 'Chưa phân công' }}</p>
+                <p><i class="fas fa-chalkboard-user w-5"></i> Giảng viên: {{ $course->teacher?->displayName() ?? 'Chưa phân công' }}</p>
                 <p><i class="fas fa-users w-5"></i> Học viên: {{ $course->enrollments_count ?? 0 }}</p>
             </div>
             <div class="mt-5 flex justify-end gap-2">

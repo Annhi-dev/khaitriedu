@@ -5,7 +5,6 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-3xl font-semibold text-slate-900">Tạo phòng ban mới</h1>
-            <p class="mt-2 text-sm leading-6 text-slate-600">Thêm phòng ban để phân bổ giảng viên theo cơ cấu tổ chức đào tạo.</p>
         </div>
         <a href="{{ route('admin.departments.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Quay lại danh sách</a>
     </div>

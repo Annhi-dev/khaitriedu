@@ -27,7 +27,7 @@
                     @php
                         $createCourseUrl = $category->defaultSubject
                             ? route('admin.courses', ['subject_id' => $category->defaultSubject->id, 'return_to_category_id' => $category->id])
-                            : route('admin.subjects.create-page', ['category_id' => $category->id, 'return_to_category_id' => $category->id]);
+                            : route('admin.courses', ['return_to_category_id' => $category->id]);
                     @endphp
                     <tr class="hover:bg-slate-50 transition">
                         <td class="px-6 py-4">

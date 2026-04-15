@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateCourseModuleRequest;
 use App\Models\Course;
 use App\Models\Module;
 use App\Models\User;
+use App\Services\CourseCurriculumService;
 use App\Services\AdminCourseModuleService;
 use Illuminate\Http\Request;
 
@@ -38,6 +39,28 @@ class ModuleController extends Controller
         return redirect()->route('admin.courses.modules.index', $course)->with('status', 'Module đã được thêm.');
     }
 
+    public function syncTemplate(Course $course, CourseCurriculumService $curriculumService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $report = $curriculumService->syncCourse($course);
+
+        return redirect()
+            ->route('admin.courses.modules.index', $course)
+            ->with(
+                'status',
+                sprintf(
+                    'Đã sinh curriculum mẫu cho khóa này: tạo %d module, cập nhật %d module, thêm %d buổi học.',
+                    $report['modules_created'],
+                    $report['modules_updated'],
+                    $report['lessons_created'],
+                )
+            );
+    }
+
     public function edit(Course $course, Module $module, AdminCourseModuleService $moduleService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
@@ -48,6 +71,8 @@ class ModuleController extends Controller
         if ($module->course_id !== $course->id) {
             abort(404);
         }
+
+        $module->loadCount('lessons');
 
         return view('admin.course.module_edit', array_merge(
             ['current' => $current, 'module' => $module],

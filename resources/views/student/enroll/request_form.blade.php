@@ -1,6 +1,6 @@
 @extends('layouts.student')
 @section('title', 'Yêu cầu lịch học — ' . $subject->name)
-@section('eyebrow', 'Custom Schedule Request')
+@section('eyebrow', 'Lịch học riêng')
 @section('content')
 @php
     $storedPreferredDays = $existingEnrollment?->preferred_days;
@@ -14,7 +14,6 @@
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold text-primary-dark">Gửi yêu cầu lịch học — {{ $subject->name }}</h1>
-            <p class="mt-2 text-sm text-gray-600">Bạn chọn các ngày và khung giờ mình có thể học, hệ thống sẽ chuyển cho admin để chủ động xếp lớp phù hợp.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             @if($openClasses->isNotEmpty())
@@ -64,11 +63,9 @@
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
         <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 class="text-xl font-semibold text-slate-900">Biểu mẫu yêu cầu lịch học</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-500">Luồng này dành cho trường hợp bạn chưa thấy lớp cố định phù hợp, hoặc muốn admin căn cứ trên lịch rảnh thực tế của bạn để gom lớp.</p>
-
             @if(!$canEditRequest)
                 <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
-                    Bạn đã được ghi danh hoặc xếp lớp cho khóa học này, nên biểu mẫu yêu cầu lịch học đã được khóa. Nếu muốn thay đổi lớp hoặc đổi lịch, vui lòng liên hệ admin.
+                    Bạn đã được ghi danh hoặc xếp lớp cho khóa học này. Nếu muốn thay đổi, vui lòng liên hệ admin.
                 </div>
                 <div class="mt-4">
                     <a href="{{ route('student.enroll.my-classes') }}" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
@@ -90,7 +87,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700">Giờ kết thúc</label>
-                            <input type="time" name="end_time" value="{{ old('end_time', $existingEnrollment?->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
+                            <input type="time" name="end_time" value="{{ old('end_time', $existingEnrollment?->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" readonly>
                             @error('end_time')
                                 <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
@@ -116,9 +113,8 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">Ghi chú thêm cho admin</label>
-                        <textarea name="preferred_schedule" rows="4" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" placeholder="Ví dụ: ưu tiên ca tối, chỉ học cuối tuần, hoặc mong muốn được học sớm trong tháng này">{{ old('preferred_schedule', $existingEnrollment?->preferred_schedule) }}</textarea>
-                        <p class="mt-2 text-xs text-slate-500">Bạn cũng có thể ghi chú thêm nếu muốn admin ưu tiên lớp cùng nhóm bạn hoặc ca học cụ thể.</p>
+                        <label class="block text-sm font-medium text-slate-700">Ghi chú thêm</label>
+                        <textarea name="preferred_schedule" rows="4" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" placeholder="Ghi chú">{{ old('preferred_schedule', $existingEnrollment?->preferred_schedule) }}</textarea>
                         @error('preferred_schedule')
                             <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                         @enderror
@@ -126,7 +122,7 @@
 
                     <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
                         <i class="fas fa-paper-plane"></i>
-                        {{ $existingEnrollment ? 'Cập nhật yêu cầu lịch học' : 'Gửi yêu cầu lịch học cho admin' }}
+                        {{ $existingEnrollment ? 'Cập nhật yêu cầu lịch học' : 'Gửi yêu cầu lịch học' }}
                     </button>
                 </form>
             @endif
@@ -134,25 +130,16 @@
 
         <aside class="space-y-6">
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 class="text-lg font-semibold text-slate-900">Admin sẽ xử lý như thế nào?</h3>
-                <ul class="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                    <li>1. Tiếp nhận khóa học bạn chọn cùng khung giờ có thể học.</li>
-                    <li>2. So khớp với các lớp đang mở hoặc gom thêm học viên có lịch tương tự.</li>
-                    <li>3. Chủ động xếp lớp, chốt giảng viên và phản hồi lại trong hồ sơ đăng ký.</li>
-                </ul>
-            </div>
-
-            <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h3 class="text-lg font-semibold text-slate-900">Lớp cố định đang mở</h3>
                 @if($openClasses->isEmpty())
-                    <p class="mt-3 text-sm leading-6 text-slate-500">Hiện chưa có lớp cố định nào phù hợp để bạn chọn trực tiếp. Bạn cứ gửi yêu cầu lịch học, admin sẽ xử lý tiếp cho bạn.</p>
+                    <p class="mt-3 text-sm leading-6 text-slate-500">Hiện chưa có lớp cố định phù hợp.</p>
                 @else
                     <div class="mt-4 space-y-3">
                         @foreach($openClasses as $classRoom)
                             <div class="rounded-2xl border border-slate-200 p-4">
                                 <div class="font-semibold text-slate-900">{{ $classRoom->displayName() }}</div>
                                 <div class="mt-2 space-y-1 text-sm text-slate-600">
-                                    <p><strong>Giảng viên:</strong> {{ $classRoom->teacher?->name ?? 'Chưa phân công' }}</p>
+                                    <p><strong>Giảng viên:</strong> {{ $classRoom->teacher?->displayName() ?? 'Chưa phân công' }}</p>
                                     <p><strong>Lịch:</strong> {{ $classRoom->scheduleSummary() }}</p>
                                     <p><strong>Chỗ trống:</strong> {{ $classRoom->availableSlots() }}</p>
                                 </div>

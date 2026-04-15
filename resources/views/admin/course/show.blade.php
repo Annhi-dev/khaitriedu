@@ -45,14 +45,14 @@
                         <select name="teacher_id" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
                             <option value="">Chưa phân công</option>
                             @foreach ($teachers as $teacher)
-                                <option value="{{ $teacher->id }}" @selected($course->teacher_id == $teacher->id)>{{ $teacher->name }}</option>
+                                <option value="{{ $teacher->id }}" @selected($course->teacher_id == $teacher->id)>{{ $teacher->displayName() }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
                         <label class="mb-2 block text-sm font-medium text-slate-700">Lịch học</label>
                         <select name="schedule" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                            <option value="">Chọn lịch học...</option>
+                            <option value="">Lịch học</option>
                             <option value="Tối T2-T4-T6, 18:00 - 20:30" @selected(old('schedule', $course->schedule) === 'Tối T2-T4-T6, 18:00 - 20:30')>Tối T2-T4-T6, 18:00 - 20:30</option>
                             <option value="Tối T3-T5-T7, 18:00 - 20:30" @selected(old('schedule', $course->schedule) === 'Tối T3-T5-T7, 18:00 - 20:30')>Tối T3-T5-T7, 18:00 - 20:30</option>
                             <option value="Sáng T7-CN, 08:30 - 11:30" @selected(old('schedule', $course->schedule) === 'Sáng T7-CN, 08:30 - 11:30')>Sáng T7-CN, 08:30 - 11:30</option>
@@ -65,7 +65,7 @@
                     <div>
                         <label class="mb-2 block text-sm font-medium text-slate-700">Giá khóa học</label>
                         <div class="relative">
-                            <input type="number" name="price" value="{{ $course->price ?? 0 }}" min="0" placeholder="Nhập giá" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 pr-12 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+                            <input type="number" name="price" value="{{ $course->price ?? 0 }}" min="0" placeholder="Giá" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 pr-12 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
                             <span class="absolute inset-y-0 right-0 flex items-center pr-4 text-sm text-slate-500">VNĐ</span>
                         </div>
                     </div>
@@ -83,6 +83,9 @@
         <aside class="space-y-6">
             <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-semibold text-slate-900">Thống kê nhanh</h2>
+                @php
+                    $totalSessions = $course->modules->sum(fn ($module) => $module->plannedSessionCount());
+                @endphp
                 <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <p class="text-xs uppercase tracking-wide text-slate-400">Học viên đã xếp</p>
@@ -92,15 +95,13 @@
                         <p class="text-xs uppercase tracking-wide text-slate-400">Số module</p>
                         <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $course->modules->count() }}</p>
                     </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Tổng buổi dự kiến</p>
+                        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $totalSessions }}</p>
+                    </div>
                 </div>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Ghi chú</h2>
-                <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
-                    <p>Module đang được quản lý riêng để phase 7 có thể thêm, sửa, sắp xếp thứ tự và ẩn/hiện nội dung mà không làm rối phần thông tin lớp học.</p>
-                </div>
-            </section>
         </aside>
     </div>
 
@@ -108,7 +109,6 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Danh sách module hiện có</h2>
-                <p class="text-sm text-slate-500">Từ đây admin nhìn thấy nhanh thứ tự và trạng thái các module, còn thao tác đầy đủ nằm ở màn quản lý module.</p>
             </div>
             <a href="{{ route('admin.courses.modules.index', $course) }}" class="inline-flex items-center justify-center rounded-2xl border border-cyan-200 px-4 py-2.5 text-sm font-medium text-cyan-700 hover:bg-cyan-50">Mở quản lý module</a>
         </div>
@@ -127,8 +127,11 @@
                                 <p class="text-sm font-semibold text-slate-900">{{ $module->position }}. {{ $module->title }}</p>
                                 <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $module->statusLabel() }}</span>
                             </div>
-                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ $module->content ?: 'Chưa có mô tả cho module này.' }}</p>
-                            <div class="mt-3 text-xs text-slate-500">{{ $module->durationLabel() }}</div>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">{{ $module->learningSummary() }}</p>
+                            <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                <span>{{ $module->sessionCountLabel() }}</span>
+                                <span>{{ $module->durationLabel() }}</span>
+                            </div>
                         </div>
                         <a href="{{ route('admin.courses.modules.edit', [$course, $module]) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Sửa module</a>
                     </div>

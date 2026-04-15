@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassRoom;
+use App\Models\Enrollment;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CourseController extends Controller
 {
@@ -55,15 +58,28 @@ class CourseController extends Controller
 
         $courses = $coursesQuery->get();
         $categories = Category::orderBy('name')->get();
+        $subjectSuggestions = $subjects->map(function (Subject $subject): array {
+            return [
+                'id' => $subject->id,
+                'name' => $subject->name,
+                'description' => $subject->description,
+                'price' => (float) ($subject->price ?? 0),
+                'duration' => $subject->duration,
+                'category_id' => $subject->category_id,
+            ];
+        })->values();
+        $nextBatch = $this->resolveNextBatch($courses);
 
         return view('admin.courses', compact(
             'courses',
             'subjects',
+            'subjectSuggestions',
             'categories',
             'current',
             'selectedSubject',
             'selectedCategory',
             'returnToCategoryId',
+            'nextBatch',
         ));
     }
 
@@ -74,7 +90,11 @@ class CourseController extends Controller
             return $redirect;
         }
 
-        $course->load(['subject.category', 'teacher', 'modules'])->loadCount('enrollments');
+        $course->load([
+            'subject.category',
+            'teacher',
+            'modules' => fn ($query) => $query->with('lessons')->orderBy('position'),
+        ])->loadCount('enrollments');
         $teachers = User::teachers()->orderBy('name')->get();
         $subjects = Subject::with('category')->orderBy('name')->get();
 
@@ -88,8 +108,29 @@ class CourseController extends Controller
             return $redirect;
         }
 
+        $request->merge([
+            'subject_name' => trim((string) $request->input('subject_name', '')),
+            'title' => trim((string) $request->input('title', '')),
+            'description' => $request->filled('description')
+                ? trim((string) $request->input('description'))
+                : null,
+        ]);
+
+        if ($request->filled('subject_id')) {
+            $subjectForCategory = Subject::query()->find((int) $request->input('subject_id'));
+
+            if ($subjectForCategory) {
+                $request->merge([
+                    'category_id' => $subjectForCategory->category_id,
+                ]);
+            }
+        }
+
         $data = $request->validate([
-            'subject_id' => 'required|exists:mon_hoc,id',
+            'category_id' => 'required|exists:danh_muc,id',
+            'subject_id' => 'nullable|exists:mon_hoc,id',
+            'subject_name' => 'required_without:subject_id|string|max:255',
+            'subject_duration' => 'required_without:subject_id|nullable|integer|min:1|max:120',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
@@ -98,16 +139,37 @@ class CourseController extends Controller
             'return_to_category_id' => 'nullable|exists:danh_muc,id',
         ]);
 
-        Course::create([
-            'subject_id' => $data['subject_id'],
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'price' => $data['price'] ?? 0,
-            'teacher_id' => $data['teacher_id'] ?? null,
-            'schedule' => $data['schedule'] ?? null,
-        ]);
+        $course = DB::transaction(function () use ($data): Course {
+            if (! empty($data['subject_id'])) {
+                $subject = Subject::query()->findOrFail((int) $data['subject_id']);
+            } else {
+                $subjectName = trim((string) $data['subject_name']);
 
-        $subject = Subject::with('category')->find($data['subject_id']);
+                $subject = Subject::query()->firstOrCreate(
+                    [
+                        'category_id' => (int) $data['category_id'],
+                        'name' => $subjectName,
+                    ],
+                    [
+                        'description' => $data['description'] ?? null,
+                        'price' => $data['price'] ?? 0,
+                        'duration' => $data['subject_duration'] ?? 12,
+                        'status' => Subject::STATUS_OPEN,
+                    ]
+                );
+            }
+
+            return Course::create([
+                'subject_id' => $subject->id,
+                'title' => $data['title'],
+                'description' => $data['description'] ?? null,
+                'price' => $data['price'] ?? 0,
+                'teacher_id' => $data['teacher_id'] ?? null,
+                'schedule' => $data['schedule'] ?? null,
+            ]);
+        });
+
+        $subject = $course->subject()->with('category')->first();
         $returnToCategoryId = (int) ($data['return_to_category_id'] ?? 0);
 
         if ($returnToCategoryId > 0 && (int) ($subject?->category_id ?? 0) === $returnToCategoryId) {
@@ -133,8 +195,11 @@ class CourseController extends Controller
             'schedule' => 'nullable|string|max:255',
         ]);
 
-        $data['price'] = $data['price'] ?? 0;
-        $course->update($data);
+        DB::transaction(function () use ($course, $data): void {
+            $data['price'] = $data['price'] ?? 0;
+            $course->update($data);
+            $this->syncTeacherAssignments($course);
+        });
 
         return redirect()->route('admin.course.show', $course)->with('status', 'Khóa học đã được cập nhật.');
     }
@@ -153,8 +218,6 @@ class CourseController extends Controller
 
     public function apiBaseCourse($id)
     {
-        // Must allow anonymous or just admin? The requirement did not specify auth, 
-        // but it'll be hit by the admin form.
         $subject = \App\Models\Subject::findOrFail($id);
         
         $totalClasses = \App\Models\Course::where('subject_id', $subject->id)->count();
@@ -179,7 +242,10 @@ class CourseController extends Controller
             'schedule' => 'nullable|string|max:255',
         ]);
 
-        $course->update($data);
+        DB::transaction(function () use ($course, $data): void {
+            $course->update($data);
+            $this->syncTeacherAssignments($course);
+        });
 
         return redirect()->route('admin.courses')->with('status', 'Khóa học đã cập nhật giảng viên và lịch.');
     }
@@ -209,5 +275,47 @@ class CourseController extends Controller
         ]);
 
         return back()->with('status', 'Khóa học thực tế đã được thêm vào khóa gốc.');
+    }
+
+    protected function syncTeacherAssignments(Course $course): void
+    {
+        $course->loadMissing('classRooms');
+
+        $activeClassRooms = $course->classRooms()
+            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->with('schedules')
+            ->get();
+
+        foreach ($activeClassRooms as $classRoom) {
+            $classRoom->forceFill([
+                'teacher_id' => $course->teacher_id,
+            ])->save();
+
+            $classRoom->schedules()
+                ->update(['teacher_id' => $course->teacher_id]);
+        }
+
+        $course->enrollments()
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->update([
+                'assigned_teacher_id' => $course->teacher_id,
+            ]);
+    }
+
+    protected function resolveNextBatch(iterable $courses): int
+    {
+        $maxBatch = (int) date('y') - 1;
+
+        foreach ($courses as $course) {
+            if (preg_match('/Khóa\s+(\d+)/iu', (string) ($course->title ?? ''), $matches)) {
+                $batch = (int) $matches[1];
+
+                if ($batch > $maxBatch) {
+                    $maxBatch = $batch;
+                }
+            }
+        }
+
+        return $maxBatch + 1;
     }
 }

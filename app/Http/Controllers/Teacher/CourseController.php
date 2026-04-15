@@ -98,7 +98,7 @@ class CourseController extends Controller
             }
         }
 
-        $totalCourseLessons = count($lessonIds);
+        $totalCourseLessons = (int) $course->modules->sum(fn ($module) => $module->plannedSessionCount());
         $studentModuleProgress = [];
         $studentCourseProgress = [];
 
@@ -106,8 +106,9 @@ class CourseController extends Controller
             $studentId = $enrollment->user_id;
 
             foreach ($course->modules as $module) {
-                $totalLessons = $module->lessons->count();
+                $totalLessons = $module->plannedSessionCount();
                 $completedLessons = $completedByStudentAndModule[$studentId][$module->id] ?? 0;
+                $completedLessons = min($completedLessons, $totalLessons);
 
                 $studentModuleProgress[$enrollment->id][$module->id] = [
                     'completed' => $completedLessons,
@@ -118,7 +119,7 @@ class CourseController extends Controller
                 ];
             }
 
-            $completedCourseLessons = $completedByStudent[$studentId] ?? 0;
+            $completedCourseLessons = min($completedByStudent[$studentId] ?? 0, $totalCourseLessons);
 
             $studentCourseProgress[$enrollment->id] = [
                 'completed' => $completedCourseLessons,

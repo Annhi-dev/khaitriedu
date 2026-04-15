@@ -32,6 +32,7 @@ class ReviewEnrollmentRequest extends FormRequest
         $this->merge([
             'action' => $action,
             'course_id' => $this->filled('course_id') ? (int) $this->input('course_id') : null,
+            'class_room_id' => $this->filled('class_room_id') ? (int) $this->input('class_room_id') : null,
             'assigned_teacher_id' => $this->filled('assigned_teacher_id') ? (int) $this->input('assigned_teacher_id') : null,
             'schedule' => $this->filled('schedule') ? trim((string) $this->input('schedule')) : null,
             'note' => $this->filled('note') ? trim((string) $this->input('note')) : null,
@@ -50,6 +51,7 @@ class ReviewEnrollmentRequest extends FormRequest
                 'complete',
             ])],
             'course_id' => ['nullable', 'exists:khoa_hoc,id'],
+            'class_room_id' => ['nullable', 'exists:lop_hoc,id'],
             'assigned_teacher_id' => ['nullable', 'exists:nguoi_dung,id'],
             'schedule' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:1000'],

@@ -56,7 +56,7 @@
                                 <div class="mt-1 text-xs text-slate-500">{{ $timeSlot->formattedWindow() }}</div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-600">
-                                <div>{{ $timeSlot->teacher?->name ?? 'Chưa phân công' }}</div>
+                                <div>{{ $timeSlot->teacher?->displayName() ?? 'Chưa phân công' }}</div>
                                 <div class="mt-1 text-xs text-slate-500">{{ $timeSlot->room ? $timeSlot->room->code . ' - ' . $timeSlot->room->name : 'Chưa gán phòng' }}</div>
                             </td>
                             <td class="px-6 py-4">

@@ -4,9 +4,7 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Phase 8</p>
             <h1 class="mt-1 text-3xl font-semibold text-slate-900">Quản lý đăng ký học</h1>
-            <p class="mt-2 text-sm text-slate-600">Xử lý yêu cầu đăng ký của học viên, rà soát nhu cầu học và chuyển hồ sơ sang bước duyệt hoặc xếp lớp.</p>
         </div>
     </div>
 
@@ -39,6 +37,14 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($enrollments as $enrollment)
+                    @php
+                        $detailRoute = $enrollment->isFixedClassEnrollment()
+                            ? route('admin.enrollments.fixed.show', $enrollment)
+                            : route('admin.enrollments.custom.show', $enrollment);
+                        $detailLabel = $enrollment->isFixedClassEnrollment()
+                            ? 'Mở hồ sơ lớp cố định'
+                            : 'Mở hồ sơ lịch học riêng';
+                    @endphp
                     <tr class="hover:bg-slate-50 transition">
                         <td class="px-5 py-4">
                             <div class="font-medium">{{ $enrollment->user?->name }}</div>
@@ -51,12 +57,12 @@
                             </div>
                         </td>
                         <td class="px-5 py-4">{{ $enrollment->start_time ?: '--' }} - {{ $enrollment->end_time ?: '--' }}</td>
-                        <td class="px-5 py-4">{{ $enrollment->course?->title ?? 'Chưa xếp lớp' }}</td>
+                        <td class="px-5 py-4">{{ $enrollment->currentClassRoomLabel() }}</td>
                         <td class="px-5 py-4">
                             <x-admin.badge :type="match($enrollment->status) {'pending' => 'warning', 'approved' => 'info', 'scheduled' => 'success', 'active' => 'success', 'completed' => 'default', 'rejected' => 'danger', default => 'default'}" :text="$enrollment->statusLabel()" />
                         </td>
                         <td class="px-5 py-4 text-right">
-                            <a href="{{ route('admin.enrollments.show', $enrollment) }}" class="inline-flex items-center px-3 py-1 rounded-xl bg-cyan-50 text-cyan-700 text-xs font-medium hover:bg-cyan-100 transition">Chi tiết</a>
+                            <a href="{{ $detailRoute }}" class="inline-flex items-center px-3 py-1 rounded-xl bg-cyan-50 text-cyan-700 text-xs font-medium hover:bg-cyan-100 transition">{{ $detailLabel }}</a>
                         </td>
                     </tr>
                     @empty

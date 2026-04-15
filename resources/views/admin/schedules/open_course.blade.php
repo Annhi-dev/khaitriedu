@@ -8,7 +8,7 @@
             Quay lai lich hoc toan he thong
         </a>
         <h1 class="mt-3 text-3xl font-semibold text-slate-900">Mo lop cho {{ $course->title }}</h1>
-        <p class="mt-2 text-sm text-slate-600">Chot ngay bat dau va ngay ket thuc khi lop da du toi thieu {{ $minimumStudentsToOpen }} hoc vien.</p>
+        <p class="mt-2 text-sm text-slate-500">Luu y kiem tra thong tin truoc khi chot lop.</p>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
@@ -22,7 +22,7 @@
             </div>
 
             <div class="mt-5 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-                <p><strong>Giang vien:</strong> {{ $course->teacher?->name ?? 'Chua phan cong' }}</p>
+                <p><strong>Giang vien:</strong> {{ $course->teacher?->displayName() ?? 'Chua phan cong' }}</p>
                 <p><strong>Lich hoc du kien:</strong> {{ $course->meetingDaysLabel() }} | {{ $course->start_time }} - {{ $course->end_time }}</p>
                 <p><strong>Si so hien tai:</strong> {{ $course->scheduled_students_count }}/{{ $minimumStudentsToOpen }} hoc vien toi thieu</p>
                 <p><strong>Suc chua:</strong> {{ $course->capacity ?? 20 }}</p>
@@ -38,18 +38,6 @@
                 </div>
             @endif
 
-            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p class="text-sm font-semibold text-slate-800">Hoc vien dang cho mo lop</p>
-                <div class="mt-3 flex flex-wrap gap-2">
-                    @forelse ($course->enrollments->whereIn('status', \App\Models\Enrollment::courseAccessStatuses()) as $enrollment)
-                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
-                            {{ $enrollment->user?->name ?? 'Hoc vien' }}
-                        </span>
-                    @empty
-                        <span class="text-sm text-slate-500">Chua co hoc vien nao duoc ghep vao lop nay.</span>
-                    @endforelse
-                </div>
-            </div>
         </section>
 
         <aside class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -78,10 +66,6 @@
                     <label class="text-sm font-medium text-slate-700">Ngay ket thuc</label>
                     <input type="date" name="end_date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                     @error('end_date')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
-                </div>
-
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                    Khi mo lop, he thong se cap nhat lich hoc chinh thuc cho toan bo hoc vien dang cho va gui thong bao trong khu vuc hoc vien.
                 </div>
 
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700" @disabled($studentsNeeded > 0)>

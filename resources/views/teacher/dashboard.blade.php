@@ -51,7 +51,6 @@
                     <div>
                         <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-700">Hôm nay</p>
                         <h2 class="mt-2 text-2xl font-semibold text-slate-900">Lịch giảng trong ngày</h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-500">Nhìn nhanh các buổi dạy hôm nay để vào lớp, điểm danh và cập nhật tiến độ.</p>
                     </div>
                     <a href="{{ route('teacher.schedules.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800">
                         Xem toàn bộ lịch
@@ -82,38 +81,13 @@
                 </div>
             </article>
 
-            <article class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-semibold text-slate-900">Khung tuần này</h2>
-                        <p class="mt-2 text-sm text-slate-500">Lịch lặp theo tuần của các lớp bạn đang phụ trách.</p>
-                    </div>
-                    <span class="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">{{ $weekSchedule->count() }} buổi</span>
-                </div>
-
-                <div class="mt-6 space-y-4">
-                    @forelse ($weekSchedule as $item)
-                        <div class="grid gap-4 rounded-3xl border border-slate-200 p-4 md:grid-cols-[170px_1fr_auto] md:items-center">
-                            <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                                <p class="text-xs uppercase tracking-[0.22em] text-slate-400">{{ $item['starts_at']->translatedFormat('D') }}</p>
-                                <p class="mt-2 text-lg font-semibold text-slate-900">{{ $item['starts_at']->format('d/m') }}</p>
-                                <p class="mt-1 text-sm text-slate-500">{{ $item['schedule']->timeRangeLabel() }}</p>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-slate-900">{{ $item['class_room']->displayName() }}</h3>
-                                <p class="mt-2 text-sm text-slate-500">{{ $item['class_room']->subject?->name ?? 'Chưa có môn học' }} • {{ $item['room_label'] }}</p>
-                            </div>
-                            <a href="{{ route('teacher.classes.show', $item['class_room']) }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                                Mở lớp
-                            </a>
-                        </div>
-                    @empty
-                        <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
-                            Chưa có lịch nào trong tuần này.
-                        </div>
-                    @endforelse
-                </div>
-            </article>
+            @include('shared.schedule-grid', [
+                'grid' => $weeklyTimetable,
+                'sectionEyebrow' => 'Week View',
+                'sectionTitle' => 'Khung tuần này',
+                'sectionSubtitle' => 'Lịch lặp theo tuần của các lớp bạn đang phụ trách. Bam vao tung o de xem chi tiet va mo lop.',
+                'emptyMessage' => 'Chua co buoi day nao trong tuan nay.',
+            ])
         </div>
 
         <div class="space-y-6">
@@ -121,7 +95,6 @@
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <h2 class="text-xl font-semibold text-slate-900">Thông báo</h2>
-                        <p class="mt-2 text-sm text-slate-500">Trạng thái yêu cầu đổi lịch và cập nhật mới từ admin.</p>
                     </div>
                     <a href="{{ route('teacher.schedule-change-requests.index') }}" class="text-sm font-medium text-cyan-700 hover:text-cyan-800">Lịch sử</a>
                 </div>
@@ -166,7 +139,6 @@
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <h2 class="text-xl font-semibold text-slate-900">Lớp truy cập nhanh</h2>
-                        <p class="mt-2 text-sm text-slate-500">Đi thẳng vào lớp để điểm danh, nhập điểm hoặc đánh giá học viên.</p>
                     </div>
                     <a href="{{ route('teacher.classes.index') }}" class="text-sm font-medium text-cyan-700 hover:text-cyan-800">Xem tất cả</a>
                 </div>

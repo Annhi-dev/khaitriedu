@@ -14,7 +14,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Seed the 3 default roles
         DB::table('roles')->insert([
             ['id' => 1, 'name' => 'admin', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 2, 'name' => 'teacher', 'created_at' => now(), 'updated_at' => now()],

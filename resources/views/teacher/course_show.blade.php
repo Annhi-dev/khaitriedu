@@ -23,7 +23,7 @@
           Lớp đang giảng dạy
         </span>
         <h1 class="mt-4 text-3xl font-bold text-gray-900">{{ $course->title }}</h1>
-        <p class="mt-3 text-gray-600">{{ $course->description ?: 'Admin đã xếp lớp này cho bạn phụ trách sau khi duyệt yêu cầu của học viên.' }}</p>
+        <p class="mt-3 text-gray-600">{{ $course->description ?: 'Lớp này đã được phân cho bạn phụ trách.' }}</p>
       </div>
       <div class="rounded-2xl bg-slate-50 px-5 py-4 text-sm text-gray-600 shadow-sm">
         <div><strong>Khóa học:</strong> {{ $course->subject?->name ?? 'Chưa gắn khóa học' }}</div>
@@ -49,7 +49,9 @@
         <div class="mb-4 rounded-2xl border border-gray-200 p-4 last:mb-0">
           <div class="text-sm font-semibold uppercase tracking-wide text-primary">Module {{ $module->position ?? $loop->iteration }}</div>
           <h3 class="mt-1 text-lg font-bold text-gray-900">{{ $module->title }}</h3>
-          <p class="mt-2 text-gray-600">{{ $module->content ?: 'Chưa có mô tả cho module này.' }}</p>
+          <p class="mt-2 text-xs font-semibold uppercase tracking-wide text-primary">Học viên sẽ học gì?</p>
+          <p class="mt-1 text-gray-600">{{ $module->learningSummary() }}</p>
+          <div class="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $module->sessionCountLabel() }}</div>
         </div>
       @empty
         <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-gray-500">

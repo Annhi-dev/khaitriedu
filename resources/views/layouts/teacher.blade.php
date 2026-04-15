@@ -36,7 +36,7 @@
 
             <div class="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
                 <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Giảng viên</p>
-                <p class="mt-3 text-lg font-semibold">{{ $teacherUser?->name }}</p>
+                <p class="mt-3 text-lg font-semibold">{{ $teacherUser?->displayName() }}</p>
                 <p class="mt-1 text-sm text-slate-400">{{ $teacherUser?->email }}</p>
             </div>
 
@@ -66,7 +66,6 @@
 
             <div class="mt-10 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-4 text-sm text-slate-300">
                 <p class="font-semibold text-white">Nhịp dạy trong tuần</p>
-                <p class="mt-2 leading-6 text-slate-400">Theo dõi lịch giảng, cập nhật điểm danh, bảng điểm và phản hồi học viên trong cùng một không gian làm việc.</p>
             </div>
 
             <div class="mt-8 space-y-2">
@@ -92,7 +91,6 @@
                             <i class="fas fa-bars"></i>
                         </button>
                         <div>
-                            <p class="text-xs uppercase tracking-[0.24em] text-slate-400">@yield('eyebrow', 'Teacher Workspace')</p>
                             <h1 class="text-xl font-semibold text-slate-900">@yield('title', 'Khu vực giảng viên')</h1>
                         </div>
                     </div>
@@ -108,10 +106,10 @@
 
                         <div class="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 md:flex">
                             <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/10 font-semibold text-cyan-700">
-                                {{ strtoupper(substr($teacherUser?->name ?? 'T', 0, 1)) }}
+                                {{ strtoupper(substr($teacherUser?->displayName() ?? 'T', 0, 1)) }}
                             </span>
                             <div>
-                                <p class="font-medium text-slate-800">{{ $teacherUser?->name }}</p>
+                                <p class="font-medium text-slate-800">{{ $teacherUser?->displayName() }}</p>
                                 <p class="text-xs text-slate-500">{{ $teacherUser?->roleLabel() }}</p>
                             </div>
                         </div>

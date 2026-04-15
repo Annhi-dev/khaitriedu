@@ -4,11 +4,16 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-            <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Phase 7</p>
+            <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Lộ trình học</p>
             <h1 class="mt-1 text-3xl font-semibold text-slate-900">Quản lý module cho lớp học</h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Sắp xếp nội dung thành từng module cho lớp <strong>{{ $course->title }}</strong>, kiểm soát trạng thái hiển thị và chuẩn bị cho phase bài học/quiz tiếp theo.</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
+            <form method="post" action="{{ route('admin.courses.modules.sync-template', $course) }}" onsubmit="return confirm('Sinh curriculum mẫu cho lớp này? Các module placeholder sẽ được điền lại theo template chuẩn.');">
+                @csrf
+                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i> Sinh curriculum mẫu
+                </button>
+            </form>
             <a href="{{ route('admin.course.show', $course->id) }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Về chi tiết lớp học</a>
             <a href="{{ route('admin.courses') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Danh sách lớp học</a>
         </div>
@@ -40,10 +45,11 @@
                                         <h3 class="text-sm font-semibold text-slate-900">{{ $listedModule->title }}</h3>
                                         <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $listedModule->statusLabel() }}</span>
                                     </div>
-                                    <p class="mt-2 text-sm leading-6 text-slate-600">{{ $listedModule->content ?: 'Chưa có mô tả cho module này.' }}</p>
+                                    <p class="mt-2 text-xs font-semibold uppercase tracking-wide text-cyan-600">Học viên sẽ học gì?</p>
+                                    <p class="mt-1 text-sm leading-6 text-slate-600">{{ $listedModule->learningSummary() }}</p>
                                     <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                                        <span>{{ $listedModule->sessionCountLabel() }}</span>
                                         <span>{{ $listedModule->durationLabel() }}</span>
-                                        <span>{{ $listedModule->lessons_count }} bài học</span>
                                         <span>{{ $listedModule->quizzes_count }} quiz</span>
                                     </div>
                                 </div>
@@ -53,10 +59,13 @@
                                         <input type="number" min="1" name="positions[{{ $listedModule->id }}]" value="{{ $listedModule->position }}" class="w-24 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
                                     </div>
                                     <a href="{{ route('admin.courses.modules.edit', [$course, $listedModule]) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-3 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50">Sửa</a>
-                                    <form method="post" action="{{ route('admin.courses.modules.delete', [$course, $listedModule]) }}" onsubmit="return confirm('Xóa module này? Nếu đang có bài học hoặc quiz thì hệ thống sẽ chuyển sang ẩn thay vì xóa cứng.');">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">Xóa</button>
-                                    </form>
+                                    <button
+                                        type="submit"
+                                        form="delete-module-{{ $listedModule->id }}"
+                                        class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                                    >
+                                        Xóa
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -66,8 +75,20 @@
                         <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800">Cập nhật thứ tự module</button>
                     </div>
                 </form>
+
+                @foreach ($modules as $listedModule)
+                    <form
+                        id="delete-module-{{ $listedModule->id }}"
+                        method="post"
+                        action="{{ route('admin.courses.modules.delete', [$course, $listedModule]) }}"
+                        onsubmit="return confirm('Xóa module này và toàn bộ dữ liệu liên quan?');"
+                        class="hidden"
+                    >
+                        @csrf
+                    </form>
+                @endforeach
             @else
-                <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">Lớp học này chưa có module nào. Hãy tạo module đầu tiên ở khung bên cạnh.</div>
+                <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">Lớp học này chưa có module nào.</div>
             @endif
         </section>
 
@@ -81,13 +102,6 @@
                 </form>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Lưu ý</h2>
-                <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
-                    <p>Module ở trạng thái ẩn sẽ không hiển thị cho học viên trong màn học.</p>
-                    <p class="mt-2">Nếu module đã có bài học hoặc quiz, thao tác xóa sẽ chuyển module sang ẩn để tránh mất dữ liệu học tập.</p>
-                </div>
-            </section>
         </aside>
     </div>
 </div>

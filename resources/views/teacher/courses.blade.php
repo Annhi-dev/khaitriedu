@@ -46,7 +46,7 @@
   <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
     <div class="mb-4">
       <h2 class="text-xl font-bold text-gray-900">Học viên đang theo các lớp của bạn</h2>
-      <p class="text-gray-600">Xem nhanh tình trạng xếp lớp và khung giờ học viên đã gửi cho admin.</p>
+      <p class="text-gray-600">Xem nhanh tình trạng xếp lớp và khung giờ học viên đã gửi.</p>
     </div>
 
     <div class="overflow-x-auto">

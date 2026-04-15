@@ -21,7 +21,7 @@
         </div>
     @endif
 
-    {{-- Filter --}}
+    
     <form method="GET" class="flex flex-wrap gap-3">
         <select name="status" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
             <option value="">Tất cả trạng thái</option>
@@ -60,7 +60,7 @@
                         <div class="font-medium text-slate-800">{{ $class->course->title ?? 'Chưa gắn khóa học' }}</div>
                         <div class="text-xs text-slate-500">{{ $class->subject->name ?? 'Chưa gắn môn học' }}</div>
                     </td>
-                    <td class="px-4 py-3 text-slate-700">{{ $class->teacher->name ?? 'Chưa phân công' }}</td>
+                    <td class="px-4 py-3 text-slate-700">{{ $class->teacher?->displayName() ?? 'Chưa phân công' }}</td>
                     <td class="px-4 py-3 text-slate-700">{{ $class->room->name ?? 'Chưa chọn' }}</td>
                     <td class="px-4 py-3">
                         @foreach($class->schedules as $s)

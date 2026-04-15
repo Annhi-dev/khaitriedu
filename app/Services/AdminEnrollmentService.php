@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
@@ -18,7 +19,20 @@ class AdminEnrollmentService
         $requestSource = trim((string) ($filters['request_source'] ?? ''));
 
         return Enrollment::query()
-            ->with(['user', 'subject.category', 'course.subject.category', 'assignedTeacher', 'reviewer'])
+            ->with([
+                'user',
+                'subject.category',
+                'course.subject.category',
+                'course.classRooms.room',
+                'course.classRooms.teacher',
+                'course.classRooms.schedules',
+                'classRoom.course',
+                'classRoom.room',
+                'classRoom.teacher',
+                'classRoom.schedules',
+                'assignedTeacher',
+                'reviewer',
+            ])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
                     $builder->whereHas('user', function (Builder $userQuery) use ($search) {
@@ -66,33 +80,19 @@ class AdminEnrollmentService
             'subject.category',
             'course.subject.category',
             'course.teacher',
+            'course.classRooms.room',
+            'course.classRooms.teacher',
+            'course.classRooms.schedules',
+            'classRoom.course',
             'assignedTeacher',
+            'classRoom.room',
+            'classRoom.teacher',
+            'classRoom.schedules',
             'reviewer',
         ]);
 
-        $availableCourses = Course::query()
-            ->with(['subject.category', 'teacher'])
-            ->when($enrollment->subject_id, fn (Builder $query) => $query->where('subject_id', $enrollment->subject_id))
-            ->orderBy('title')
-            ->get();
-
-        if ($availableCourses->isEmpty()) {
-            $availableCourses = Course::query()
-                ->with(['subject.category', 'teacher'])
-                ->orderBy('title')
-                ->get();
-        }
-
-        $teachers = User::query()
-            ->teachers()
-            ->where('status', User::STATUS_ACTIVE)
-            ->orderBy('name')
-            ->get();
-
         return [
             'enrollment' => $enrollment,
-            'availableCourses' => $availableCourses,
-            'teachers' => $teachers,
         ];
     }
 
@@ -107,6 +107,7 @@ class AdminEnrollmentService
         }
 
         $selectedCourse = $this->resolveSelectedCourse($enrollment, $data['course_id'] ?? null);
+        $selectedClassRoom = $this->resolveSelectedClassRoom($enrollment, $data['class_room_id'] ?? null, $selectedCourse);
         $assignedTeacherId = $data['assigned_teacher_id'] ?? null;
         $note = $data['note'] ?? null;
         $finalSchedule = $data['schedule'] ?? null;
@@ -134,11 +135,28 @@ class AdminEnrollmentService
         switch ($action) {
             case 'approve':
                 $enrollment->status = Enrollment::STATUS_APPROVED;
-                $enrollment->course_id = null;
-                $enrollment->assigned_teacher_id = null;
-                $enrollment->schedule = null;
                 $enrollment->note = $note;
-                $message = 'Đăng ký học đã được duyệt và đang chờ xếp lớp.';
+                if (! $enrollment->isFixedClassEnrollment()) {
+                    $enrollment->course_id = null;
+                    $enrollment->assigned_teacher_id = null;
+                    $enrollment->schedule = null;
+                    $message = 'Đăng ký học đã được duyệt và đang chờ xếp lớp.';
+                } else {
+                    if (! $selectedClassRoom) {
+                        throw ValidationException::withMessages([
+                            'class_room_id' => 'Khóa này chưa có lớp hiện hành. Vui lòng mở lớp trước khi duyệt ghi danh.',
+                        ]);
+                    }
+
+                    $enrollment->lop_hoc_id = $selectedClassRoom->id;
+                    $enrollment->course_id = $selectedClassRoom->course_id ?? $selectedCourse?->id ?? $enrollment->course_id;
+                    $enrollment->subject_id = $selectedClassRoom->subject_id ?? $selectedCourse?->subject_id ?? $enrollment->subject_id;
+                    $enrollment->assigned_teacher_id = $selectedClassRoom->teacher_id ?? $assignedTeacherId ?? $enrollment->assigned_teacher_id;
+                    $enrollment->schedule = $selectedClassRoom->schedules->isNotEmpty()
+                        ? $selectedClassRoom->scheduleSummary()
+                        : ($finalSchedule ?? $enrollment->schedule);
+                    $message = 'Ghi danh lớp cố định đã được duyệt và gắn vào lớp hiện hành.';
+                }
                 break;
 
             case 'reject':
@@ -256,5 +274,43 @@ class AdminEnrollmentService
         }
 
         return $course;
+    }
+
+    protected function resolveSelectedClassRoom(Enrollment $enrollment, ?int $classRoomId, ?Course $selectedCourse = null): ?ClassRoom
+    {
+        $classRoom = null;
+
+        if ($classRoomId) {
+            $classRoom = ClassRoom::query()
+                ->with(['course.teacher', 'room', 'teacher', 'schedules'])
+                ->find($classRoomId);
+        } elseif ($enrollment->classRoom) {
+            $classRoom = $enrollment->classRoom;
+        } elseif ($selectedCourse) {
+            $classRoom = $selectedCourse->currentClassRoom();
+        } elseif ($enrollment->course_id) {
+            $classRoom = Course::query()
+                ->with(['classRooms.room', 'classRooms.teacher', 'classRooms.schedules'])
+                ->find($enrollment->course_id)
+                ?->currentClassRoom();
+        }
+
+        if (! $classRoom) {
+            return null;
+        }
+
+        if ($selectedCourse && (int) $classRoom->course_id !== (int) $selectedCourse->id) {
+            throw ValidationException::withMessages([
+                'class_room_id' => 'Lớp học phải thuộc đúng khóa học đã chọn.',
+            ]);
+        }
+
+        if ($enrollment->subject_id && (int) $classRoom->subject_id !== (int) $enrollment->subject_id) {
+            throw ValidationException::withMessages([
+                'class_room_id' => 'Lớp học phải thuộc đúng môn mà học viên đã đăng ký.',
+            ]);
+        }
+
+        return $classRoom;
     }
 }

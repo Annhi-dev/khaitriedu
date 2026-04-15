@@ -32,7 +32,6 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Rate limiting: max 5 attempts per minute per IP
         $throttleKey = 'login:' . Str::lower($request->input('login')) . '|' . $request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
@@ -55,13 +54,10 @@ class AuthController extends Controller
             return back()->with('error', 'Tài khoản của bạn hiện không thể đăng nhập. Vui lòng liên hệ quản trị viên.');
         }
 
-        // Clear rate limiter on successful login
         RateLimiter::clear($throttleKey);
 
-        // Use Laravel Auth Guard — handles session securely
         Auth::login($user);
 
-        // Regenerate session ID to prevent session fixation attacks
         $request->session()->regenerate();
 
         return $this->redirectAfterLogin($user);
@@ -150,7 +146,6 @@ class AuthController extends Controller
         $currentUser = Auth::user();
         $isAdminCreating = $currentUser && $currentUser->isAdmin();
 
-        // Only admin can assign roles. Public registration is always hoc_vien.
         $rules = [
             'username' => 'required|string|max:50',
             'name' => 'required|string|max:255',
@@ -184,7 +179,6 @@ class AuthController extends Controller
             return redirect()->route('admin.users')->with('status', 'Người dùng đã được tạo và kích hoạt ngay lập tức.');
         }
 
-        // Public registration: always student, hash password before storing in session
         session(['pending_user' => [
             'username' => $data['username'],
             'name' => $data['name'],

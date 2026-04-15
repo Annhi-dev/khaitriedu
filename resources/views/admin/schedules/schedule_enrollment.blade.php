@@ -28,11 +28,7 @@
                 Quay lai hang cho xep lich
             </a>
             <h1 class="mt-3 text-3xl font-semibold text-slate-900">Xep lich cho {{ $enrollment->user?->name }}</h1>
-            <p class="mt-2 text-sm text-slate-600">
-                {{ $forceCreateNewClass
-                    ? 'Ho so nay se duoc luu vao lop cho mo. Admin chi chot ngay bat dau va ngay ket thuc sau khi lop du toi thieu ' . ($minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen()) . ' hoc vien.'
-                    : 'Chon lop hoc hien co hoac tao lop moi, sau do gan giang vien va lich hoc chinh thuc.' }}
-            </p>
+            <p class="mt-2 text-sm text-slate-500">Luu y kiem tra thong tin truoc khi xep lich.</p>
         </div>
         <span class="inline-flex rounded-full bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700">{{ $enrollment->statusLabel() }}</span>
     </div>
@@ -49,14 +45,6 @@
                 <p class="md:col-span-2"><strong>Ngay co the hoc:</strong> {{ $selectedDays ? implode(', ', array_map(fn ($day) => $dayLabels[$day] ?? $day, $selectedDays)) : 'Chua chon ngay hoc' }}</p>
             </div>
 
-            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                <p class="font-medium text-slate-800">Luu y kiem tra</p>
-                <ul class="mt-2 space-y-2 leading-6">
-                    <li>1. Lop cho mo chi luu giang vien, ngay hoc va khung gio; ngay khai giang se chot sau.</li>
-                    <li>2. Neu da co lop cho mo cung mon phu hop, admin co the ghep them hoc vien vao lop do.</li>
-                    <li>3. Khi du hoc vien, admin se mo lop va he thong se thong bao lai cho tung hoc vien.</li>
-                </ul>
-            </div>
         </section>
 
         <aside class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -64,10 +52,6 @@
                 @csrf
 
                 @if ($forceCreateNewClass)
-                    <div class="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-4 text-sm text-cyan-800">
-                        Buoc nay se luu lop cho mo. Ngay bat dau va ngay ket thuc se duoc admin chon o buoc mo lop khi du {{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} hoc vien.
-                    </div>
-
                     @if (($waitingCourses ?? collect())->isNotEmpty())
                         <div>
                             <label class="text-sm font-medium text-slate-700">Ghep vao lop cho mo da co</label>
@@ -112,7 +96,6 @@
                         <div>
                             <label class="text-sm font-medium text-slate-700">Ten lop hoc</label>
                             <input id="new-course-title" type="text" name="new_course_title" value="{{ old('new_course_title', $suggestedCourseTitle ?? '') }}" readonly class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:outline-none">
-                            <p class="mt-1 text-xs text-slate-500">Ten lop duoc tu sinh theo mon hoc da dang ky va chi tang so khoa hoc.</p>
                             @error('new_course_title')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -128,7 +111,7 @@
                     <select id="teacher-select" name="teacher_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         <option value="">Chon giang vien</option>
                         @foreach ($teachers as $teacher)
-                            <option value="{{ $teacher->id }}" @selected(old('teacher_id', $enrollment->assigned_teacher_id) == $teacher->id)>{{ $teacher->name }}</option>
+                            <option value="{{ $teacher->id }}" @selected(old('teacher_id', $enrollment->assigned_teacher_id) == $teacher->id)>{{ $teacher->displayName() }}</option>
                         @endforeach
                     </select>
                     @error('teacher_id')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
@@ -152,7 +135,6 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="text-sm font-medium text-slate-700">Ngay hoc trong tuan</label>
-                        <p class="mt-1 text-xs text-slate-500">Co the chon nhieu ngay voi cung mot khung gio.</p>
                         <div class="mt-2 grid gap-2 sm:grid-cols-2">
                             @foreach ($dayLabels as $value => $label)
                                 <label class="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50/40">

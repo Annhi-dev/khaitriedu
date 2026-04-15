@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Teacher;
 
+use App\Helpers\ScheduleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class StoreTeacherScheduleChangeRequest extends FormRequest
             'requested_date' => $this->input('requested_date') ?: null,
             'requested_end_date' => $this->input('requested_end_date') ?: null,
             'requested_start_time' => $this->input('requested_start_time') ?: null,
-            'requested_end_time' => $this->input('requested_end_time') ?: null,
+            'requested_end_time' => $this->input('requested_start_time') ? ScheduleHelper::normalizeEndTime((string) $this->input('requested_start_time')) : ($this->input('requested_end_time') ?: null),
             'reason' => $this->filled('reason') ? trim((string) $this->input('reason')) : null,
         ]);
     }

@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\AttendanceRecord;
+use App\Models\ClassSchedule;
 use App\Models\Enrollment;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class StudentScheduleService
@@ -71,7 +73,85 @@ class StudentScheduleService
         return [
             'enrollments' => $enrollments,
             'attendanceSummaries' => $attendanceSummaries,
+            'weeklyTimetable' => $this->weeklyTimetable($student),
         ];
     }
-}
 
+    public function weeklyEntries(User $student): Collection
+    {
+        $enrollments = Enrollment::query()
+            ->where('user_id', $student->id)
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereNotNull('course_id')
+            ->with([
+                'course.subject.category',
+                'assignedTeacher',
+                'classRoom.room',
+                'classRoom.teacher',
+                'classRoom.schedules',
+            ])
+            ->orderByDesc('id')
+            ->get();
+
+        return $enrollments
+            ->flatMap(function (Enrollment $enrollment) {
+                if ($enrollment->classRoom && $enrollment->classRoom->schedules->isNotEmpty()) {
+                    return $enrollment->classRoom->schedules->map(function (ClassSchedule $schedule) use ($enrollment) {
+                        $classRoom = $enrollment->classRoom;
+                        $roomName = $schedule->room?->name ?? $classRoom->room?->name ?? 'Chua phan phong';
+                        $teacherName = $classRoom->teacher?->displayName() ?? $enrollment->assignedTeacher?->displayName() ?? 'Chua phan cong';
+                        $status = $enrollment->normalizedStatus();
+
+                        return [
+                            'id' => 'student-' . $enrollment->id . '-' . $schedule->id,
+                            'day_of_week' => $schedule->day_of_week,
+                            'start_time' => substr((string) $schedule->start_time, 0, 5),
+                            'end_time' => substr((string) $schedule->end_time, 0, 5),
+                            'title' => $classRoom->displayName(),
+                            'subtitle' => $enrollment->course?->subject?->name ?? 'Lop da xep',
+                            'meta' => implode(' • ', array_filter([$teacherName, $roomName])),
+                            'badge' => $enrollment->statusLabel(),
+                            'badge_class' => match ($status) {
+                                Enrollment::STATUS_ACTIVE, Enrollment::STATUS_ENROLLED, Enrollment::STATUS_SCHEDULED => 'bg-emerald-100 text-emerald-700',
+                                Enrollment::STATUS_PENDING, Enrollment::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
+                                default => 'bg-slate-100 text-slate-600',
+                            },
+                            'tone' => 'emerald',
+                            'url' => $enrollment->course ? route('courses.show', $enrollment->course->id) : null,
+                            'primary_label' => 'Xem khoa hoc',
+                        ];
+                    });
+                }
+
+                if ($enrollment->course && $enrollment->course->isPendingOpen() && $enrollment->course->meetingDayValues() !== [] && $enrollment->course->start_time && $enrollment->course->end_time) {
+                    $teacherName = $enrollment->course->teacher?->displayName() ?? $enrollment->assignedTeacher?->displayName() ?? 'Chua phan cong';
+                    $roomName = $enrollment->classRoom?->room?->name ?? 'Dang cho mo lop';
+
+                    return collect($enrollment->course->meetingDayValues())->map(function (string $dayOfWeek) use ($enrollment, $teacherName, $roomName) {
+                        return [
+                            'id' => 'pending-' . $enrollment->id . '-' . $dayOfWeek,
+                            'day_of_week' => $dayOfWeek,
+                            'start_time' => substr((string) $enrollment->course->start_time, 0, 5),
+                            'end_time' => substr((string) $enrollment->course->end_time, 0, 5),
+                            'title' => $enrollment->course->title ?? $enrollment->subject?->name ?? 'Lop cho mo',
+                            'subtitle' => $enrollment->course->subject?->name ?? 'Yeu cau lich hoc',
+                            'meta' => implode(' • ', array_filter([$teacherName, $roomName])),
+                            'badge' => 'Dang cho mo lop',
+                            'badge_class' => 'bg-amber-100 text-amber-700',
+                            'tone' => 'amber',
+                            'url' => route('courses.show', $enrollment->course->id),
+                            'primary_label' => 'Xem khoa hoc',
+                        ];
+                    });
+                }
+
+                return collect();
+            })
+            ->values();
+    }
+
+    public function weeklyTimetable(User $student, ?CarbonInterface $reference = null): array
+    {
+        return app(WeeklyTimetableService::class)->build($this->weeklyEntries($student), $reference);
+    }
+}

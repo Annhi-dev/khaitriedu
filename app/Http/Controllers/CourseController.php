@@ -79,10 +79,11 @@ class CourseController extends Controller
             $completedLessonLookup = array_flip($completedLessonIds);
 
             foreach ($course->modules as $module) {
-                $totalLessons = $module->lessons->count();
+                $totalLessons = $module->plannedSessionCount();
                 $completedLessons = $module->lessons
                     ->filter(fn ($lesson) => isset($completedLessonLookup[$lesson->id]))
                     ->count();
+                $completedLessons = min($completedLessons, $totalLessons);
 
                 $moduleProgress[$module->id] = [
                     'completed' => $completedLessons,
@@ -93,8 +94,8 @@ class CourseController extends Controller
                 ];
             }
 
-            $totalCourseLessons = (int) $course->modules->sum(fn ($module) => $module->lessons->count());
-            $completedCourseLessons = count($completedLessonIds);
+            $totalCourseLessons = (int) $course->modules->sum(fn ($module) => $module->plannedSessionCount());
+            $completedCourseLessons = min(count($completedLessonIds), $totalCourseLessons);
 
             $courseProgress = [
                 'completed' => $completedCourseLessons,

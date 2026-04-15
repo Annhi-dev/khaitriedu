@@ -91,13 +91,6 @@
                 </div>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Lưu ý phân công</h2>
-                <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
-                    <p>Giảng viên chưa được gán trực tiếp ở cấp khóa học public.</p>
-                    <p class="mt-2">Admin sẽ gán giảng viên khi tạo hoặc sắp xếp lớp học nội bộ để giữ đúng flow duyệt và phân lớp của hệ thống.</p>
-                </div>
-            </section>
         </aside>
     </div>
 
@@ -105,7 +98,6 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Lớp học nội bộ thuộc khóa này</h2>
-                <p class="text-sm text-slate-500">Hiển thị các lớp học nội bộ đang dùng khóa học này để admin nắm nhanh tiến độ chuẩn bị cho các phase xếp lớp và module.</p>
             </div>
             <a href="{{ route('admin.courses') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Mở quản lý lớp học</a>
         </div>
@@ -118,7 +110,7 @@
                             <p class="text-sm font-semibold text-slate-900">{{ $course->title }}</p>
                             <p class="mt-2 text-sm leading-6 text-slate-600">{{ $course->description ?: 'Chưa có mô tả cho lớp học này.' }}</p>
                             <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                                <span>Giảng viên: {{ $course->teacher?->name ?? 'Chưa phân công' }}</span>
+                                <span>Giảng viên: {{ $course->teacher?->displayName() ?? 'Chưa phân công' }}</span>
                                 <span>Lịch: {{ $course->schedule ?: 'Chưa chốt' }}</span>
                                 <span>{{ $course->modules_count }} module</span>
                                 <span>{{ $course->enrollments_count }} học viên</span>
@@ -128,7 +120,7 @@
                     </div>
                 </div>
             @empty
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Khóa học này chưa có lớp học nội bộ nào được tạo.</div>
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Chưa có lớp học nội bộ nào được tạo.</div>
             @endforelse
         </div>
     </section>

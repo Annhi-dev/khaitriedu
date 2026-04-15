@@ -18,7 +18,7 @@ class UserController extends Controller
             return $redirect;
         }
 
-        $users = User::orderBy('id', 'desc')->get();
+        $users = User::with('role')->orderBy('id', 'desc')->get();
 
         return view('admin.users', compact('users', 'user'));
     }
@@ -30,7 +30,7 @@ class UserController extends Controller
             return $redirect;
         }
 
-        $target = User::find($id);
+        $target = User::with('role')->find($id);
         if (! $target) {
             return redirect()->route('admin.users')->with('error', 'Người dùng không tồn tại.');
         }

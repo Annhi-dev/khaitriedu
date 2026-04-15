@@ -26,7 +26,7 @@ class StudentEnrollmentPortalTest extends TestCase
             ->withSession(['user_id' => $student->id])
             ->post(route('student.enroll.request-store', $subject), [
                 'start_time' => '18:00',
-                'end_time' => '20:00',
+                'end_time' => '20:15',
                 'preferred_days' => ['Monday', 'Wednesday', 'Friday'],
                 'preferred_schedule' => 'Ưu tiên ca tối trong tuần.',
             ]);
@@ -39,7 +39,7 @@ class StudentEnrollmentPortalTest extends TestCase
             'lop_hoc_id' => null,
             'status' => Enrollment::STATUS_PENDING,
             'start_time' => '18:00',
-            'end_time' => '20:00',
+            'end_time' => '20:15',
             'preferred_schedule' => 'Ưu tiên ca tối trong tuần.',
         ]);
 
@@ -187,7 +187,7 @@ class StudentEnrollmentPortalTest extends TestCase
             ->withSession(['user_id' => $student->id])
             ->post(route('student.enroll.request-store', $subject), [
                 'start_time' => '18:30',
-                'end_time' => '20:30',
+                'end_time' => '20:45',
                 'preferred_days' => ['Tuesday', 'Thursday'],
                 'preferred_schedule' => 'Cap nhat sang lich toi.',
             ]);
@@ -198,7 +198,7 @@ class StudentEnrollmentPortalTest extends TestCase
         $updatedEnrollment = $enrollment->fresh();
         $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
         $this->assertSame('18:30', $updatedEnrollment->start_time);
-        $this->assertSame('20:30', $updatedEnrollment->end_time);
+        $this->assertSame('20:45', $updatedEnrollment->end_time);
         $this->assertSame(['Tuesday', 'Thursday'], $updatedEnrollment->preferred_days);
         $this->assertSame('Cap nhat sang lich toi.', $updatedEnrollment->preferred_schedule);
         $this->assertNull($updatedEnrollment->note);

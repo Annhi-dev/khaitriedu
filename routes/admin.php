@@ -106,6 +106,7 @@ Route::prefix('courses')->group(function () {
     Route::get('/', [CourseController::class, 'index'])->name('courses');
     Route::get('/{course}/modules', [ModuleController::class, 'index'])->name('courses.modules.index');
     Route::post('/{course}/modules', [ModuleController::class, 'store'])->name('courses.modules.create');
+    Route::post('/{course}/modules/sync-template', [ModuleController::class, 'syncTemplate'])->name('courses.modules.sync-template');
     Route::post('/{course}/modules/reorder', [ModuleController::class, 'reorder'])->name('courses.modules.reorder');
     Route::get('/{course}/modules/{module}/edit', [ModuleController::class, 'edit'])->name('courses.modules.edit');
     Route::post('/{course}/modules/{module}/update', [ModuleController::class, 'update'])->name('courses.modules.update');
@@ -148,6 +149,8 @@ Route::prefix('slot-tracking')->name('slot-tracking.')->group(function () {
 
 Route::prefix('enrollments')->group(function () {
     Route::get('/', [EnrollmentController::class, 'index'])->name('enrollments');
+    Route::get('/{enrollment}/fixed-class', [EnrollmentController::class, 'showFixedClass'])->name('enrollments.fixed.show');
+    Route::get('/{enrollment}/custom-schedule', [EnrollmentController::class, 'showCustomSchedule'])->name('enrollments.custom.show');
     Route::get('/{enrollment}', [EnrollmentController::class, 'show'])->name('enrollments.show');
     Route::post('/{enrollment}/review', [EnrollmentController::class, 'review'])->name('enrollments.review');
     Route::post('/{enrollment}/update', [EnrollmentController::class, 'review'])->name('enrollments.update');
@@ -155,9 +158,11 @@ Route::prefix('enrollments')->group(function () {
 
 Route::prefix('schedules')->name('schedules.')->group(function () {
     Route::get('/', [ScheduleController::class, 'index'])->name('index');
+    Route::get('/conflicts', [ScheduleController::class, 'conflicts'])->name('conflicts');
     Route::get('/queue', [ScheduleController::class, 'queue'])->name('queue');
     Route::get('/enrollments/{enrollment}', [ScheduleController::class, 'showEnrollment'])->name('enrollments.show');
     Route::post('/enrollments/{enrollment}', [ScheduleController::class, 'storeEnrollment'])->name('enrollments.store');
+    Route::get('/courses/{course}', [ScheduleController::class, 'showCourse'])->name('courses.show');
     Route::get('/courses/{course}/open', [ScheduleController::class, 'showOpenCourse'])->name('courses.open');
     Route::post('/courses/{course}/open', [ScheduleController::class, 'openCourse'])->name('courses.open.store');
 });
@@ -168,11 +173,9 @@ Route::prefix('schedule-change-requests')->name('schedule-change-requests.')->gr
     Route::post('/{scheduleChangeRequest}/review', [ScheduleChangeRequestController::class, 'review'])->name('review');
 });
 
-// ─── API: Auto-fill subject data for course creation form ────────────────────
 Route::get('/api/subjects/{id}', function ($id) {
     $subject = \App\Models\Subject::findOrFail($id);
     
-    // Auto calculate the next batch number
     $courses = \App\Models\Course::where('subject_id', $id)->get(['title']);
     $maxBatch = (int) date('y') - 1; // start slightly before current year e.g. 25 in 2026
     
@@ -190,20 +193,20 @@ Route::get('/api/subjects/{id}', function ($id) {
         'name'        => $subject->name,
         'description' => $subject->description,
         'price'       => $subject->price,
+        'duration'    => $subject->duration,
+        'category_id' => $subject->category_id,
         'next_batch'  => $maxBatch + 1,
         'schedule'    => null,
     ]);
 })->name('api.subjects.show');
 
-// ─── API: Lấy danh sách môn học theo nhóm học (cho dropdown 2 cấp) ────────────
 Route::get('/api/categories/{id}/subjects', function ($id) {
     $subjects = \App\Models\Subject::where('category_id', $id)
         ->orderBy('name')
-        ->get(['id', 'name', 'price']);
+        ->get(['id', 'name', 'description', 'price', 'duration', 'category_id']);
     return response()->json($subjects);
 })->name('api.categories.subjects');
 
-// ─── Lớp học (lop_hoc) ───────────────────────────────────────────────────────
 Route::prefix('classes')->name('classes.')->group(function () {
     Route::get('/', [ClassRoomController::class, 'index'])->name('index');
     Route::get('/create', [ClassRoomController::class, 'create'])->name('create');

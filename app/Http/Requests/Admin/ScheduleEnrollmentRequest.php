@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Helpers\ScheduleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,9 @@ class ScheduleEnrollmentRequest extends FormRequest
             'start_date' => $this->input('start_date') ?: null,
             'end_date' => $this->input('end_date') ?: null,
             'start_time' => $this->input('start_time') ?: null,
-            'end_time' => $this->input('end_time') ?: null,
+            'end_time' => $this->filled('start_time')
+                ? ScheduleHelper::normalizeEndTime((string) $this->input('start_time'))
+                : ($this->input('end_time') ?: null),
             'capacity' => $this->filled('capacity') ? (int) $this->input('capacity') : null,
             'note' => $this->filled('note') ? trim((string) $this->input('note')) : null,
         ]);

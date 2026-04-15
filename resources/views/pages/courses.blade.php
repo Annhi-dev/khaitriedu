@@ -6,7 +6,7 @@
 <div class="container mx-auto px-4 py-12">
     <div class="mb-16 text-center">
         <h1 class="text-5xl md:text-6xl font-black bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent mb-4">Khám phá khóa học</h1>
-        <p class="text-lg text-gray-600 max-w-3xl mx-auto">Chọn khóa học bạn quan tâm theo nhóm ngành, gửi khung giờ mong muốn và admin sẽ xếp bạn vào lớp phù hợp.</p>
+        <p class="text-lg text-gray-600 max-w-3xl mx-auto">Chọn khóa học theo nhóm ngành, lịch học và mục tiêu của bạn.</p>
     </div>
 
     <div class="bg-gradient-to-r from-white to-blue-50 p-8 rounded-2xl shadow-lg mb-12 border border-blue-100">
@@ -72,7 +72,7 @@
                     <div class="p-6 flex-1 flex flex-col">
                         <div class="mb-4">
                             <h4 class="text-xl font-bold mb-2 line-clamp-2 text-gray-800 group-hover:text-primary transition">{{ $course->name }}</h4>
-                            <p class="text-gray-600 text-sm line-clamp-3">{{ $course->description ?? 'Khóa học được thiết kế linh hoạt để admin xếp lớp theo nhu cầu thực tế của học viên.' }}</p>
+                            <p class="text-gray-600 text-sm line-clamp-3">{{ $course->description ?? 'Khóa học được thiết kế linh hoạt theo nhu cầu thực tế của học viên.' }}</p>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 mb-5">

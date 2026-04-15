@@ -83,10 +83,12 @@ class ScheduleController extends Controller
         }
 
         $scheduleItems = $service->scheduleForRange($current, $periodStart, $periodEnd);
+        $weeklyTimetable = $service->weeklyTimetable($current, $anchorDate);
 
         return view('teacher.schedules.index', [
             'current' => $current,
             'scheduleItems' => $scheduleItems,
+            'weeklyTimetable' => $weeklyTimetable,
             'availableRooms' => Room::query()
                 ->where('status', Room::STATUS_ACTIVE)
                 ->orderBy('name')

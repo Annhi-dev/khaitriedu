@@ -8,7 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Thêm lop_hoc_id vào dang_ky để student enroll vào lớp cụ thể
         Schema::table('dang_ky', function (Blueprint $table) {
             if (! Schema::hasColumn('dang_ky', 'lop_hoc_id')) {
                 $table->foreignId('lop_hoc_id')

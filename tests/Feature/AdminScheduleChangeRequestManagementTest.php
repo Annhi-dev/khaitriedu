@@ -63,7 +63,7 @@ class AdminScheduleChangeRequestManagementTest extends TestCase
             ]));
 
         $response->assertOk();
-        $response->assertSee('Phase 10');
+        $response->assertDontSee('Phase 10');
         $response->assertSee($teacherA->name);
         $response->assertSee($courseA->title);
         $response->assertDontSee($teacherB->name);

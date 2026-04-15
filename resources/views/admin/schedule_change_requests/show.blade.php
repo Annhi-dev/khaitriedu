@@ -26,7 +26,7 @@
             <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-semibold text-slate-900">Thong tin giang vien va lop hoc</h2>
                 <div class="mt-5 grid gap-4 md:grid-cols-2 text-sm text-slate-600">
-                    <p><strong>Giang vien:</strong> {{ $scheduleChangeRequest->teacher?->name ?? 'Khong co du lieu' }}</p>
+                    <p><strong>Giang vien:</strong> {{ $scheduleChangeRequest->teacher?->displayName() ?? 'Khong co du lieu' }}</p>
                     <p><strong>Email:</strong> {{ $scheduleChangeRequest->teacher?->email ?? 'Khong co du lieu' }}</p>
                     <p><strong>Lop hoc:</strong> {{ $scheduleChangeRequest->targetTitle() }}</p>
                     <p><strong>Khoa hoc:</strong> {{ $scheduleChangeRequest->subjectName() }}</p>

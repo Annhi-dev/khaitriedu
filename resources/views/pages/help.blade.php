@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Trung tâm trợ giúp - KhaiTriEdu')
 
@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <!-- FAQ Section -->
+    
     <div class="max-w-3xl mx-auto">
         <h2 class="text-3xl font-bold text-gray-800 mb-8">Câu hỏi thường gặp</h2>
         <div class="space-y-4">
@@ -126,7 +126,7 @@
         </div>
     </div>
 
-    <!-- Contact Support -->
+    
     <div class="mt-20 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-2xl p-12 text-center">
         <h2 class="text-3xl font-bold mb-4">Không tìm thấy câu trả lời?</h2>
         <p class="text-blue-100 mb-6">Liên hệ với team hỗ trợ của chúng tôi</p>

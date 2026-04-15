@@ -6,7 +6,6 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-primary-dark">Đăng ký khóa học</h1>
-            <p class="text-gray-600">Bạn có thể chọn lớp cố định do admin đã mở, hoặc tự gửi yêu cầu lịch học riêng để admin xếp lớp sau.</p>
         </div>
         <a href="{{ route('student.enroll.my-classes') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             <i class="fas fa-list mr-1"></i> Lớp của tôi
@@ -40,7 +39,7 @@
                         @endif
                     </div>
 
-                    {{-- Lớp còn chỗ --}}
+                    
                     @php
                         $openClasses = $subject->classRooms->filter(fn ($cl) => $cl->status === 'open' && ! $cl->isFull());
                         $existingEnrollment = $subject->enrollments->sortByDesc('id')->first();

@@ -1,8 +1,7 @@
 import './bootstrap';
 
-// Hiệu ứng ripple khi click (nâng cao)
 document.addEventListener('click', function (e) {
-    const target = e.target.closest('.btn, .nav-link, .card'); // các phần tử muốn có ripple
+    const target = e.target.closest('.btn, .nav-link, .card');
     if (!target) return;
 
     const ripple = document.createElement('span');

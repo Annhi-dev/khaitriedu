@@ -4,9 +4,8 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Phase 9</p>
+            <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Xếp lịch</p>
             <h1 class="mt-1 text-3xl font-semibold text-slate-900">Hàng chờ xếp lịch</h1>
-            <p class="mt-2 text-sm text-slate-600">Ưu tiên các đăng ký đã được duyệt, sau đó đến các yêu cầu đang chờ cần admin quyết định lịch học chính thức.</p>
         </div>
         <a href="{{ route('admin.schedules.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Xem lịch toàn hệ thống</a>
     </div>
@@ -40,7 +39,6 @@
                     <p><strong>Ngày gửi:</strong> {{ $enrollment->submitted_at?->format('d/m/Y H:i') ?: optional($enrollment->created_at)->format('d/m/Y H:i') }}</p>
                 </div>
                 <div class="mt-5 flex items-center justify-between gap-3">
-                    <p class="text-sm text-slate-500">Tại bước này admin sẽ chọn lớp, giảng viên và lịch học chính thức.</p>
                     <a href="{{ route('admin.schedules.enrollments.show', $enrollment) }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Xếp lịch</a>
                 </div>
             </article>

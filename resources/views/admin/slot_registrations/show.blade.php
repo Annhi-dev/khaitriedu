@@ -34,7 +34,7 @@
                             </div>
                             <div>
                                 <div class="text-xs uppercase tracking-wide text-slate-400">Giảng viên</div>
-                                <div class="mt-1">{{ $choice->courseTimeSlot?->teacher?->name ?? 'Chưa phân công' }}</div>
+                                <div class="mt-1">{{ $choice->courseTimeSlot?->teacher?->displayName() ?? 'Chưa phân công' }}</div>
                             </div>
                             <div>
                                 <div class="text-xs uppercase tracking-wide text-slate-400">Phòng học</div>

@@ -40,11 +40,11 @@
 
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Lý do ứng tuyển</label>
-                <textarea name="message" rows="4" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Cho chúng tôi biết tại sao bạn phù hợp">{{ old('message') }}</textarea>
+                <textarea name="message" rows="4" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Giới thiệu ngắn về kinh nghiệm và chuyên môn">{{ old('message') }}</textarea>
                 @error('message') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
             </div>
 
-            <p class="text-sm text-gray-500">Admin sẽ kiểm tra hồ sơ và phản hồi trong vòng 24-48 giờ.</p>
+            <p class="text-sm text-gray-500">Phản hồi trong 24-48 giờ.</p>
 
             <button type="submit" class="w-full bg-primary text-white rounded-lg py-3 font-semibold hover:bg-primary-dark transition">Gửi hồ sơ ứng tuyển</button>
         </form>

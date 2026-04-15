@@ -6,7 +6,6 @@
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold text-primary-dark">Lop hoc cua toi</h1>
-            <p class="text-sm text-gray-600">Theo doi ca lop co dinh da ghi danh, lop dang cho mo va cac yeu cau lich hoc dang cho admin xu ly.</p>
         </div>
         <a href="{{ route('student.enroll.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
             <i class="fas fa-plus mr-1"></i> Dang ky them
@@ -47,7 +46,7 @@
                     @if($class)
                         <div class="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
                             <div><span class="font-medium text-gray-500">Lop:</span> {{ $class->displayName() }}</div>
-                            <div><span class="font-medium text-gray-500">Giang vien:</span> {{ $class->teacher?->name ?? 'Chua phan cong' }}</div>
+                            <div><span class="font-medium text-gray-500">Giang vien:</span> {{ $class->teacher?->displayName() ?? 'Chua phan cong' }}</div>
                             <div><span class="font-medium text-gray-500">Phong:</span> {{ $class->room ? $class->room->name . ' (' . $class->room->code . ')' : 'Chua chon' }}</div>
                             <div><span class="font-medium text-gray-500">Ngay bat dau:</span> {{ $class->start_date?->format('d/m/Y') ?? 'Chua xac dinh' }}</div>
                         </div>
@@ -56,16 +55,16 @@
                             <p class="text-sm font-medium text-amber-800">Ban da duoc ghep vao lop cho mo</p>
                             <div class="mt-3 grid gap-2 text-sm text-amber-900 sm:grid-cols-2">
                                 <div><span class="font-medium text-amber-700">Lop:</span> {{ $course->title }}</div>
-                                <div><span class="font-medium text-amber-700">Giang vien:</span> {{ $course->teacher?->name ?? 'Chua phan cong' }}</div>
+                                <div><span class="font-medium text-amber-700">Giang vien:</span> {{ $course->teacher?->displayName() ?? 'Chua phan cong' }}</div>
                                 <div><span class="font-medium text-amber-700">Khung gio:</span> {{ $course->start_time }} - {{ $course->end_time }}</div>
                                 <div><span class="font-medium text-amber-700">Ngay hoc:</span> {{ $course->meetingDaysLabel() }}</div>
                             </div>
-                            <p class="mt-3 text-sm text-amber-800">Admin se chot ngay bat dau va ngay ket thuc khi lop du toi thieu 5 hoc vien.</p>
+                            <p class="mt-3 text-sm text-amber-800">Đang chờ lớp đủ sĩ số để mở chính thức.</p>
                         </div>
                     @else
                         <div class="mt-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
                             <p class="text-sm font-medium text-slate-700">Dang ky theo yeu cau lich hoc rieng</p>
-                            <p class="mt-1 text-sm text-slate-500">Admin chua xep ban vao lop co dinh. Ho so nay se duoc dung de xem lich ranh va ghep lop phu hop.</p>
+                            <p class="mt-1 text-sm text-slate-500">Chưa được xếp vào lớp cố định.</p>
 
                             <div class="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                                 <div>

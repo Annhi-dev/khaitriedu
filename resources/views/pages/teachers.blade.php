@@ -11,18 +11,17 @@
 </div>
 
 <div class="container mx-auto px-4 py-20">
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         @forelse($teachers as $teacher)
             @php
-                preg_match('/\((.+)\)/', $teacher->name, $matches);
-                $field = $matches[1] ?? 'Giảng viên chuyên nghiệp';
+                $field = $teacher->specialtyLabel() ?? 'Giảng viên chuyên nghiệp';
             @endphp
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition group">
                 <div class="relative overflow-hidden h-64 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
                     <img src="https://randomuser.me/api/portraits/men/{{ $loop->index + 10 }}.jpg" alt="Teacher" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                 </div>
                 <div class="p-6 text-center">
-                    <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $teacher->name }}</h3>
+                    <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $teacher->displayName() }}</h3>
                     <p class="text-primary font-semibold mb-3">{{ $field }}</p>
                     <p class="text-gray-600 text-sm mb-4">Hơn 8 năm kinh nghiệm, đã đào tạo hơn 500+ học viên.</p>
                     <div class="flex justify-center gap-2">

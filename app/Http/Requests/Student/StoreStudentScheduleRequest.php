@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Student;
 
+use App\Helpers\ScheduleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,9 @@ class StoreStudentScheduleRequest extends FormRequest
     {
         return [
             'start_time' => filled($input['start_time'] ?? null) ? trim((string) $input['start_time']) : null,
-            'end_time' => filled($input['end_time'] ?? null) ? trim((string) $input['end_time']) : null,
+            'end_time' => filled($input['start_time'] ?? null)
+                ? ScheduleHelper::normalizeEndTime(trim((string) $input['start_time']))
+                : (filled($input['end_time'] ?? null) ? trim((string) $input['end_time']) : null),
             'preferred_days' => $input['preferred_days'] ?? [],
             'preferred_schedule' => filled($input['preferred_schedule'] ?? null) ? trim((string) $input['preferred_schedule']) : null,
         ];

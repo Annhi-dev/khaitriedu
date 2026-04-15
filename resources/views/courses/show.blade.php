@@ -77,7 +77,7 @@
       </div>
       <div class="rounded-2xl bg-slate-50 p-4">
         <div class="text-sm text-gray-500">Giảng viên phụ trách</div>
-        <div class="mt-2 text-lg font-bold text-gray-900">{{ $course->teacher?->name ?? 'Chưa phân công' }}</div>
+        <div class="mt-2 text-lg font-bold text-gray-900">{{ $course->teacher?->displayName() ?? 'Chưa phân công' }}</div>
       </div>
       <div class="rounded-2xl bg-slate-50 p-4">
         <div class="text-sm text-gray-500">Lịch lớp</div>
@@ -95,11 +95,11 @@
           </div>
           <div>
             <div class="font-medium text-gray-500">Lịch đã chốt</div>
-            <div class="mt-1 font-semibold text-gray-900">{{ $enrollment->schedule ?: $course->schedule ?: 'Admin sẽ cập nhật sau' }}</div>
+            <div class="mt-1 font-semibold text-gray-900">{{ $enrollment->schedule ?: $course->schedule ?: 'Đang cập nhật' }}</div>
           </div>
           <div>
             <div class="font-medium text-gray-500">Giảng viên</div>
-            <div class="mt-1 font-semibold text-gray-900">{{ $enrollment->assignedTeacher?->name ?? $course->teacher?->name ?? 'Chưa phân công' }}</div>
+            <div class="mt-1 font-semibold text-gray-900">{{ $enrollment->assignedTeacher?->displayName() ?? $course->teacher?->displayName() ?? 'Chưa phân công' }}</div>
           </div>
         </div>
       </div>
@@ -110,10 +110,13 @@
     <div class="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="text-2xl font-bold text-gray-900">Lộ trình trong lớp học</h2>
-        <p class="text-gray-600">Danh sách module và bài học bạn có thể theo dõi trong lớp này.</p>
+        <p class="text-gray-600">Danh sách module và buổi học bạn có thể theo dõi trong lớp này.</p>
       </div>
+      @php
+        $totalSessions = $course->modules->sum(fn ($module) => $module->plannedSessionCount());
+      @endphp
       <div class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-        {{ $course->modules->count() }} module
+        {{ $course->modules->count() }} module · {{ $totalSessions }} buổi
       </div>
     </div>
 
@@ -125,8 +128,8 @@
       <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <div class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Tien do khoa hoc cua ban</div>
-            <p class="mt-1 text-sm text-emerald-800">Da hoan thanh {{ $courseProgress['completed'] }}/{{ $courseProgress['total'] }} bai hoc.</p>
+            <div class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Tiến độ học tập của bạn</div>
+            <p class="mt-1 text-sm text-emerald-800">Đã hoàn thành {{ $courseProgress['completed'] }}/{{ $courseProgress['total'] }} buổi.</p>
           </div>
           <div class="text-3xl font-black text-emerald-700">{{ $courseProgress['percent'] }}%</div>
         </div>
@@ -141,37 +144,38 @@
           'percent' => 0,
         ];
       @endphp
-      <div class="mb-4 rounded-2xl border border-gray-200 p-5 last:mb-0">
+        <div class="mb-4 rounded-2xl border border-gray-200 p-5 last:mb-0">
         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <div class="text-sm font-semibold uppercase tracking-wide text-primary">Module {{ $module->position ?? $loop->iteration }}</div>
             <h3 class="mt-1 text-xl font-bold text-gray-900">{{ $module->title }}</h3>
-            <p class="mt-2 text-gray-600">{{ $module->content ?: 'Module này đang được cập nhật nội dung chi tiết.' }}</p>
+            <p class="mt-2 text-xs font-semibold uppercase tracking-wide text-primary">Học viên sẽ học gì?</p>
+            <p class="mt-1 text-gray-600">{{ $module->learningSummary() }}</p>
           </div>
           @if($user && $user->isStudent() && $enrollment)
             <div class="rounded-2xl bg-emerald-50 px-4 py-2 text-right text-sm font-semibold text-emerald-700">
-              <div>{{ $moduleStat['completed'] }}/{{ $moduleStat['total'] }} bài học</div>
+              <div>{{ $moduleStat['completed'] }}/{{ $moduleStat['total'] }} buổi</div>
               <div>{{ $moduleStat['percent'] }}% hoàn thành</div>
             </div>
           @else
             <div class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-              {{ $module->lessons->count() }} bài học
+              {{ $module->sessionCountLabel() }}
             </div>
           @endif
         </div>
 
         @if($module->lessons->isEmpty())
           <div class="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-            Chưa có bài học nào trong module này.
+            Chưa có buổi học nào trong module này.
           </div>
         @else
           <div class="mt-4 grid gap-3">
             @foreach($module->lessons as $lesson)
               <a href="{{ route('courses.lesson.show', [$course->id, $module->id, $lesson->id]) }}" class="flex flex-col gap-3 rounded-2xl border border-gray-200 px-4 py-4 transition hover:border-primary hover:bg-primary-light/10 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <div class="text-sm font-semibold text-primary">Bài {{ $lesson->order ?? $loop->iteration }}</div>
+                  <div class="text-sm font-semibold text-primary">Buổi {{ $lesson->order ?? $loop->iteration }}</div>
                   <div class="mt-1 text-lg font-semibold text-gray-900">{{ $lesson->title }}</div>
-                  <p class="mt-1 text-sm text-gray-600">{{ $lesson->description ?: 'Mở bài học để xem nội dung chi tiết.' }}</p>
+                  <p class="mt-1 text-sm text-gray-600">{{ $lesson->description ?: 'Mở buổi học để xem nội dung chi tiết.' }}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
                   @if($lesson->duration)
@@ -187,7 +191,7 @@
                       <span class="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-600">Chưa học</span>
                     @endif
                   @endif
-                  <span class="font-semibold text-primary">Vào bài học</span>
+                  <span class="font-semibold text-primary">Vào buổi học</span>
                 </div>
               </a>
             @endforeach

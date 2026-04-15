@@ -28,7 +28,7 @@ class AdminReportTest extends TestCase
             ->get(route('admin.report'));
 
         $response->assertOk();
-        $response->assertSee('Phase 11');
+        $response->assertDontSee('Phase 11');
         $response->assertSee('Bao cao tong quan he thong');
     }
 

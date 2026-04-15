@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CheckScheduleConflictRequest;
 use App\Http\Requests\Admin\OpenPendingCourseRequest;
 use App\Http\Requests\Admin\ScheduleEnrollmentRequest;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
+use App\Services\AdminScheduleConflictService;
 use App\Services\AdminScheduleService;
 use Illuminate\Http\Request;
 
@@ -27,6 +29,30 @@ class ScheduleController extends Controller
         $courses = $scheduleService->courseOptions();
 
         return view('admin.schedules.index', compact('current', 'filters', 'schedules', 'teachers', 'students', 'courses'));
+    }
+
+    public function conflicts(CheckScheduleConflictRequest $request, AdminScheduleService $scheduleService, AdminScheduleConflictService $conflictService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $filters = $request->validated();
+        $preview = $conflictService->preview($filters);
+
+        return view('admin.schedules.conflicts', array_merge(
+            ['current' => $current],
+            $preview,
+            [
+                'filters' => $filters,
+                'teachers' => $scheduleService->teacherOptions(),
+                'rooms' => $scheduleService->roomOptions(),
+                'courses' => $scheduleService->courseOptions(),
+                'classRooms' => $scheduleService->classRoomOptions(),
+                'dayOptions' => \App\Models\ClassSchedule::$dayOptions,
+            ],
+        ));
     }
 
     public function queue(Request $request, AdminScheduleService $scheduleService)
@@ -52,6 +78,19 @@ class ScheduleController extends Controller
         return view('admin.schedules.schedule_enrollment', array_merge(
             ['current' => $current],
             $scheduleService->getSchedulingContext($enrollment),
+        ));
+    }
+
+    public function showCourse(Course $course, AdminScheduleService $scheduleService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        return view('admin.schedules.show', array_merge(
+            ['current' => $current],
+            $scheduleService->getCourseDetailContext($course),
         ));
     }
 

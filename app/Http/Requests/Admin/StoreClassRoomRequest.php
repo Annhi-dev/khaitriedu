@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Helpers\ScheduleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,9 @@ class StoreClassRoomRequest extends FormRequest
             $normalizedSchedules[] = [
                 'day' => isset($row['day']) ? trim((string) $row['day']) : null,
                 'start' => isset($row['start']) ? trim((string) $row['start']) : null,
-                'end' => isset($row['end']) ? trim((string) $row['end']) : null,
+                'end' => isset($row['start']) && trim((string) $row['start']) !== ''
+                    ? ScheduleHelper::normalizeEndTime(trim((string) $row['start']))
+                    : (isset($row['end']) ? trim((string) $row['end']) : null),
             ];
         }
 
@@ -98,4 +101,3 @@ class StoreClassRoomRequest extends FormRequest
         });
     }
 }
-

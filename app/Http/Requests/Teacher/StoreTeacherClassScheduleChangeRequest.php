@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Teacher;
 
+use App\Helpers\ScheduleHelper;
 use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,7 +35,23 @@ class StoreTeacherClassScheduleChangeRequest extends FormRequest
             try {
                 $requestedDate = Carbon::parse($requestedStartAt)->format('Y-m-d');
             } catch (\Throwable $exception) {
-                // keep original value for validator to catch
+            }
+        }
+
+        if ($requestedStartAt !== '') {
+            try {
+                $startAt = Carbon::parse($requestedStartAt);
+                $requestedStartTime = $startAt->format('H:i');
+                $requestedEndTime = $startAt->copy()->addMinutes(ScheduleHelper::sessionMinutes())->format('H:i');
+                $requestedEndAt = $startAt->copy()->addMinutes(ScheduleHelper::sessionMinutes())->format('Y-m-d H:i:s');
+            } catch (\Throwable $exception) {
+            }
+        } elseif ($requestedDate !== '' && $requestedStartTime !== '') {
+            try {
+                $startAt = Carbon::parse($requestedDate . ' ' . $requestedStartTime);
+                $requestedEndTime = $startAt->copy()->addMinutes(ScheduleHelper::sessionMinutes())->format('H:i');
+                $requestedEndAt = $startAt->copy()->addMinutes(ScheduleHelper::sessionMinutes())->format('Y-m-d H:i:s');
+            } catch (\Throwable $exception) {
             }
         }
 

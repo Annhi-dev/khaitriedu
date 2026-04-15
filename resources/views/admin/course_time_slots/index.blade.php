@@ -35,7 +35,7 @@
                 <select name="teacher_id" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
                     <option value="">Tất cả</option>
                     @foreach ($teachers as $teacher)
-                        <option value="{{ $teacher->id }}" @selected((string) request('teacher_id') === (string) $teacher->id)>{{ $teacher->name }}</option>
+                        <option value="{{ $teacher->id }}" @selected((string) request('teacher_id') === (string) $teacher->id)>{{ $teacher->displayName() }}</option>
                     @endforeach
                 </select>
             </div>
@@ -74,7 +74,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-700">
-                                <div>{{ $timeSlot->teacher?->name ?? 'Chưa phân công' }}</div>
+                                <div>{{ $timeSlot->teacher?->displayName() ?? 'Chưa phân công' }}</div>
                                 <div class="mt-1 text-xs text-slate-500">{{ $timeSlot->room ? $timeSlot->room->code . ' - ' . $timeSlot->room->name : 'Chưa gán phòng' }}</div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-700">

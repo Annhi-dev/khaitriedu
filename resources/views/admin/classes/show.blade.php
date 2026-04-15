@@ -28,7 +28,7 @@
     @endif
 
     <div class="grid gap-5 md:grid-cols-2">
-        {{-- Thông tin lớp --}}
+        
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="mb-4 text-sm font-semibold text-slate-700 uppercase tracking-wide">Thông tin lớp</h2>
             <dl class="space-y-3 text-sm">
@@ -45,7 +45,7 @@
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-slate-500">Giảng viên</dt>
-                    <dd class="font-medium">{{ $class->teacher->name ?? 'Chưa phân công' }}</dd>
+                    <dd class="font-medium">{{ $class->teacher?->displayName() ?? 'Chưa phân công' }}</dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-slate-500">Phòng học</dt>
@@ -72,7 +72,7 @@
             </dl>
         </div>
 
-        {{-- Lịch học --}}
+        
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="mb-4 text-sm font-semibold text-slate-700 uppercase tracking-wide">Lịch học hàng tuần</h2>
             @forelse($class->schedules as $s)
@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    {{-- Danh sách học viên --}}
+    
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100">
             <h2 class="font-semibold text-slate-800">Học viên đã đăng ký ({{ $class->enrollments->count() }})</h2>

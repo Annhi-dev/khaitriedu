@@ -20,8 +20,9 @@ class StudentController extends Controller
 
         $filters = $request->only(['search', 'status']);
         $students = $studentService->paginateStudents($filters);
+        $summary = $studentService->summary();
 
-        return view('admin.students.index', compact('current', 'filters', 'students'));
+        return view('admin.students.index', compact('current', 'filters', 'students', 'summary'));
     }
 
     public function create()

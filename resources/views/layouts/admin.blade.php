@@ -50,7 +50,6 @@
                 ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.classes.index', 'active' => request()->routeIs('admin.classes.*')],
                 ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
                 ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
-                ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
                 [
                     'label' => 'Đăng ký học',
                     'icon' => 'fas fa-clipboard-check',
@@ -131,7 +130,7 @@
                         <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-lg hover:bg-slate-100">
                             <i class="fas fa-bars text-slate-600"></i>
                         </button>
-                        <!-- Desktop Collapse Toggle Button -->
+                        
                         <button onclick="toggleSidebar()" class="hidden lg:block p-2 rounded-lg hover:bg-slate-100" title="Thu gọn/Mở rộng menu">
                             <i class="fas fa-bars text-slate-600"></i>
                         </button>

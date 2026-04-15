@@ -11,7 +11,7 @@
 </div>
 
 <div class="container mx-auto px-4 py-20">
-    <!-- About Content -->
+    
     <div class="grid md:grid-cols-2 gap-12 mb-20 items-center">
         <div>
             <h2 class="text-4xl font-bold text-gray-800 mb-6">Câu chuyện của chúng tôi</h2>
@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <!-- Stats -->
+    
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center mb-20 bg-blue-50 p-12 rounded-2xl">
         <div>
             <div class="text-4xl font-bold text-primary mb-2">{{ number_format($studentCount) }}+</div>
@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <!-- Values -->
+    
     <div class="mb-20">
         <h2 class="text-4xl font-bold text-gray-800 mb-12 text-center">Giá trị cốt lõi</h2>
         <div class="grid md:grid-cols-3 gap-8">
@@ -78,7 +78,7 @@
         </div>
     </div>
 
-    <!-- Team -->
+    
     <div class="mb-20">
         <h2 class="text-4xl font-bold text-gray-800 mb-12 text-center">Đội ngũ đạo tạo</h2>
         <div class="grid md:grid-cols-3 gap-8">
@@ -95,7 +95,7 @@
         </div>
     </div>
 
-    <!-- CTA -->
+    
     <div class="bg-gradient-to-r from-blue-900 to-blue-700 rounded-3xl p-12 text-center text-white">
         <h2 class="text-4xl font-bold mb-4">Sẵn sàng bắt đầu hành trình học tập?</h2>
         <p class="text-blue-100 text-lg mb-8">Khám phá hàng trăm khóa học chất lượng cao</p>

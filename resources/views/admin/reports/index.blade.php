@@ -51,22 +51,18 @@
         [
             'label' => 'Bài chấm trong kỳ',
             'value' => number_format($quality['gradeCount'] ?? 0),
-            'hint' => 'Số bản ghi điểm có dữ liệu để tính chất lượng học tập.',
         ],
         [
             'label' => 'Đánh giá khóa học',
             'value' => ($quality['averageCourseRating'] ?? null) !== null ? number_format((float) $quality['averageCourseRating'], 2) . '/5' : '--',
-            'hint' => 'Từ ' . number_format($quality['courseReviewCount'] ?? 0) . ' lượt đánh giá trong kỳ.',
         ],
         [
             'label' => 'Đánh giá giảng viên',
             'value' => ($quality['averageTeacherRating'] ?? null) !== null ? number_format((float) $quality['averageTeacherRating'], 2) . '/5' : '--',
-            'hint' => 'Từ ' . number_format($quality['teacherReviewCount'] ?? 0) . ' lượt đánh giá có gắn giảng viên.',
         ],
         [
             'label' => 'Khóa học có review',
             'value' => number_format($quality['reviewedCourseCount'] ?? 0),
-            'hint' => 'Số lớp hoặc khóa học nhận được phản hồi trong kỳ đã chọn.',
         ],
     ];
 
@@ -98,9 +94,7 @@
 
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <p class="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600">Phase 11</p>
             <h1 class="mt-1 text-3xl font-semibold text-slate-900">Báo cáo tổng quan hệ thống</h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Theo dõi tăng trưởng học viên, đăng ký mới, chất lượng đào tạo và các điểm nghẽn vận hành của trung tâm theo từng kỳ báo cáo.</p>
         </div>
     </div>
 
@@ -109,7 +103,6 @@
             <div>
                 <p class="text-sm uppercase tracking-[0.2em] text-cyan-100">Kỳ báo cáo</p>
                 <p class="mt-2 text-3xl font-semibold">{{ $rangeLabel }}</p>
-                <p class="mt-2 text-sm text-cyan-50">Lọc theo ngày bắt đầu và kết thúc để so sánh tốc độ tăng trưởng của hệ thống.</p>
             </div>
             <form method="get" action="{{ route('admin.report') }}" class="grid gap-3 md:grid-cols-3 xl:min-w-[620px]">
                 <div>
@@ -147,7 +140,6 @@
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="text-lg font-semibold text-slate-900">Biến động theo kỳ</h2>
-                    <p class="mt-1 text-sm text-slate-500">So sánh học viên mới, đăng ký mới, ứng tuyển giảng viên và lượt review theo {{ ($activityTrend['mode'] ?? 'day') === 'day' ? 'ngày' : 'tháng' }}.</p>
                 </div>
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Trục tối đa: {{ $activityTrend['max'] ?? 1 }}</span>
             </div>
@@ -191,7 +183,6 @@
                                 <p class="text-sm font-medium text-slate-600">{{ $card['label'] }}</p>
                                 <span class="text-lg font-semibold text-slate-900">{{ $card['value'] }}</span>
                             </div>
-                            <p class="mt-2 text-sm leading-6 text-slate-500">{{ $card['hint'] }}</p>
                         </div>
                     @endforeach
                 </div>
@@ -217,7 +208,6 @@
     <section class="grid gap-6 xl:grid-cols-2">
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-slate-900"><span class="sr-only">Top khoa hoc theo dang ky</span>Top khóa học theo đăng ký</h2>
-            <p class="mt-1 text-sm text-slate-500">Ưu tiên các khóa học public có lượng học viên quan tâm cao nhất trong kỳ.</p>
             <div class="mt-5 space-y-3">
                 @forelse ($topCourses as $subject)
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3">
@@ -235,12 +225,11 @@
 
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-slate-900"><span class="sr-only">Top giang vien theo danh gia</span>Top giảng viên theo đánh giá</h2>
-            <p class="mt-1 text-sm text-slate-500">Tổng hợp từ review gắn với lớp học có phân công giảng viên.</p>
             <div class="mt-5 space-y-3">
                 @forelse ($topTeachers as $row)
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3">
                         <div>
-                            <p class="font-medium text-slate-900">{{ $row['teacher']->name }}</p>
+                            <p class="font-medium text-slate-900">{{ $row['teacher']->displayName() }}</p>
                             <p class="text-sm text-slate-500">{{ $row['courses_count'] }} lớp có review, {{ $row['reviews_count'] }} lượt đánh giá</p>
                         </div>
                         <span class="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">{{ number_format((float) $row['average_rating'], 2) }}/5</span>

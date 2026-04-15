@@ -8,11 +8,17 @@ use App\Models\Course;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AdminClassRoomService
 {
+    public function __construct(
+        protected AdminScheduleConflictService $conflictService,
+    ) {
+    }
+
     public function create(array $data): ClassRoom
     {
         $subject = Subject::query()->findOrFail((int) $data['subject_id']);
@@ -43,18 +49,23 @@ class AdminClassRoomService
             ]);
         }
 
+        $startDate = $data['start_date'] ?? now()->toDateString();
+        $endDate = Carbon::parse($startDate)
+            ->addMonths(max(1, (int) ($subject->duration ?? 1)))
+            ->toDateString();
+
         foreach ($data['schedules'] as $slot) {
             $days = [$slot['day']];
             $start = $slot['start'];
             $end = $slot['end'];
 
-            if (ClassRoom::teacherHasConflict($teacher->id, $days, $start, $end)) {
+            if ($this->conflictService->teacherHasConflict($teacher->id, $days, $start, $end, (string) $startDate, (string) $endDate, $course->id)) {
                 throw ValidationException::withMessages([
                     'teacher_id' => 'Giảng viên đã có lớp vào khung giờ ' . $slot['day'] . ' ' . $start . '-' . $end . '.',
                 ]);
             }
 
-            if (ClassRoom::roomHasConflict($room->id, $days, $start, $end)) {
+            if ($this->conflictService->roomHasConflict($room->id, $days, $start, $end, (string) $startDate, (string) $endDate)) {
                 throw ValidationException::withMessages([
                     'room_id' => 'Phòng học đã được sử dụng vào khung giờ ' . $slot['day'] . ' ' . $start . '-' . $end . '.',
                 ]);
@@ -89,4 +100,3 @@ class AdminClassRoomService
         });
     }
 }
-

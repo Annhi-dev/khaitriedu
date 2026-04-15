@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,7 +35,6 @@ class ClassRoom extends Model
         'duration'   => 'integer',
     ];
 
-    // ─── Relationships ──────────────────────────────────────────────────────────
 
     public function subject()
     {
@@ -112,7 +113,6 @@ class ClassRoom extends Model
             ->withTimestamps();
     }
 
-    // ─── Computed ───────────────────────────────────────────────────────────────
 
     public function enrolledCount(): int
     {
@@ -180,47 +180,110 @@ class ClassRoom extends Model
             : 'Chưa có lịch giảng dạy';
     }
 
-    // ─── Conflict Checks ────────────────────────────────────────────────────────
+    public function scheduleRangeStart(): ?CarbonInterface
+    {
+        return $this->start_date?->copy()->startOfDay();
+    }
 
-    /**
-     * Kiểm tra giáo viên có bị trùng lịch với lớp khác không.
-     */
+    public function scheduleRangeEnd(): ?CarbonInterface
+    {
+        $startDate = $this->scheduleRangeStart();
+
+        if (! $startDate) {
+            return null;
+        }
+
+        $months = max(1, (int) ($this->duration ?? $this->course?->subject?->duration ?? 1));
+
+        return $startDate->copy()->addMonths($months)->endOfDay();
+    }
+
+    public function overlapsDateRange(CarbonInterface $candidateStartDate, CarbonInterface $candidateEndDate): bool
+    {
+        $existingStartDate = $this->scheduleRangeStart();
+        $existingEndDate = $this->scheduleRangeEnd();
+
+        if (! $existingStartDate || ! $existingEndDate) {
+            return true;
+        }
+
+        return $existingStartDate->lte($candidateEndDate) && $existingEndDate->gte($candidateStartDate);
+    }
+
+    protected static function normalizeDateRange(?string $startDate, ?string $endDate): ?array
+    {
+        if (! $startDate || ! $endDate) {
+            return null;
+        }
+
+        return [
+            Carbon::parse($startDate)->startOfDay(),
+            Carbon::parse($endDate)->endOfDay(),
+        ];
+    }
+
+
+    
     public static function teacherHasConflict(
         int $teacherId,
         array $dayOfWeek,
         string $startTime,
         string $endTime,
+        ?string $startDate = null,
+        ?string $endDate = null,
         ?int $excludeId = null
     ): bool {
-        return static::where('teacher_id', $teacherId)
-            ->whereNot(fn ($q) => $q->where('status', self::STATUS_COMPLETED)->orWhere('status', self::STATUS_CLOSED))
+        $candidateRange = static::normalizeDateRange($startDate, $endDate);
+
+        return static::query()
+            ->where('teacher_id', $teacherId)
+            ->whereNotIn('status', [self::STATUS_COMPLETED, self::STATUS_CLOSED])
             ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
             ->whereHas('schedules', function ($q) use ($dayOfWeek, $startTime, $endTime) {
                 $q->whereIn('day_of_week', $dayOfWeek)
                   ->where('start_time', '<', $endTime)
                   ->where('end_time', '>', $startTime);
             })
-            ->exists();
+            ->with(['course.subject'])
+            ->get()
+            ->contains(function (ClassRoom $classRoom) use ($candidateRange) {
+                if ($candidateRange === null) {
+                    return true;
+                }
+
+                return $classRoom->overlapsDateRange($candidateRange[0], $candidateRange[1]);
+            });
     }
 
-    /**
-     * Kiểm tra phòng có bị trùng lịch không.
-     */
+    
     public static function roomHasConflict(
         int $roomId,
         array $dayOfWeek,
         string $startTime,
         string $endTime,
+        ?string $startDate = null,
+        ?string $endDate = null,
         ?int $excludeId = null
     ): bool {
-        return static::where('room_id', $roomId)
-            ->whereNot(fn ($q) => $q->where('status', self::STATUS_COMPLETED)->orWhere('status', self::STATUS_CLOSED))
+        $candidateRange = static::normalizeDateRange($startDate, $endDate);
+
+        return static::query()
+            ->where('room_id', $roomId)
+            ->whereNotIn('status', [self::STATUS_COMPLETED, self::STATUS_CLOSED])
             ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
             ->whereHas('schedules', function ($q) use ($dayOfWeek, $startTime, $endTime) {
                 $q->whereIn('day_of_week', $dayOfWeek)
                   ->where('start_time', '<', $endTime)
                   ->where('end_time', '>', $startTime);
             })
-            ->exists();
+            ->with(['course.subject'])
+            ->get()
+            ->contains(function (ClassRoom $classRoom) use ($candidateRange) {
+                if ($candidateRange === null) {
+                    return true;
+                }
+
+                return $classRoom->overlapsDateRange($candidateRange[0], $candidateRange[1]);
+            });
     }
 }

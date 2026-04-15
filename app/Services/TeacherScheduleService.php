@@ -22,6 +22,7 @@ class TeacherScheduleService
 
         return [
             'classes' => $classes,
+            'weeklyTimetable' => $this->weeklyTimetable($teacher, $today),
             'todaySchedule' => $weekSchedule
                 ->filter(fn (array $item) => $item['starts_at']->isSameDay($today))
                 ->values(),
@@ -51,6 +52,40 @@ class TeacherScheduleService
             ])
             ->orderByDesc('id')
             ->get();
+    }
+
+    public function weeklyEntries(User $teacher): Collection
+    {
+        return $this->assignedClasses($teacher)
+            ->flatMap(function (ClassRoom $classRoom) {
+                return $classRoom->schedules->map(function (ClassSchedule $schedule) use ($classRoom) {
+                    $roomName = $schedule->room?->name ?? $classRoom->room?->name ?? 'Chua phan phong';
+                    $studentsCount = (int) ($classRoom->students_count ?? 0);
+
+                    return [
+                        'id' => 'teacher-' . $classRoom->id . '-' . $schedule->id,
+                        'day_of_week' => $schedule->day_of_week,
+                        'start_time' => substr((string) $schedule->start_time, 0, 5),
+                        'end_time' => substr((string) $schedule->end_time, 0, 5),
+                        'title' => $classRoom->displayName(),
+                        'subtitle' => $classRoom->subject?->name ?? 'Chua co mon hoc',
+                        'meta' => implode(' • ', array_filter([$roomName, $studentsCount . ' hoc vien'])),
+                        'badge' => $classRoom->subject?->category?->name ?? 'Lich day',
+                        'badge_class' => 'bg-cyan-100 text-cyan-700',
+                        'tone' => 'cyan',
+                        'url' => route('teacher.classes.show', $classRoom),
+                        'primary_label' => 'Mo lop',
+                        'secondary_url' => $classRoom->course ? route('teacher.schedule-change-requests.create', $classRoom->course) : null,
+                        'secondary_label' => 'Doi lich',
+                    ];
+                });
+            })
+            ->values();
+    }
+
+    public function weeklyTimetable(User $teacher, ?CarbonInterface $reference = null): array
+    {
+        return app(WeeklyTimetableService::class)->build($this->weeklyEntries($teacher), $reference);
     }
 
     public function weekSchedule(User $teacher, ?CarbonInterface $reference = null): Collection

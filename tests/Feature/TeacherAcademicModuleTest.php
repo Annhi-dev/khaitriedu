@@ -45,6 +45,7 @@ class TeacherAcademicModuleTest extends TestCase
         $response->assertSee('Lịch giảng trong ngày');
         $response->assertSee($classRoom->displayName());
         $response->assertSee($schedule->timeRangeLabel());
+        $response->assertSee('Xem chi tiet');
         $response->assertSee('Yêu cầu đổi lịch đã được duyệt');
     }
 

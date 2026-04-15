@@ -28,15 +28,19 @@ class EnrollmentController extends Controller
 
     public function show(Enrollment $enrollment, AdminEnrollmentService $enrollmentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
-        if ($redirect) {
-            return $redirect;
-        }
+        return $enrollment->isFixedClassEnrollment()
+            ? $this->showFixedClass($enrollment, $enrollmentService)
+            : $this->showCustomSchedule($enrollment, $enrollmentService);
+    }
 
-        return view('admin.enrollments.show', array_merge(
-            ['current' => $current],
-            $enrollmentService->getEnrollmentDetail($enrollment),
-        ));
+    public function showFixedClass(Enrollment $enrollment, AdminEnrollmentService $enrollmentService)
+    {
+        return $this->renderDetailView('admin.enrollments.fixed_class', $enrollment, $enrollmentService);
+    }
+
+    public function showCustomSchedule(Enrollment $enrollment, AdminEnrollmentService $enrollmentService)
+    {
+        return $this->renderDetailView('admin.enrollments.custom_schedule', $enrollment, $enrollmentService);
     }
 
     public function review(ReviewEnrollmentRequest $request, Enrollment $enrollment, AdminEnrollmentService $enrollmentService)
@@ -49,5 +53,18 @@ class EnrollmentController extends Controller
         $message = $enrollmentService->reviewEnrollment($enrollment, $request->validated(), $current);
 
         return redirect()->route('admin.enrollments.show', $enrollment)->with('status', $message);
+    }
+
+    protected function renderDetailView(string $view, Enrollment $enrollment, AdminEnrollmentService $enrollmentService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        return view($view, array_merge(
+            ['current' => $current],
+            $enrollmentService->getEnrollmentDetail($enrollment),
+        ));
     }
 }

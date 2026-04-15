@@ -18,13 +18,14 @@
     $normalizedStatus = $userEnrollment?->normalizedStatus();
     $hasCourseAccess = $userEnrollment?->hasCourseAccess();
     $waitingOpenCourse = $userEnrollment?->course?->isPendingOpen() ?? false;
+    $openClasses = $subject->courses->filter(fn ($course) => $course->isPendingOpen());
 @endphp
 <div class="mx-auto max-w-5xl space-y-6">
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
             <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">{{ $subject->category?->name ?? 'Chua phan nhom' }}</p>
             <h1 class="mt-2 text-3xl font-bold text-gray-900">{{ $subject->name }}</h1>
-            <p class="mt-2 text-gray-600">{{ $subject->description ?? 'Hoc vien chon khung gio phu hop, admin se duyet va xep vao lop noi bo hoac luu lop cho mo neu can tao lop moi.' }}</p>
+            <p class="mt-2 text-gray-600">{{ $subject->description ?? 'Chon lop dang mo hoac gui yeu cau lich hoc phu hop.' }}</p>
         </div>
         <a href="{{ route('courses.index') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:border-primary hover:text-primary">
             <i class="fas fa-arrow-left text-sm"></i>
@@ -43,17 +44,17 @@
         <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
             <div class="text-sm font-medium text-gray-500">Nhom hoc</div>
             <div class="mt-2 text-xl font-bold text-gray-900">{{ $subject->category?->name ?? 'Chua phan nhom' }}</div>
-            <p class="mt-2 text-sm text-gray-500">Admin se doi chieu mon hoc, nhom hoc va khung gio de xep lop phu hop.</p>
+            <p class="mt-2 text-sm text-gray-500">Cac lop duoc ghep theo mon hoc va lich phu hop.</p>
         </div>
         <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
             <div class="text-sm font-medium text-gray-500">Hoc phi tham khao</div>
             <div class="mt-2 text-xl font-bold text-primary">{{ number_format($subject->price ?? 0, 0, ',', '.') }}d</div>
-            <p class="mt-2 text-sm text-gray-500">Hoc phi cuoi cung se theo lop duoc mo va ke hoach hoc chinh thuc.</p>
+            <p class="mt-2 text-sm text-gray-500">Ap dung theo lop dang mo hoac lop duoc xep sau.</p>
         </div>
         <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
             <div class="text-sm font-medium text-gray-500">Lop hien co</div>
             <div class="mt-2 text-xl font-bold text-gray-900">{{ $subject->courses->count() }}</div>
-            <p class="mt-2 text-sm text-gray-500">Neu chua co lop hop lich, admin van co the tao lop cho mo va gom du hoc vien roi moi khai giang.</p>
+            <p class="mt-2 text-sm text-gray-500">Chon lop phu hop hoac gui yeu cau lich rieng.</p>
         </div>
     </div>
 
@@ -66,7 +67,7 @@
                         @if($waitingOpenCourse)
                             <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">{{ $userEnrollment->course->statusLabel() }}</span>
                         @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_PENDING)
-                            <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">Dang cho admin duyet</span>
+                            <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">Dang cho duyet</span>
                         @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED)
                             <span class="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-800">Da duyet, cho xep lop</span>
                         @elseif(in_array($normalizedStatus, [\App\Models\Enrollment::STATUS_SCHEDULED, \App\Models\Enrollment::STATUS_ACTIVE, \App\Models\Enrollment::STATUS_COMPLETED], true))
@@ -78,9 +79,9 @@
 
                     @if($userEnrollment->course)
                         <div class="mt-3 space-y-1 text-sm text-gray-700">
-                            <p><strong>Lop da xep:</strong> {{ $userEnrollment->course->title }}</p>
-                            <p><strong>Giang vien:</strong> {{ $userEnrollment->assignedTeacher?->name ?? 'Chua phan cong' }}</p>
-                            <p><strong>Lich admin da luu:</strong> {{ $userEnrollment->schedule ?? 'Chua co lich' }}</p>
+                            <p><strong>Lop:</strong> {{ $userEnrollment->course->title }}</p>
+                            <p><strong>Giang vien:</strong> {{ $userEnrollment->assignedTeacher?->displayName() ?? 'Chua phan cong' }}</p>
+                            <p><strong>Lich hoc:</strong> {{ $userEnrollment->schedule ?? 'Chua co lich' }}</p>
                         </div>
                     @endif
                 </div>
@@ -100,7 +101,7 @@
 
             @if($waitingOpenCourse)
                 <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    Ban da duoc ghep vao lop cho mo. Admin se chon ngay bat dau va ngay ket thuc khi lop du toi thieu {{ \App\Models\Course::minimumStudentsToOpen() }} hoc vien.
+                    Ban dang cho lop mo.
                 </div>
             @endif
 
@@ -121,15 +122,15 @@
         </div>
     @else
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm">
-            <h2 class="text-lg font-semibold">Cach dang ky khoa hoc nay</h2>
-            <p class="mt-2 text-sm leading-6">Ban chon khung gio va cac ngay co the hoc. Sau khi gui yeu cau, admin co the xep ban vao lop co san hoac tao mot lop cho mo moi neu can gom them hoc vien cung nhu cau.</p>
+            <h2 class="text-lg font-semibold">Chua co dang ky</h2>
+            <p class="mt-2 text-sm leading-6">Ban co the chon lop dang mo hoac gui yeu cau lich hoc.</p>
         </div>
     @endif
 
     <div class="grid gap-6 lg:grid-cols-5">
         <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-3">
             <h2 class="text-2xl font-bold text-gray-900">Dang ky khoa hoc</h2>
-            <p class="mt-2 text-sm text-gray-600">Dien thong tin thoi gian ban co the hoc. Admin se can cu vao day de xep lop phu hop hoac mo lop moi khi can.</p>
+            <p class="mt-2 text-sm text-gray-600">Chon ngay va khung gio ban co the hoc.</p>
 
             @if(!$user || !$user->isStudent())
                 <div class="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-800">
@@ -143,11 +144,11 @@
                 </div>
             @elseif($waitingOpenCourse)
                 <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
-                    Ban dang nam trong lop cho mo, nen form dang ky tam khoa lai de admin tiep tuc gom du hoc vien va chot lich khai giang.
+                    Ban dang duoc ghep vao lop cho mo.
                 </div>
             @elseif($hasCourseAccess)
                 <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800">
-                    Ban da duoc xep vao lop hoc chinh thuc. Muc dang ky tai day da khoa lai de tranh tao trung yeu cau.
+                    Ban da duoc xep vao lop hoc chinh thuc.
                 </div>
             @else
                 <form method="post" action="{{ route('khoa-hoc.enroll', $subject->id) }}" class="mt-6 space-y-5">
@@ -198,18 +199,23 @@
 
         <div class="space-y-6 lg:col-span-2">
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 class="text-lg font-semibold text-gray-900">Admin se xu ly nhu the nao?</h3>
-                <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-600">
-                    <li>1. Tiep nhan mon hoc ban chon va khung gio mong muon.</li>
-                    <li>2. Duyet dang ky va doi chieu voi lop hien co trong he thong.</li>
-                    <li>3. Neu chua co lop hop lich, admin se luu lop cho mo va thong bao khi lop du hoc vien de khai giang.</li>
-                </ul>
+                <h3 class="text-lg font-semibold text-gray-900">Dang ky nhanh</h3>
+                <div class="mt-4 flex flex-col gap-3">
+                    @if($openClasses->isNotEmpty())
+                        <a href="{{ route('student.enroll.select', $subject) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-100 transition">
+                            Chon lop dang mo
+                        </a>
+                    @endif
+                    <a href="{{ route('student.enroll.request-form', $subject) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                        Gui yeu cau lich hoc
+                    </a>
+                </div>
             </div>
 
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h3 class="text-lg font-semibold text-gray-900">Cac lop hien co cua khoa nay</h3>
                 @if($subject->courses->isEmpty())
-                    <p class="mt-3 text-sm text-gray-500">Hien chua co lop co san nao. Ban van co the gui dang ky de admin tao lop cho mo khi can.</p>
+                    <p class="mt-3 text-sm text-gray-500">Hien chua co lop dang mo cho khoa nay.</p>
                 @else
                     <div class="mt-4 space-y-3">
                         @foreach($subject->courses as $course)
@@ -220,10 +226,10 @@
                                         {{ $course->statusLabel() }}
                                     </span>
                                 </div>
-                                <p class="mt-1 text-sm text-gray-600">{{ $course->description ?? 'Admin se cap nhat them thong tin lop hoc sau.' }}</p>
+                                <p class="mt-1 text-sm text-gray-600">{{ $course->description ?? 'Thong tin lop se cap nhat them.' }}</p>
                                 <div class="mt-3 space-y-1 text-xs text-gray-500">
                                     <p><strong>Lich:</strong> {{ $course->formattedSchedule() }}</p>
-                                    <p><strong>Giang vien:</strong> {{ $course->teacher?->name ?? 'Chua phan cong' }}</p>
+                                    <p><strong>Giang vien:</strong> {{ $course->teacher?->displayName() ?? 'Chua phan cong' }}</p>
                                 </div>
                             </div>
                         @endforeach

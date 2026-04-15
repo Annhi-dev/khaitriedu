@@ -7,13 +7,9 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    
     public function up(): void
     {
-        // Copy courses data to subjects
-        // Combine course title and description into subject name and description
         DB::statement("
             INSERT INTO mon_hoc (name, description, price, created_at, updated_at)
             SELECT 
@@ -27,13 +23,8 @@ return new class extends Migration
         ");
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    
     public function down(): void
     {
-        // Delete records that were copied from khoa_hoc
-        // This is optional - you may want to keep the data after reverting
-        // DB::statement("DELETE FROM mon_hoc WHERE id > (SELECT MAX(id) FROM khoa_hoc)");
     }
 };

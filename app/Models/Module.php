@@ -19,12 +19,14 @@ class Module extends Model
         'course_id',
         'title',
         'content',
+        'session_count',
         'duration',
         'status',
         'position',
     ];
 
     protected $casts = [
+        'session_count' => 'integer',
         'duration' => 'integer',
         'position' => 'integer',
     ];
@@ -46,6 +48,50 @@ class Module extends Model
     public function durationLabel(): string
     {
         return $this->duration ? $this->duration . ' phút' : 'Chưa cấu hình';
+    }
+
+    public function sessionCount(): ?int
+    {
+        if (array_key_exists('session_count', $this->attributes) && $this->attributes['session_count'] !== null) {
+            return (int) $this->attributes['session_count'];
+        }
+
+        return null;
+    }
+
+    public function plannedSessionCount(): int
+    {
+        return $this->sessionCount() ?? $this->lessonCount();
+    }
+
+    public function sessionCountLabel(): string
+    {
+        return $this->plannedSessionCount() . ' buổi';
+    }
+
+    public function lessonCount(): int
+    {
+        if (array_key_exists('lessons_count', $this->attributes) && $this->attributes['lessons_count'] !== null) {
+            return (int) $this->attributes['lessons_count'];
+        }
+
+        if ($this->relationLoaded('lessons')) {
+            return $this->lessons->count();
+        }
+
+        return $this->lessons()->count();
+    }
+
+    public function lessonCountLabel(): string
+    {
+        return $this->sessionCountLabel();
+    }
+
+    public function learningSummary(): string
+    {
+        $summary = trim((string) $this->content);
+
+        return $summary !== '' ? $summary : 'Mục tiêu học tập đang được cập nhật.';
     }
 
     public function course()

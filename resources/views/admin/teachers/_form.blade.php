@@ -29,7 +29,7 @@
             @endforeach
         </select>
         @if(($departments ?? collect())->isEmpty())
-            <p class="mt-2 text-xs text-amber-600">Chưa có phòng ban hoạt động. Vui lòng thêm dữ liệu bảng phòng ban trước khi tạo giảng viên.</p>
+            <p class="mt-2 text-xs text-amber-600">Chưa có phòng ban hoạt động.</p>
         @endif
     </div>
     <div>
@@ -39,14 +39,9 @@
             <option value="{{ \App\Models\User::STATUS_INACTIVE }}" @selected($statusValue === \App\Models\User::STATUS_INACTIVE)>Tạm dừng</option>
         </select>
     </div>
-    <div class="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-        <p class="font-semibold">Ghi chú quản trị</p>
-        <p class="mt-2 leading-6">Role của tài khoản luôn được giữ là giảng viên. Trạng thái khóa chỉ đổi bằng nút khóa hoặc mở khóa ở màn quản lý.</p>
-    </div>
     <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">{{ isset($teacher) ? 'Mật khẩu mới' : 'Mật khẩu' }}</label>
         <input name="password" type="password" {{ isset($teacher) ? '' : 'required' }} class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
-        <p class="mt-2 text-xs text-slate-500">{{ isset($teacher) ? 'Để trống nếu không đổi mật khẩu.' : 'Tối thiểu 6 ký tự.' }}</p>
     </div>
     <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">Xác nhận mật khẩu</label>

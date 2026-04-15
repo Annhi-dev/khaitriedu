@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="space-y-6">
-    <x-admin.page-header title="Quản lý module" subtitle="Tổng hợp module theo từng lớp học để admin đi nhanh vào màn sắp xếp nội dung.">
+    <x-admin.page-header title="Quản lý module" subtitle="Tổng hợp module theo từng lớp học, số buổi và trạng thái hiển thị.">
         <x-slot name="actions">
             <a href="{{ route('admin.courses') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
                 <i class="fas fa-people-group mr-1"></i> Danh sách lớp học
@@ -44,7 +44,7 @@
                                 <div class="mt-1 text-xs text-slate-500">{{ $course->subject?->category?->name ?? 'Chưa phân nhóm học' }}</div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-700">
-                                {{ $course->teacher?->name ?? 'Chưa phân công' }}
+                                {{ $course->teacher?->displayName() ?? 'Chưa phân công' }}
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm font-medium text-slate-800">{{ $course->modules_count }} module</div>
@@ -53,9 +53,17 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ route('admin.courses.modules.index', $course) }}" class="inline-flex items-center rounded-xl border border-cyan-200 px-3 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-50">
-                                    Mở module
-                                </a>
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    <form method="post" action="{{ route('admin.courses.modules.sync-template', $course) }}" onsubmit="return confirm('Sinh curriculum mẫu cho lớp này? Các module placeholder sẽ được điền lại theo template chuẩn.');">
+                                        @csrf
+                                        <button type="submit" class="inline-flex items-center rounded-xl border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
+                                            Sinh mẫu
+                                        </button>
+                                    </form>
+                                    <a href="{{ route('admin.courses.modules.index', $course) }}" class="inline-flex items-center rounded-xl border border-cyan-200 px-3 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-50">
+                                        Mở module
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty

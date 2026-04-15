@@ -8,21 +8,15 @@
             <div>
                 <p class="text-sm uppercase tracking-[0.25em] text-cyan-100">Dashboard Admin</p>
                 <h1 class="mt-2 text-3xl font-bold">Trung tâm điều phối đào tạo</h1>
-                <p class="mt-3 max-w-3xl text-sm leading-6 text-cyan-50/95">
-                    Theo dõi toàn bộ vận hành admin: người dùng, nhóm học, khóa học, lớp đang hoạt động,
-                    hạ tầng phòng học, khung giờ mở đăng ký và các luồng chờ xử lý trước khi mở lớp chính thức.
-                </p>
             </div>
             <div class="grid gap-3 sm:grid-cols-2 xl:min-w-[360px]">
                 <div class="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
                     <p class="text-xs uppercase tracking-wider text-cyan-100">Admin đang đăng nhập</p>
                     <p class="mt-2 text-xl font-semibold">{{ $user->name }}</p>
-                    <p class="mt-1 text-xs text-cyan-100">KhaiTriEdu Control Center</p>
                 </div>
                 <div class="rounded-2xl bg-slate-950/20 p-4 backdrop-blur-sm">
                     <p class="text-xs uppercase tracking-wider text-cyan-100">Hạ tầng dashboard</p>
                     <p class="mt-2 text-2xl font-semibold">{{ collect($infrastructureChecks)->filter()->count() }}/{{ count($infrastructureChecks) }}</p>
-                    <p class="mt-1 text-xs text-cyan-100">Thành phần nền đã sẵn sàng</p>
                 </div>
             </div>
         </div>
@@ -30,7 +24,7 @@
 
     @if ($infrastructureWarnings)
         <section class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-            <p class="font-semibold">A1 đang chờ đủ hạ tầng dashboard</p>
+            <p class="font-semibold">Hạ tầng dashboard chưa sẵn sàng</p>
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 @foreach ($infrastructureWarnings as $warning)
                     <li>{{ $warning }}</li>
@@ -59,7 +53,6 @@
             </div>
             <div>
                 <p class="font-semibold">Xử lý đăng ký học</p>
-                <p class="text-sm text-slate-500">Theo dõi pipeline enrollment hiện tại</p>
             </div>
         </a>
         <a href="{{ route('admin.teacher-applications') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
@@ -68,7 +61,6 @@
             </div>
             <div>
                 <p class="font-semibold">Duyệt giảng viên</p>
-                <p class="text-sm text-slate-500">{{ $pendingTeacherApplications }} hồ sơ đang chờ admin</p>
             </div>
         </a>
         <a href="{{ route('admin.schedules.queue') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
@@ -77,7 +69,6 @@
             </div>
             <div>
                 <p class="font-semibold">Hàng chờ xếp lịch</p>
-                <p class="text-sm text-slate-500">Mở lớp và xếp lịch chính thức cho học viên</p>
             </div>
         </a>
         <a href="{{ route('admin.schedule-change-requests.index') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
@@ -86,7 +77,6 @@
             </div>
             <div>
                 <p class="font-semibold">Duyệt đổi lịch</p>
-                <p class="text-sm text-slate-500">{{ $pendingScheduleChangeRequests }} yêu cầu cần phản hồi</p>
             </div>
         </a>
     </section>
@@ -96,9 +86,7 @@
             <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-4">
                 <div>
                     <h2 class="font-semibold text-slate-800">Hạ tầng lịch học</h2>
-                    <p class="mt-1 text-sm text-slate-500">Mức sẵn sàng của phòng học, khung giờ và luồng đăng ký theo slot.</p>
                 </div>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">A1 Foundation</span>
             </div>
             <div class="grid gap-4 p-5 md:grid-cols-2">
                 @php
@@ -144,7 +132,6 @@
             <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-4">
                 <div>
                     <h2 class="font-semibold text-slate-800">Nhu cầu theo khung giờ</h2>
-                    <p class="mt-1 text-sm text-slate-500">Những slot đang mở hoặc đã đủ điều kiện mở lớp gần đây nhất.</p>
                 </div>
                 <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">{{ $slotDemandSummary->count() }} slot</span>
             </div>
@@ -162,7 +149,7 @@
                         </div>
                         <div class="mt-3 grid gap-2 text-sm text-slate-600">
                             <p><span class="text-slate-500">Khung giờ:</span> {{ $slot->formattedWindow() }}</p>
-                            <p><span class="text-slate-500">Giảng viên:</span> {{ $slot->teacher?->name ?? 'Chưa gán' }}</p>
+                            <p><span class="text-slate-500">Giảng viên:</span> {{ $slot->teacher?->displayName() ?? 'Chưa gán' }}</p>
                             <p><span class="text-slate-500">Phòng học:</span> {{ $slot->room?->name ?? 'Chưa gán' }}</p>
                         </div>
                         <div class="mt-3 flex items-center justify-between text-sm">
@@ -226,7 +213,7 @@
                 @forelse($pendingScheduleRequestsList as $request)
                     <a href="{{ route('admin.schedule-change-requests.show', $request) }}" class="block p-5 hover:bg-slate-50 transition">
                         <p class="font-medium text-slate-800">{{ $request->course?->title ?? 'Lớp học không xác định' }}</p>
-                        <p class="text-sm text-slate-500">{{ $request->teacher?->name ?? 'Giảng viên không xác định' }}</p>
+                        <p class="text-sm text-slate-500">{{ $request->teacher?->displayName() ?? 'Giảng viên không xác định' }}</p>
                         <p class="text-xs text-rose-600 mt-1">{{ $request->reason }}</p>
                     </a>
                 @empty
@@ -285,7 +272,7 @@
                         <p class="mt-1 font-semibold text-slate-800">{{ $course->title }}</p>
                         <div class="mt-3 space-y-1 text-sm text-slate-600">
                             <p>Khóa học: {{ $course->subject?->name ?? 'N/A' }}</p>
-                            <p>Giảng viên: {{ $course->teacher?->name ?? 'Chưa phân công' }}</p>
+                            <p>Giảng viên: {{ $course->teacher?->displayName() ?? 'Chưa phân công' }}</p>
                             <p>Lịch: {{ $course->formattedSchedule() }}</p>
                         </div>
                     </div>

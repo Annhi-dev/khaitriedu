@@ -34,7 +34,7 @@
         <select name="teacher_id" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
             <option value="">Chưa phân công</option>
             @foreach ($teachers as $teacher)
-                <option value="{{ $teacher->id }}" @selected((string) old('teacher_id', $courseTimeSlot->teacher_id) === (string) $teacher->id)>{{ $teacher->name }}</option>
+                <option value="{{ $teacher->id }}" @selected((string) old('teacher_id', $courseTimeSlot->teacher_id) === (string) $teacher->id)>{{ $teacher->displayName() }}</option>
             @endforeach
         </select>
     </div>
@@ -76,7 +76,7 @@
     </div>
     <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Kết thúc</label>
-        <input type="time" name="end_time" value="{{ $endTime }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500" required>
+        <input type="time" name="end_time" value="{{ $endTime }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500 bg-slate-50" readonly required>
     </div>
     <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Mở đăng ký từ</label>

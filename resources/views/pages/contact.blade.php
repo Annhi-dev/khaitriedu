@@ -17,7 +17,7 @@
 
 <div class="container mx-auto px-4 py-20">
     <div class="grid md:grid-cols-3 gap-8 mb-20">
-        <!-- Contact Info -->
+        
         <div class="space-y-8">
             <div class="bg-white p-6 rounded-xl shadow-sm">
                 <div class="flex items-start gap-4">
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        <!-- Contact Form -->
+        
         <div class="md:col-span-2">
             <div class="bg-white rounded-2xl shadow-lg p-8">
                 <h2 class="text-3xl font-bold text-gray-800 mb-6">Gửi tin nhắn cho chúng tôi</h2>
@@ -133,12 +133,12 @@
         </div>
     </div>
 
-    <!-- Map Section (Optional) -->
+    
     <div class="bg-gray-200 rounded-2xl overflow-hidden h-96 mb-20">
         <iframe src="{{ $mapEmbedUrl }}" width="100%" height="100%" class="contact-map-iframe" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
 
-    <!-- FAQ -->
+    
     <div class="mb-20">
         <h2 class="text-4xl font-bold text-gray-800 mb-12 text-center">Câu hỏi thường gặp</h2>
         <div class="space-y-4 max-w-3xl mx-auto">

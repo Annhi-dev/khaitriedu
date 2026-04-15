@@ -3,13 +3,20 @@
 @section('eyebrow', 'Student Schedule')
 @section('content')
 <div class="mx-auto max-w-6xl space-y-6">
-  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-primary-dark">Lich hoc cua toi</h1>
-      <p class="text-gray-600">Theo doi ca lop da mo chinh thuc va lop dang cho du hoc vien de khai giang.</p>
-    </div>
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-primary-dark">Lich hoc cua toi</h1>
+        </div>
     <a href="{{ route('student.dashboard') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-primary hover:text-primary">Quay lai dashboard</a>
   </div>
+
+  @include('shared.schedule-grid', [
+      'grid' => $weeklyTimetable,
+      'sectionEyebrow' => 'Student Schedule',
+      'sectionTitle' => 'Lich hoc theo tuan',
+      'sectionSubtitle' => 'Moi o la mot khung gio thuc te trong tuan hien tai. Bam vao tung o de xem chi tiet.',
+      'emptyMessage' => 'Ban chua co buoi hoc nao trong tuan nay.',
+  ])
 
   <div class="grid gap-4">
     @forelse($enrollments as $enrollment)
@@ -44,7 +51,7 @@
 
             @if ($waitingOpen)
               <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Lop nay da duoc ghep lich nhung chua chot ngay khai giang. Admin se thong bao cho ban ngay khi lop du toi thieu 5 hoc vien va duoc mo chinh thuc.
+                Lớp đang chờ mở chính thức.
               </div>
             @endif
 
@@ -117,7 +124,7 @@
     @empty
       <div class="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
         <p class="text-lg font-semibold text-gray-700">Ban chua duoc xep vao lop hoc nao.</p>
-        <p class="mt-2 text-gray-500">Hay chon khoa hoc, gui khung gio mong muon va cho admin xep vao lop phu hop.</p>
+        <p class="mt-2 text-gray-500">Hãy chọn khóa học và gửi yêu cầu lịch học phù hợp.</p>
         <a href="{{ route('student.enroll.index') }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-white transition hover:bg-primary-dark">
           <i class="fas fa-book-open"></i>
           Xem khoa hoc

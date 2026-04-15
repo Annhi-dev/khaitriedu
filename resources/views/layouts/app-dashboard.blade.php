@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'KhaiTriEdu Dashboard')</title>
-    <!-- Google Fonts -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Vite -->
+    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Alpine.js -->
+    
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Font Awesome -->
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
@@ -19,10 +19,10 @@
 
     <div class="dashboard-wrapper">
         
-        <!-- Mobile Sidebar Overlay -->
+        
         <div class="sidebar-overlay" @click="mobileMenuOpen = false"></div>
 
-        <!-- Sidebar Section -->
+        
         <aside class="dashboard-sidebar">
             <div class="sidebar-logo">
                 <i class="fas fa-graduation-cap text-blue-600 mr-2"></i> KhaiTriEdu
@@ -32,7 +32,7 @@
                 @php $user = Auth::user(); @endphp
                 
                 @if($user)
-                    <!-- Admin Menu -->
+                    
                     @if($user->isAdmin())
                         <div class="px-6 py-2 text-xs font-semibold text-gray-400 pl-6 uppercase tracking-wider mb-1 mt-2">Admin Portal</div>
                         <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -48,7 +48,7 @@
                             <i class="fas fa-chart-bar nav-icon"></i> Báo cáo
                         </a>
                     
-                    <!-- Teacher Menu -->
+                    
                     @elseif($user->isTeacher())
                         <div class="px-6 py-2 text-xs font-semibold text-gray-400 pl-6 uppercase tracking-wider mb-1 mt-2">Giảng Viên</div>
                         <a href="{{ route('teacher.dashboard') }}" class="nav-item {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}">
@@ -64,7 +64,7 @@
                             <i class="fas fa-clipboard-check nav-icon"></i> Điểm danh
                         </a>
 
-                    <!-- Student Menu -->
+                    
                     @else
                         <div class="px-6 py-2 text-xs font-semibold text-gray-400 pl-6 uppercase tracking-wider mb-1 mt-2">Học Viên</div>
                         <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -95,9 +95,9 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        
         <main class="dashboard-main">
-            <!-- Top Navbar -->
+            
             <header class="dashboard-header">
                 <div class="flex items-center">
                     <button class="md:hidden text-gray-500 hover:text-blue-600 focus:outline-none mr-4" @click="mobileMenuOpen = !mobileMenuOpen">
@@ -107,12 +107,12 @@
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <!-- Notifications -->
+                    
                     <button class="text-gray-400 hover:text-blue-600 rounded-full p-2 transition">
                         <i class="fas fa-bell"></i>
                     </button>
                     
-                    <!-- Profile Dropdown -->
+                    
                     @if(Auth::check())
                         <div class="relative" x-data="{ profileOpen: false }" @click.away="profileOpen = false">
                             <button @click="profileOpen = !profileOpen" class="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1 border border-gray-200 hover:bg-gray-50 transition">
@@ -123,7 +123,7 @@
                                 <i class="fas fa-chevron-down text-xs text-gray-400 pr-1 hidden md:block"></i>
                             </button>
                             
-                            <!-- Dropdown menu -->
+                            
                             <div x-show="profileOpen" x-transition x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                                 <div class="px-4 py-2 border-b border-gray-100 mb-1">
                                     <p class="text-sm text-gray-900 font-bold truncate">{{ Auth::user()->name }}</p>
@@ -140,9 +140,9 @@
                 </div>
             </header>
 
-            <!-- Render the content -->
+            
             <div class="dashboard-content">
-                <!-- Safe Wrapper for existing content -->
+                
                 <div class="content-card-wrapper">
                     @yield('content')
                 </div>

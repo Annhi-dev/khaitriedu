@@ -85,6 +85,10 @@ class StudentScheduleExperienceTest extends TestCase
         $response->assertSee('Lan diem danh gan day');
         $response->assertSee('Ban hoc cung lop');
         $response->assertSee($classmate->name);
+        $response->assertSee('Khung gio');
+        $response->assertSee('Lich hoc theo tuan');
+        $response->assertSee('Xem chi tiet');
+        $response->assertSee('Xem khoa hoc');
     }
 
     private function createClassBundle(User $teacher): array
@@ -151,4 +155,3 @@ class StudentScheduleExperienceTest extends TestCase
         return compact('category', 'subject', 'course', 'classRoom', 'schedule');
     }
 }
-

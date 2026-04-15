@@ -108,6 +108,24 @@ class Course extends Model
         return $this->hasMany(ClassRoom::class, 'course_id');
     }
 
+    public function currentClassRoom(): ?ClassRoom
+    {
+        $classRooms = $this->relationLoaded('classRooms')
+            ? $this->classRooms
+            : $this->classRooms()->with(['room', 'teacher', 'schedules'])->orderByDesc('id')->get();
+
+        if ($classRooms->isEmpty()) {
+            return null;
+        }
+
+        return $classRooms
+            ->sortByDesc('id')
+            ->first(function (ClassRoom $classRoom) {
+                return ! in_array($classRoom->status, [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED], true);
+            })
+            ?? $classRooms->sortByDesc('id')->first();
+    }
+
     public function customScheduleRequests()
     {
         return $this->hasMany(CustomScheduleRequest::class);

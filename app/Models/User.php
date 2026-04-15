@@ -10,19 +10,16 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    // ─── Role Constants (English, matching roles table) ──
     public const ROLE_ADMIN = 'admin';
     public const ROLE_TEACHER = 'teacher';
     public const ROLE_STUDENT = 'student';
 
-    // ─── Status Constants ────────────────────────────────
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
     public const STATUS_LOCKED = 'locked';
 
     protected $table = 'nguoi_dung';
 
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     protected $fillable = [
@@ -50,7 +47,6 @@ class User extends Authenticatable
         ];
     }
 
-    // ─── Role Relationship ───────────────────────────────
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
@@ -61,12 +57,6 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    // ─── Role Helpers ────────────────────────────────────
-    /**
-     * Check if user has one of the given roles.
-     *
-     * Usage: $user->hasRole('admin') or $user->hasRole('admin', 'teacher')
-     */
     public function hasRole(string ...$roles): bool
     {
         return $this->role && in_array($this->role->name, $roles, true);
@@ -87,17 +77,11 @@ class User extends Authenticatable
         return $this->hasRole(self::ROLE_STUDENT);
     }
 
-    /**
-     * Get role name as string (for display/backward compat).
-     */
     public function getRoleName(): string
     {
         return $this->role?->name ?? 'unknown';
     }
 
-    /**
-     * Get human-readable role label.
-     */
     public function roleLabel(): string
     {
         return match ($this->role?->name) {
@@ -108,7 +92,6 @@ class User extends Authenticatable
         };
     }
 
-    // ─── Scopes ──────────────────────────────────────────
     public function scopeStudents($query)
     {
         return $query->whereHas('role', fn ($q) => $q->where('name', self::ROLE_STUDENT));
@@ -119,7 +102,6 @@ class User extends Authenticatable
         return $query->whereHas('role', fn ($q) => $q->where('name', self::ROLE_TEACHER));
     }
 
-    // ─── Status Helpers ──────────────────────────────────
     public function isLocked(): bool
     {
         return $this->status === self::STATUS_LOCKED;
@@ -128,14 +110,39 @@ class User extends Authenticatable
     public function statusLabel(): string
     {
         return match ($this->status) {
-            self::STATUS_ACTIVE => 'Hoat dong',
-            self::STATUS_INACTIVE => 'Tam dung',
-            self::STATUS_LOCKED => 'Da khoa',
+            self::STATUS_ACTIVE => 'Hoạt động',
+            self::STATUS_INACTIVE => 'Tạm dừng',
+            self::STATUS_LOCKED => 'Đã khóa',
             default => ucfirst((string) $this->status),
         };
     }
 
-    // ─── Relationships ───────────────────────────────────
+    public function displayName(): string
+    {
+        $name = trim((string) $this->name);
+
+        if (preg_match('/^(.*?)(?:\s*\(([^()]*)\))\s*$/u', $name, $matches)) {
+            $displayName = trim($matches[1]);
+
+            return $displayName !== '' ? $displayName : $name;
+        }
+
+        return $name;
+    }
+
+    public function specialtyLabel(): ?string
+    {
+        $name = trim((string) $this->name);
+
+        if (preg_match('/\(([^()]*)\)\s*$/u', $name, $matches)) {
+            $specialty = trim($matches[1]);
+
+            return $specialty !== '' ? $specialty : null;
+        }
+
+        return null;
+    }
+
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);

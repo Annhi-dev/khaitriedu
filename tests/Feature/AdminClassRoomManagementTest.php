@@ -39,7 +39,7 @@ class AdminClassRoomManagementTest extends TestCase
                     [
                         'day' => 'Monday',
                         'start' => '18:00',
-                        'end' => '20:00',
+                        'end' => '20:15',
                     ],
                 ],
             ]);
@@ -65,7 +65,7 @@ class AdminClassRoomManagementTest extends TestCase
             'room_id' => $room->id,
             'day_of_week' => 'Monday',
             'start_time' => '18:00',
-            'end_time' => '20:00',
+            'end_time' => '20:15',
         ]);
     }
 
@@ -230,7 +230,58 @@ class AdminClassRoomManagementTest extends TestCase
         $this->assertDatabaseCount('lop_hoc', 1);
     }
 
-    private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array
+    public function test_admin_can_create_class_when_weekly_slot_matches_but_date_ranges_do_not_overlap(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+        $room = $this->createRoom();
+        [, $subject] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong', 1);
+        $firstCourse = $this->createCourse($subject, $teacher, ['title' => 'Khóa hiện hữu']);
+        $secondCourse = $this->createCourse($subject, $teacher, ['title' => 'Khóa kế tiếp']);
+
+        $existingClassRoom = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $firstCourse->id,
+            'room_id' => $room->id,
+            'teacher_id' => $teacher->id,
+            'start_date' => '2026-05-01',
+            'duration' => 1,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $existingClassRoom->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'day_of_week' => 'Monday',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+        ]);
+
+        $response = $this
+            ->from(route('admin.classes.create'))
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.classes.store'), [
+                'subject_id' => $subject->id,
+                'course_id' => $secondCourse->id,
+                'teacher_id' => $teacher->id,
+                'room_id' => $room->id,
+                'start_date' => '2026-07-01',
+                'schedules' => [
+                    [
+                        'day' => 'Monday',
+                        'start' => '18:00',
+                        'end' => '20:00',
+                    ],
+                ],
+            ]);
+
+        $response->assertRedirect(route('admin.classes.index'));
+        $response->assertSessionHas('status');
+        $this->assertDatabaseCount('lop_hoc', 2);
+    }
+
+    private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong', int $duration = 24): array
     {
         $category = Category::create([
             'name' => 'Nhom hoc ' . $slug,
@@ -243,7 +294,7 @@ class AdminClassRoomManagementTest extends TestCase
             'category_id' => $category->id,
             'status' => Subject::STATUS_OPEN,
             'price' => 1500000,
-            'duration' => 24,
+            'duration' => $duration,
         ]);
 
         return [$category, $subject];
@@ -274,4 +325,3 @@ class AdminClassRoomManagementTest extends TestCase
         ], $overrides));
     }
 }
-

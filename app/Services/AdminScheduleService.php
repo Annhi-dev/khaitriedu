@@ -24,6 +24,7 @@ class AdminScheduleService
 
         return Enrollment::query()
             ->with(['user', 'subject.category'])
+            ->whereNull('lop_hoc_id')
             ->whereIn('status', [Enrollment::STATUS_PENDING, Enrollment::STATUS_APPROVED])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
@@ -50,14 +51,16 @@ class AdminScheduleService
         $date = $filters['date'] ?? null;
 
         return Course::query()
-            ->with(['subject.category', 'teacher', 'enrollments.user'])
+            ->with(['subject.category', 'teacher', 'enrollments.user', 'classRooms.room', 'classRooms.teacher', 'classRooms.schedules'])
             ->withCount([
                 'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
             ])
             ->whereNotNull('teacher_id')
-            ->whereNotNull('day_of_week')
-            ->whereNotNull('start_time')
-            ->whereNotNull('end_time')
+            ->whereIn('status', [
+                Course::STATUS_PENDING_OPEN,
+                Course::STATUS_SCHEDULED,
+                Course::STATUS_ACTIVE,
+            ])
             ->when($teacherId, fn (Builder $query) => $query->where('teacher_id', $teacherId))
             ->when($courseId, fn (Builder $query) => $query->whereKey($courseId))
             ->when($studentId, function (Builder $query) use ($studentId) {
@@ -67,15 +70,15 @@ class AdminScheduleService
                 });
             })
             ->when($date, function (Builder $query) use ($date) {
-                $query->whereDate('start_date', '<=', $date)
+                $query->whereNotNull('start_date')
+                    ->whereDate('start_date', '<=', $date)
                     ->where(function (Builder $builder) use ($date) {
                         $builder->whereNull('end_date')
                             ->orWhereDate('end_date', '>=', $date);
                     });
             })
-            ->orderByRaw("case when status = '" . Course::STATUS_PENDING_OPEN . "' then 0 else 1 end")
-            ->orderBy('day_of_week')
-            ->orderBy('start_time')
+            ->orderByRaw("case when status = '" . Course::STATUS_PENDING_OPEN . "' then 0 when status = '" . Course::STATUS_SCHEDULED . "' then 1 when status = '" . Course::STATUS_ACTIVE . "' then 2 else 3 end")
+            ->orderBy('title')
             ->paginate(12)
             ->withQueryString();
     }
@@ -129,6 +132,51 @@ class AdminScheduleService
         ];
     }
 
+    public function getCourseDetailContext(Course $course): array
+    {
+        $course->load([
+            'subject.category',
+            'teacher',
+            'enrollments.user',
+            'classRooms.room',
+            'classRooms.teacher',
+            'classRooms.schedules.room',
+        ])->loadCount([
+            'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+        ]);
+
+        $classRoom = $course->currentClassRoom();
+        $classRoom?->loadMissing(['room', 'teacher', 'schedules.room']);
+
+        $activeEnrollments = $course->enrollments
+            ->filter(fn (Enrollment $enrollment) => in_array($enrollment->status, Enrollment::courseAccessStatuses(), true))
+            ->sortBy(function (Enrollment $enrollment) {
+                return match ($enrollment->status) {
+                    Enrollment::STATUS_SCHEDULED => 0,
+                    Enrollment::STATUS_ACTIVE => 1,
+                    Enrollment::STATUS_APPROVED => 2,
+                    Enrollment::STATUS_PENDING => 3,
+                    default => 9,
+                };
+            })
+            ->values();
+
+        $classSchedules = $classRoom?->schedules
+            ? $classRoom->schedules->sortBy(function (ClassSchedule $schedule) {
+                return array_search($schedule->day_of_week, array_keys(ClassSchedule::$dayOptions), true);
+            })->values()
+            : collect();
+
+        return [
+            'course' => $course,
+            'classRoom' => $classRoom,
+            'classSchedules' => $classSchedules,
+            'activeEnrollments' => $activeEnrollments,
+            'scheduledStudentsCount' => (int) $course->scheduled_students_count,
+            'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
+        ];
+    }
+
     public function scheduleEnrollment(Enrollment $enrollment, array $data, User $admin): string
     {
         return DB::transaction(function () use ($enrollment, $data, $admin): string {
@@ -171,7 +219,15 @@ class AdminScheduleService
             $this->ensureTeacherIsValid((int) $teacherId);
             $this->ensureRoomIsValid((int) $roomId);
             $this->ensureTeacherAvailability($course->id, (int) $teacherId, $meetingDays, (string) $startDate, (string) $endDate, (string) $startTime, (string) $endTime);
-            $this->ensureRoomAvailability((int) $roomId, $meetingDays, (string) $startTime, (string) $endTime, $this->findExistingClassRoomForCourse($course->id)?->id);
+            $this->ensureRoomAvailability(
+                (int) $roomId,
+                $meetingDays,
+                (string) $startTime,
+                (string) $endTime,
+                (string) $startDate,
+                (string) $endDate,
+                $this->findExistingClassRoomForCourse($course->id)?->id
+            );
             $this->ensureStudentAvailability($enrollment, $course->id, $meetingDays, (string) $startDate, (string) $endDate, (string) $startTime, (string) $endTime);
             $this->ensureCapacity($course, (int) $capacity, $enrollment);
 
@@ -278,7 +334,15 @@ class AdminScheduleService
             $this->ensureTeacherIsValid($teacherId);
             $this->ensureRoomIsValid($roomId);
             $this->ensureTeacherAvailability($course->id, $teacherId, $meetingDays, $startDate, $endDate, $startTime, $endTime);
-            $this->ensureRoomAvailability($roomId, $meetingDays, $startTime, $endTime, $this->findExistingClassRoomForCourse($course->id)?->id);
+            $this->ensureRoomAvailability(
+                $roomId,
+                $meetingDays,
+                $startTime,
+                $endTime,
+                $startDate,
+                $endDate,
+                $this->findExistingClassRoomForCourse($course->id)?->id
+            );
 
             $enrollments = $course->enrollments()
                 ->whereIn('status', Enrollment::courseAccessStatuses())
@@ -346,6 +410,15 @@ class AdminScheduleService
     {
         return Course::query()
             ->orderBy('title')
+            ->get();
+    }
+
+    public function classRoomOptions(): Collection
+    {
+        return ClassRoom::query()
+            ->with(['course.subject', 'room', 'teacher', 'schedules'])
+            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->orderByDesc('id')
             ->get();
     }
 
@@ -610,9 +683,17 @@ class AdminScheduleService
         }
     }
 
-    protected function ensureRoomAvailability(int $roomId, array $meetingDays, string $startTime, string $endTime, ?int $excludeClassRoomId = null): void
+    protected function ensureRoomAvailability(
+        int $roomId,
+        array $meetingDays,
+        string $startTime,
+        string $endTime,
+        ?string $startDate = null,
+        ?string $endDate = null,
+        ?int $excludeClassRoomId = null
+    ): void
     {
-        if (ClassRoom::roomHasConflict($roomId, $meetingDays, $startTime, $endTime, $excludeClassRoomId)) {
+        if (ClassRoom::roomHasConflict($roomId, $meetingDays, $startTime, $endTime, $startDate, $endDate, $excludeClassRoomId)) {
             throw ValidationException::withMessages([
                 'room_id' => 'Phòng học đã có lớp khác trùng vào khung giờ này.',
             ]);

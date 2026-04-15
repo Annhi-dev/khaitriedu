@@ -117,7 +117,7 @@ class AdminInfrastructureManagementTest extends TestCase
                 'room_id' => $room->id,
                 'day_of_week' => 'Monday',
                 'start_time' => '18:00',
-                'end_time' => '20:00',
+                'end_time' => '20:15',
                 'registration_open_at' => now()->format('Y-m-d H:i:s'),
                 'registration_close_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
                 'min_students' => 10,
@@ -146,7 +146,7 @@ class AdminInfrastructureManagementTest extends TestCase
                 'room_id' => $room->id,
                 'slot_date' => now()->addWeek()->format('Y-m-d'),
                 'start_time' => '17:30',
-                'end_time' => '19:30',
+                'end_time' => '19:45',
                 'registration_open_at' => now()->format('Y-m-d H:i:s'),
                 'registration_close_at' => now()->addDays(5)->format('Y-m-d H:i:s'),
                 'min_students' => 8,
@@ -160,9 +160,53 @@ class AdminInfrastructureManagementTest extends TestCase
             'id' => $timeSlot->id,
             'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS,
             'start_time' => '17:30',
-            'end_time' => '19:30',
+            'end_time' => '19:45',
             'min_students' => 8,
             'max_students' => 18,
+        ]);
+    }
+
+    public function test_admin_time_slot_validation_messages_are_in_vietnamese(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+        $category = Category::create([
+            'name' => 'Ngoai ngu - Tin hoc',
+            'slug' => 'ngoai-ngu-tin-hoc-viet-hoa',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+        $subject = Subject::create([
+            'name' => 'Tieng Anh giao tiep',
+            'price' => 1800000,
+            'category_id' => $category->id,
+        ]);
+        $room = Room::create([
+            'code' => 'P102',
+            'name' => 'Phong 102',
+            'capacity' => 25,
+            'status' => Room::STATUS_ACTIVE,
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.course-time-slots.store'), [
+                'subject_id' => $subject->id,
+                'teacher_id' => $teacher->id,
+                'room_id' => $room->id,
+                'day_of_week' => 'Monday',
+                'start_time' => '05:49 AM',
+                'end_time' => '10:49 AM',
+                'registration_open_at' => now()->format('Y-m-d H:i:s'),
+                'registration_close_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+                'min_students' => 10,
+                'max_students' => 20,
+                'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors([
+            'start_time' => 'Giờ bắt đầu phải có định dạng H:i.',
+            'end_time' => 'Giờ kết thúc phải có định dạng H:i.',
         ]);
     }
 
@@ -205,7 +249,7 @@ class AdminInfrastructureManagementTest extends TestCase
             'room_id' => $room->id,
             'day_of_week' => 'Monday',
             'start_time' => '18:00',
-            'end_time' => '20:00',
+            'end_time' => '20:15',
             'min_students' => 10,
             'max_students' => 20,
             'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,

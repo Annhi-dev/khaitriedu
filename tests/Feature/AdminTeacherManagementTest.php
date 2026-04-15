@@ -20,8 +20,18 @@ class AdminTeacherManagementTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teacherA = User::factory()->teacher()->create([
-            'name' => 'Giang Vien A',
+            'name' => 'Giang Vien A (Phát triển Cá nhân)',
             'email' => 'teacher-a@example.com',
+        ]);
+        $subject = Subject::create([
+            'name' => 'Tieng Anh giao tiep',
+            'price' => 1800000,
+        ]);
+        Course::create([
+            'subject_id' => $subject->id,
+            'title' => 'Tieng Anh giao tiep - Lop sang',
+            'teacher_id' => $teacherA->id,
+            'schedule' => 'Thu 2 - Thu 4, 18:00 - 20:00',
         ]);
         $teacherB = User::factory()->teacher()->inactive()->create([
             'name' => 'Giang Vien B',
@@ -38,8 +48,14 @@ class AdminTeacherManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Quản lý giảng viên');
+        $response->assertSee('Chuyên môn');
+        $response->assertDontSee('Giang Vien A (Phát triển Cá nhân)');
+        $response->assertSee('Giang Vien A');
+        $response->assertSee('Phát triển Cá nhân');
         $response->assertSee($teacherA->email);
         $response->assertSee($teacherB->email);
+        $response->assertSee('0 yêu cầu');
+        $response->assertDontSee('Tieng Anh giao tiep');
         $response->assertDontSee($student->email);
     }
 
@@ -166,7 +182,7 @@ class AdminTeacherManagementTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create([
-            'name' => 'Giang Vien Chi Tiet',
+            'name' => 'Giang Vien Chi Tiet (Phát triển Cá nhân)',
             'email' => 'giangvienchitiet@example.com',
         ]);
         $student = User::factory()->student()->create([
@@ -217,7 +233,10 @@ class AdminTeacherManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Giang Vien Chi Tiet');
-        $response->assertSee('Tieng Anh giao tiep - Lop toi');
+        $response->assertSee('Phát triển Cá nhân');
+        $response->assertSee('Chuyên môn giảng dạy');
+        $response->assertSee('Tieng Anh giao tiep');
+        $response->assertDontSee('Tieng Anh giao tiep - Lop toi');
         $response->assertSee('Thu 3 - Thu 5, 18:30 - 20:30');
         $response->assertSee('5 nam day giao tiep');
         $response->assertSee('Can doi lich do cong tac');
