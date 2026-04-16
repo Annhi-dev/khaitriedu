@@ -29,7 +29,7 @@ class quan_ly_yeu_cau_doi_lich_test extends TestCase
                 'requested_end_date' => '2026-06-08',
                 'requested_start_time' => '19:00',
                 'requested_end_time' => '21:00',
-                'reason' => 'Can doi lich vi lich day hien tai bi trung.',
+                'reason' => 'Cần dời buổi vì lịch dạy hiện tại bị trùng.',
             ]);
 
         $response->assertRedirect(route('teacher.schedule-change-requests.index'));
@@ -168,7 +168,7 @@ class quan_ly_yeu_cau_doi_lich_test extends TestCase
         [, $subject] = $this->createCatalogSubject();
 
         $course = $this->createScheduledCourse($subject, $teacher, [
-            'title' => 'Lop dang xin doi lich',
+            'title' => 'Lớp đang xin dời buổi',
         ]);
         $this->createScheduledCourse($subject, $teacher, [
             'title' => 'Lop trung lich',
@@ -266,7 +266,7 @@ class quan_ly_yeu_cau_doi_lich_test extends TestCase
             'requested_end_date' => '2026-06-08',
             'requested_start_time' => '19:00',
             'requested_end_time' => '21:00',
-            'reason' => 'Can doi lich de phu hop cong tac.',
+            'reason' => 'Cần dời buổi để phù hợp công tác.',
             'status' => ScheduleChangeRequest::STATUS_PENDING,
         ], $overrides));
     }

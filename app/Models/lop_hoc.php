@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Helpers\ScheduleHelper;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class ClassRoom extends Model
 {
@@ -28,11 +30,13 @@ class ClassRoom extends Model
         'duration',
         'status',
         'note',
+        'grade_weights',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'duration'   => 'integer',
+        'grade_weights' => 'array',
     ];
 
 
@@ -180,6 +184,67 @@ class ClassRoom extends Model
             : 'Chưa có lịch giảng dạy';
     }
 
+    public function scheduleRows(): Collection
+    {
+        return $this->effectiveScheduleRows();
+    }
+
+    public function conflictsWith(ClassRoom $other): bool
+    {
+        return $this->firstScheduleConflictWith($other) !== null;
+    }
+
+    public function firstScheduleConflictWith(ClassRoom $other): ?array
+    {
+        $thisSchedules = $this->scheduleRows();
+        $otherSchedules = $other->scheduleRows();
+
+        if ($thisSchedules->isEmpty() || $otherSchedules->isEmpty()) {
+            return null;
+        }
+
+        $thisStartDate = $this->scheduleRangeStart();
+        $thisEndDate = $this->scheduleRangeEnd();
+        $otherStartDate = $other->scheduleRangeStart();
+        $otherEndDate = $other->scheduleRangeEnd();
+
+        foreach ($thisSchedules as $thisSchedule) {
+            foreach ($otherSchedules as $otherSchedule) {
+                if (($thisSchedule['day_of_week'] ?? null) !== ($otherSchedule['day_of_week'] ?? null)) {
+                    continue;
+                }
+
+                $thisStartTime = substr((string) ($thisSchedule['start_time'] ?? ''), 0, 5);
+                $thisEndTime = substr((string) ($thisSchedule['end_time'] ?? ''), 0, 5);
+                $otherStartTime = substr((string) ($otherSchedule['start_time'] ?? ''), 0, 5);
+                $otherEndTime = substr((string) ($otherSchedule['end_time'] ?? ''), 0, 5);
+
+                if ($thisStartTime >= $otherEndTime || $thisEndTime <= $otherStartTime) {
+                    continue;
+                }
+
+                if ($thisStartDate && $thisEndDate && $otherStartDate && $otherEndDate) {
+                    if (! ($thisStartDate->lte($otherEndDate) && $thisEndDate->gte($otherStartDate))) {
+                        continue;
+                    }
+                }
+
+                return [
+                    'day_of_week' => (string) ($thisSchedule['day_of_week'] ?? ''),
+                    'day_label' => ClassSchedule::$dayOptions[$thisSchedule['day_of_week'] ?? ''] ?? (string) ($thisSchedule['day_of_week'] ?? ''),
+                    'existing_start_time' => $thisStartTime,
+                    'existing_end_time' => $thisEndTime,
+                    'existing_time_label' => ScheduleHelper::timeRangeLabel($thisStartTime, $thisEndTime),
+                    'candidate_start_time' => $otherStartTime,
+                    'candidate_end_time' => $otherEndTime,
+                    'candidate_time_label' => ScheduleHelper::timeRangeLabel($otherStartTime, $otherEndTime),
+                ];
+            }
+        }
+
+        return null;
+    }
+
     public function scheduleRangeStart(): ?CarbonInterface
     {
         return $this->start_date?->copy()->startOfDay();
@@ -220,6 +285,31 @@ class ClassRoom extends Model
             Carbon::parse($startDate)->startOfDay(),
             Carbon::parse($endDate)->endOfDay(),
         ];
+    }
+
+    protected function effectiveScheduleRows(): Collection
+    {
+        $this->loadMissing(['schedules', 'course']);
+
+        if ($this->schedules->isNotEmpty()) {
+            return $this->schedules->map(fn (ClassSchedule $schedule) => [
+                'day_of_week' => $schedule->day_of_week,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
+            ])->values();
+        }
+
+        $meetingDays = $this->course?->meetingDayValues() ?? [];
+
+        if ($meetingDays === [] || ! $this->course?->start_time || ! $this->course?->end_time) {
+            return collect();
+        }
+
+        return collect($meetingDays)->map(fn (string $dayOfWeek) => [
+            'day_of_week' => $dayOfWeek,
+            'start_time' => $this->course?->start_time,
+            'end_time' => $this->course?->end_time,
+        ])->values();
     }
 
 

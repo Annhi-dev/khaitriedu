@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\ClassRoom;
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Room;
@@ -69,6 +70,46 @@ class ghi_danh_hoc_vien_test extends TestCase
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
             'status' => Enrollment::STATUS_ENROLLED,
+        ]);
+    }
+
+    public function test_legacy_confirmed_enrollment_blocks_enrolling_into_a_different_fixed_class(): void
+    {
+        $student = User::factory()->student()->create();
+        $teacherOne = User::factory()->teacher()->create();
+        $teacherTwo = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject('Ke toan thuc hanh', 'Ke toan');
+        $classRoomOne = $this->createOpenClassRoom($subject, $teacherOne);
+        $classRoomTwo = $this->createOpenClassRoom($subject, $teacherTwo, 'Wednesday', '18:00', '20:00');
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'course_id' => $classRoomOne->course_id,
+            'lop_hoc_id' => $classRoomOne->id,
+            'assigned_teacher_id' => $teacherOne->id,
+            'status' => Enrollment::LEGACY_STATUS_CONFIRMED,
+            'schedule' => $classRoomOne->scheduleSummary(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->from(route('student.enroll.select', $subject))
+            ->withSession(['user_id' => $student->id])
+            ->post(route('student.enroll.store', $subject), [
+                'lop_hoc_id' => $classRoomTwo->id,
+            ]);
+
+        $response->assertRedirect(route('student.enroll.select', $subject));
+        $response->assertSessionHas('error', 'Bạn đã có lớp cho khóa học này. Nếu muốn đổi lớp, vui lòng liên hệ admin.');
+
+        $this->assertSame(1, Enrollment::count());
+        $this->assertDatabaseHas('dang_ky', [
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'lop_hoc_id' => $classRoomOne->id,
+            'status' => Enrollment::LEGACY_STATUS_CONFIRMED,
         ]);
     }
 
@@ -162,6 +203,103 @@ class ghi_danh_hoc_vien_test extends TestCase
         $this->assertNull($pendingEnrollment->fresh()->preferred_days);
     }
 
+    public function test_student_cannot_enroll_into_two_classes_with_overlapping_schedule(): void
+    {
+        $student = User::factory()->student()->create();
+        $teacherOne = User::factory()->teacher()->create();
+        $teacherTwo = User::factory()->teacher()->create();
+        [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
+        [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
+        $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne);
+        $classRoomTwo = $this->createOpenClassRoom($subjectTwo, $teacherTwo, 'Monday', '18:00', '20:00');
+
+        $firstResponse = $this
+            ->withSession(['user_id' => $student->id])
+            ->post(route('student.enroll.store', $subjectOne), [
+                'lop_hoc_id' => $classRoomOne->id,
+            ]);
+
+        $firstResponse->assertRedirect(route('student.enroll.my-classes'));
+        $firstResponse->assertSessionHas('status');
+
+        $secondResponse = $this
+            ->withSession(['user_id' => $student->id])
+            ->post(route('student.enroll.store', $subjectTwo), [
+                'lop_hoc_id' => $classRoomTwo->id,
+            ]);
+
+        $secondResponse->assertRedirect();
+        $secondResponse->assertSessionHas('error', 'Học viên đã có lớp khác trùng lịch trong cùng khung giờ. Vui lòng chọn lớp khác.');
+        $this->assertDatabaseCount('dang_ky', 1);
+    }
+
+    public function test_student_select_class_screen_shows_schedule_conflict_warning(): void
+    {
+        $student = User::factory()->student()->create();
+        $teacherOne = User::factory()->teacher()->create();
+        $teacherTwo = User::factory()->teacher()->create();
+        [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
+        [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
+        $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne, 'Wednesday', '18:00', '22:15');
+        $classRoomTwo = $this->createOpenClassRoom($subjectTwo, $teacherTwo, 'Wednesday', '18:30', '20:45');
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectOne->id,
+            'course_id' => $classRoomOne->course_id,
+            'lop_hoc_id' => $classRoomOne->id,
+            'assigned_teacher_id' => $teacherOne->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $classRoomOne->scheduleSummary(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $student->id])
+            ->get(route('student.enroll.select', $subjectTwo));
+
+        $response->assertOk();
+        $response->assertSee('Phát hiện 1 lớp bị trùng lịch với thời khóa biểu hiện tại.');
+        $response->assertSee('Trùng với lớp ' . $classRoomOne->displayName());
+        $response->assertSee('Bị trùng lịch');
+        $response->assertSee('Khung giờ này bị trùng với lịch học hiện tại.');
+        $response->assertSee($classRoomTwo->subject->name);
+    }
+
+    public function test_student_select_class_screen_keeps_non_conflicting_class_available(): void
+    {
+        $student = User::factory()->student()->create();
+        $teacherOne = User::factory()->teacher()->create();
+        $teacherTwo = User::factory()->teacher()->create();
+        [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
+        [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
+        $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne, 'Wednesday', '18:00', '20:15');
+        $classRoomTwo = $this->createOpenClassRoom($subjectTwo, $teacherTwo, 'Wednesday', '20:15', '22:00');
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectOne->id,
+            'course_id' => $classRoomOne->course_id,
+            'lop_hoc_id' => $classRoomOne->id,
+            'assigned_teacher_id' => $teacherOne->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $classRoomOne->scheduleSummary(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $student->id])
+            ->get(route('student.enroll.select', $subjectTwo));
+
+        $response->assertOk();
+        $response->assertDontSee('Phát hiện 1 lớp bị trùng lịch với thời khóa biểu hiện tại.');
+        $response->assertSee('Đăng ký lớp này');
+        $response->assertDontSee('Bị trùng lịch');
+        $response->assertSee($classRoomTwo->subject->name);
+    }
+
     public function test_student_portal_keeps_approved_status_when_updating_custom_schedule_request(): void
     {
         $student = User::factory()->student()->create();
@@ -238,10 +376,10 @@ class ghi_danh_hoc_vien_test extends TestCase
         ]);
     }
 
-    private function createCatalogSubject(string $name = 'Tieng Anh giao tiep'): array
+    private function createCatalogSubject(string $name = 'Tieng Anh giao tiep', string $categoryName = 'Ngoai ngu'): array
     {
         $category = Category::create([
-            'name' => 'Ngoai ngu',
+            'name' => $categoryName,
             'slug' => 'ngoai-ngu-' . str()->slug($name) . '-' . fake()->unique()->numberBetween(100, 999),
             'status' => Category::STATUS_ACTIVE,
         ]);
@@ -256,14 +394,24 @@ class ghi_danh_hoc_vien_test extends TestCase
         return [$category, $subject];
     }
 
-    private function createOpenClassRoom(Subject $subject, User $teacher): ClassRoom
+    private function createOpenClassRoom(
+        Subject $subject,
+        User $teacher,
+        string $dayOfWeek = 'Monday',
+        string $startTime = '18:00',
+        string $endTime = '20:00'
+    ): ClassRoom
     {
         $course = Course::create([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop co dinh',
             'description' => 'Lop co dinh do admin mo.',
             'teacher_id' => $teacher->id,
-            'schedule' => 'T2-T4-T6, 18:00 - 20:00',
+            'day_of_week' => $dayOfWeek,
+            'meeting_days' => [$dayOfWeek],
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'schedule' => 'T2-T4-T6, ' . $startTime . ' - ' . $endTime,
         ]);
 
         $room = Room::create([
@@ -275,7 +423,7 @@ class ghi_danh_hoc_vien_test extends TestCase
             'status' => Room::STATUS_ACTIVE,
         ]);
 
-        return ClassRoom::create([
+        $classRoom = ClassRoom::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $subject->name . ' - Lop toi',
@@ -284,6 +432,17 @@ class ghi_danh_hoc_vien_test extends TestCase
             'status' => ClassRoom::STATUS_OPEN,
             'duration' => 3,
         ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $classRoom->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'day_of_week' => $dayOfWeek,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ]);
+
+        return $classRoom;
     }
 }
 

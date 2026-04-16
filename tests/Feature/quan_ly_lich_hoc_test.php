@@ -149,8 +149,10 @@ class quan_ly_lich_hoc_test extends TestCase
         $response->assertSee($course->title);
         $response->assertSee($course->schedule);
         $response->assertSee($teacher->name);
+        $response->assertSee(route('admin.course.show', $course));
         $response->assertSee(route('admin.classes.show', $classRoom));
         $response->assertSee(route('admin.schedules.courses.show', $course));
+        $response->assertSee('Sửa nhanh');
         $response->assertSee('Xem lịch chi tiết');
     }
 
@@ -159,6 +161,7 @@ class quan_ly_lich_hoc_test extends TestCase
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create(['name' => 'Teacher Detail']);
         $student = User::factory()->student()->create(['name' => 'Student Detail']);
+        $studentSecond = User::factory()->student()->create(['name' => 'Student Synced']);
         $room = $this->createRoom(['name' => 'Phong 201', 'code' => 'P201']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
@@ -211,6 +214,14 @@ class quan_ly_lich_hoc_test extends TestCase
             'schedule' => $course->schedule,
         ]);
 
+        $this->createEnrollment($studentSecond, $subject, [
+            'course_id' => $course->id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'schedule' => $course->schedule,
+        ]);
+
         $response = $this
             ->withSession(['user_id' => $admin->id])
             ->get(route('admin.schedules.courses.show', $course));
@@ -223,7 +234,11 @@ class quan_ly_lich_hoc_test extends TestCase
         $response->assertSee('Thứ 2');
         $response->assertSee('18:00 - 20:15');
         $response->assertSee($student->name);
+        $response->assertSee($studentSecond->name);
         $response->assertSee(route('admin.classes.show', $classRoom));
+        $response->assertSee('Đang học');
+        $response->assertDontSee('Đã xếp lớp');
+        $response->assertDontSee('Đã ghi danh');
     }
 
     public function test_custom_schedule_request_cannot_use_existing_open_class_in_phase_9(): void
@@ -760,7 +775,7 @@ class quan_ly_lich_hoc_test extends TestCase
         $response->assertSee($subject->name);
         $response->assertSee('17:00 - 19:15');
         $response->assertSee('Teacher Schedule');
-        $response->assertSee('Dang cho mo lop');
+        $response->assertSee('Đang chờ mở lớp');
         $response->assertDontSee('Vao lop hoc');
     }
 
@@ -837,7 +852,7 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $oldTeacherResponse->assertOk();
         $oldTeacherResponse->assertDontSee('Lop Teacher Alpha');
-        $oldTeacherResponse->assertSee('Khung gio');
+        $oldTeacherResponse->assertSee('Khung giờ');
 
         $newTeacherResponse = $this
             ->withSession(['user_id' => $teacherB->id])
@@ -845,8 +860,8 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $newTeacherResponse->assertOk();
         $newTeacherResponse->assertSee('Lop Teacher Alpha');
-        $newTeacherResponse->assertSee('Khung gio');
-        $newTeacherResponse->assertSee('Xem chi tiet');
+        $newTeacherResponse->assertSee('Khung giờ');
+        $newTeacherResponse->assertSee('Xem chi tiết');
     }
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array

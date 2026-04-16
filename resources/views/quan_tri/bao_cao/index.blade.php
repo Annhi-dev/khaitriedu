@@ -39,7 +39,7 @@
             'meta' => 'Tỉ lệ đạt: ' . (($quality['passRate'] ?? null) !== null ? number_format((float) $quality['passRate'], 1) . '%' : 'Chưa có dữ liệu'),
         ],
         [
-            'label' => 'Yêu cầu đổi lịch chờ',
+            'label' => 'Yêu cầu dời buổi chờ',
             'value' => number_format($summary['pendingScheduleChanges'] ?? 0),
             'icon' => 'fas fa-calendar-rotate',
             'tone' => 'slate',

@@ -149,7 +149,7 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Email</label>
-                    <input name="email" type="email" value="{{ old('email') }}" placeholder="name@example.com" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+                    <input name="email" type="email" value="{{ old('email') }}" placeholder="ten@khaitriedu.vn" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">

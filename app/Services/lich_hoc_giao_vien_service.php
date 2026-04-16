@@ -76,7 +76,7 @@ class TeacherScheduleService
                         'url' => route('teacher.classes.show', $classRoom),
                         'primary_label' => 'Mo lop',
                         'secondary_url' => $classRoom->course ? route('teacher.schedule-change-requests.create', $classRoom->course) : null,
-                        'secondary_label' => 'Doi lich',
+                        'secondary_label' => 'Dời buổi',
                     ];
                 });
             })

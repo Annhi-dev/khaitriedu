@@ -19,7 +19,7 @@
 
 <div class="grid gap-4 md:grid-cols-2">
     <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Khóa học public</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Khóa học công khai</label>
         <select name="subject_id" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500" required>
             <option value="">Chọn khóa học</option>
             @foreach ($subjects as $subject)

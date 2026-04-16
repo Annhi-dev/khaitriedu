@@ -25,7 +25,7 @@
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="text-lg font-semibold text-slate-900">Danh sách module</h2>
-                    <p class="text-sm text-slate-500">Khóa học public: {{ $course->subject?->name ?? 'Chưa gắn khóa học' }}</p>
+                    <p class="text-sm text-slate-500">Khóa học công khai: {{ $course->subject?->name ?? 'Chưa gắn khóa học' }}</p>
                 </div>
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $modules->count() }} module</span>
             </div>

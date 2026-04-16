@@ -3,6 +3,7 @@
     $selectedCategory = $selectedCategory ?? null;
     $statusValue = old('status', $subject->status ?? \App\Models\Subject::STATUS_OPEN);
     $selectedCategoryId = (string) old('category_id', $subject->category_id ?? $selectedCategory?->id ?? request('category_id', ''));
+    $testCountValue = old('test_count', $subject->test_count ?? \App\Models\Subject::DEFAULT_TEST_COUNT);
     $returnToCategoryId = old('return_to_category_id', $returnToCategoryId ?? null);
 @endphp
 @if ($returnToCategoryId)
@@ -51,6 +52,12 @@
                     <label for="duration" class="mb-2 block text-sm font-medium text-slate-700">Thoi gian hoc (du kien)</label>
                     <input id="duration" name="duration" type="number" min="1" max="120" value="{{ old('duration', $subject->duration ?? '') }}" placeholder="So thang" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
                     @error('duration')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="test_count" class="mb-2 block text-sm font-medium text-slate-700">So lan kiem tra</label>
+                    <input id="test_count" name="test_count" type="number" min="1" max="12" value="{{ $testCountValue }}" placeholder="So lan kiem tra" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" />
+                    @error('test_count')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="md:col-span-2">

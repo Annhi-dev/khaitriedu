@@ -5,10 +5,10 @@
   <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div>
       <h1 class="text-2xl font-bold text-primary-dark">Lớp học phụ trách</h1>
-      <p class="text-gray-600">Danh sách các lớp nội bộ admin đã phân cho bạn giảng dạy.</p>
+      <p class="text-gray-600">Danh sách các khóa học triển khai admin đã phân cho bạn giảng dạy.</p>
     </div>
     <div class="flex flex-wrap gap-3">
-      <a href="{{ route('teacher.schedule-change-requests.index') }}" class="rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 transition">Yeu cau doi lich</a>
+      <a href="{{ route('teacher.schedule-change-requests.index') }}" class="rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 transition">Yêu cầu dời buổi</a>
       <a href="{{ route('dashboard') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Quay lai dashboard</a>
     </div>
   </div>
@@ -75,8 +75,8 @@
                 'Saturday' => 'T7',
                 'Sunday' => 'CN',
               ];
-              $normalizedStatus = $enrollment->normalizedStatus();
-              $statusClasses = match ($normalizedStatus) {
+              $displayStatus = $enrollment->displayStatus();
+              $statusClasses = match ($displayStatus) {
                 \App\Models\Enrollment::STATUS_SCHEDULED => 'bg-green-100 text-green-800',
                 \App\Models\Enrollment::STATUS_ACTIVE => 'bg-violet-100 text-violet-800',
                 \App\Models\Enrollment::STATUS_COMPLETED => 'bg-slate-100 text-slate-800',
@@ -98,7 +98,7 @@
               </td>
               <td class="border-b p-3">
                 <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusClasses }}">
-                  {{ $enrollment->statusLabel() }}
+                  {{ $enrollment->displayStatusLabel() }}
                 </span>
               </td>
             </tr>

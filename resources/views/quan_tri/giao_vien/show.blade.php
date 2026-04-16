@@ -121,7 +121,7 @@
                     <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $studentCount }}</p>
                 </div>
                 <div class="rounded-2xl bg-slate-50 px-4 py-4">
-                    <p class="text-xs uppercase tracking-wide text-slate-500">Yêu cầu đổi lịch</p>
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Yêu cầu dời buổi</p>
                     <p class="mt-2 text-2xl font-semibold text-slate-900">{{ $teacher->schedule_change_requests_count }}</p>
                 </div>
             </div>
@@ -191,7 +191,7 @@
 
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-slate-900">Yêu cầu đổi lịch gần đây</h2>
+                <h2 class="text-lg font-semibold text-slate-900">Yêu cầu dời buổi gần đây</h2>
             </div>
             <div class="mt-5 grid gap-4">
                 @forelse ($scheduleChangeRequests as $request)
@@ -206,7 +206,7 @@
                         <p class="mt-3 text-sm text-slate-600">Lý do: {{ $request->reason ?: 'Không có' }}</p>
                     </div>
                 @empty
-                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Giảng viên chưa gửi yêu cầu đổi lịch nào.</div>
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Giảng viên chưa gửi yêu cầu dời buổi nào.</div>
                 @endforelse
             </div>
         </section>

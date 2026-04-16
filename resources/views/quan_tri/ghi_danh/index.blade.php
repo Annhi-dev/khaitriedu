@@ -10,14 +10,34 @@
 
     <x-quan_tri.thanh_loc route="{{ route('admin.enrollments') }}" searchPlaceholder="Tên học viên, email, khóa học..." :statuses="$statusOptions">
         <x-slot:additionalFilters>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Loại hồ sơ</label>
-                <select name="request_source" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
-                    <option value="">Tất cả</option>
-                    @foreach($requestSourceOptions as $value => $label)
-                        <option value="{{ $value }}" @selected(request('request_source') == $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Học viên</label>
+                    <select name="student_id" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">Tất cả</option>
+                        @foreach($studentOptions as $student)
+                            <option value="{{ $student->id }}" @selected(request('student_id') == $student->id)>{{ $student->name }}{{ $student->email ? ' - ' . $student->email : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Lớp học</label>
+                    <select name="class_room_id" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">Tất cả</option>
+                        @foreach($classRoomOptions as $classRoom)
+                            <option value="{{ $classRoom->id }}" @selected(request('class_room_id') == $classRoom->id)>{{ $classRoom->displayName() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Loại hồ sơ</label>
+                    <select name="request_source" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">Tất cả</option>
+                        @foreach($requestSourceOptions as $value => $label)
+                            <option value="{{ $value }}" @selected(request('request_source') == $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </x-slot:additionalFilters>
     </x-quan_tri.thanh_loc>

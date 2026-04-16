@@ -14,7 +14,9 @@ use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\CourseQuizService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class bai_kiem_tra_va_chung_chi_test extends TestCase
@@ -93,6 +95,60 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
         $this->assertSame(0, Certificate::count());
     }
 
+    public function test_quiz_service_requires_course_access_before_grading(): void
+    {
+        $fixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100);
+        $otherStudent = User::factory()->student()->create();
+
+        try {
+            app(CourseQuizService::class)->submit($otherStudent, $fixture['course'], $fixture['quiz'], $fixture['correctAnswers']);
+            $this->fail('Quiz service should reject students without course access.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('course_id', $exception->errors());
+            $this->assertSame('Bạn chưa được xếp vào lớp học này.', $exception->errors()['course_id'][0]);
+        }
+
+        $this->assertSame(0, QuizAnswer::count());
+        $this->assertSame(0, Certificate::count());
+    }
+
+    public function test_teacher_cannot_submit_quiz_even_when_assigned_to_course(): void
+    {
+        $fixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100);
+
+        $response = $this
+            ->withSession(['user_id' => $fixture['teacher']->id])
+            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+                'answers' => $fixture['correctAnswers'],
+            ]);
+
+        $response->assertRedirect(route('courses.show', $fixture['course']->id));
+        $response->assertSessionHas('error', 'Chi hoc vien da duoc xep lop moi co the nop quiz.');
+
+        $this->assertSame(0, QuizAnswer::count());
+        $this->assertSame(0, Certificate::count());
+    }
+
+    public function test_quiz_page_is_scoped_to_the_selected_course(): void
+    {
+        $firstFixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100, suffix: '-a');
+        $secondFixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100, suffix: '-b');
+
+        $response = $this
+            ->withSession(['user_id' => $firstFixture['student']->id])
+            ->get(route('courses.quiz.show', [$firstFixture['course']->id, $secondFixture['quiz']->id]));
+
+        $response->assertRedirect(route('courses.show', $firstFixture['course']->id));
+        $response->assertSessionHas('error', 'Quiz khong ton tai.');
+    }
+
+    public function test_guest_is_redirected_from_certificate_index(): void
+    {
+        $response = $this->get(route('certificates.index'));
+
+        $response->assertRedirect(route('login'));
+    }
+
     public function test_student_can_view_only_their_own_certificate(): void
     {
         $fixture = $this->createQuizFixture(questionCount: 2, maxAttempts: 3, passingScore: 100);
@@ -126,28 +182,51 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
         $otherResponse->assertSessionHas('error');
     }
 
-    private function createQuizFixture(int $questionCount = 2, int $maxAttempts = 3, int $passingScore = 100): array
+    public function test_guest_is_redirected_from_certificate_detail(): void
     {
+        $fixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100, suffix: '-guest');
+
+        $certificate = Certificate::create([
+            'user_id' => $fixture['student']->id,
+            'course_id' => $fixture['course']->id,
+            'certificate_number' => 'CERT-' . strtoupper((string) fake()->unique()->bothify('??????')),
+            'file_path' => null,
+            'score' => 100,
+            'issued_at' => now(),
+            'status' => 'issued',
+        ]);
+
+        $detailResponse = $this->get(route('certificates.show', $certificate));
+
+        $detailResponse->assertRedirect(route('certificates.index'));
+        $detailResponse->assertSessionHas('error', 'Chứng chỉ không tồn tại.');
+    }
+
+    private function createQuizFixture(int $questionCount = 2, int $maxAttempts = 3, int $passingScore = 100, string $suffix = ''): array
+    {
+        $suffix = $suffix !== '' ? ' ' . $suffix : '';
+        $slugSuffix = $suffix !== '' ? strtolower(str_replace(' ', '-', trim($suffix))) : '-' . fake()->unique()->numberBetween(100, 999);
+
         $teacher = User::factory()->teacher()->create([
-            'name' => 'Giang vien quiz',
+            'name' => 'Giang vien quiz' . $suffix,
         ]);
         $student = User::factory()->student()->create([
-            'name' => 'Hoc vien quiz',
+            'name' => 'Hoc vien quiz' . $suffix,
         ]);
         $category = Category::create([
-            'name' => 'Nhom hoc quiz',
-            'slug' => 'nhom-hoc-quiz-' . fake()->unique()->numberBetween(100, 999),
+            'name' => 'Nhom hoc quiz' . $suffix,
+            'slug' => 'nhom-hoc-quiz' . $slugSuffix,
             'status' => Category::STATUS_ACTIVE,
         ]);
         $subject = Subject::create([
-            'name' => 'Tin hoc van phong quiz',
+            'name' => 'Tin hoc van phong quiz' . $suffix,
             'category_id' => $category->id,
             'status' => Subject::STATUS_OPEN,
             'price' => 1500000,
         ]);
         $course = Course::create([
             'subject_id' => $subject->id,
-            'title' => 'Tin hoc van phong - Lop quiz',
+            'title' => 'Tin hoc van phong - Lop quiz' . $suffix,
             'description' => 'Khoa hoc phuc vu test quiz va chung chi.',
             'teacher_id' => $teacher->id,
             'status' => Course::STATUS_ACTIVE,
@@ -165,7 +244,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $module = Module::create([
             'course_id' => $course->id,
-            'title' => 'Module 1',
+            'title' => 'Module 1' . $suffix,
             'content' => 'Noi dung module quiz',
             'position' => 1,
             'status' => Module::STATUS_PUBLISHED,
@@ -173,7 +252,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $lesson = Lesson::create([
             'module_id' => $module->id,
-            'title' => 'Bai hoc quiz',
+            'title' => 'Bai hoc quiz' . $suffix,
             'description' => 'Bai hoc co quiz',
             'content' => 'Noi dung bai hoc',
             'order' => 1,
@@ -182,7 +261,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $quiz = Quiz::create([
             'lesson_id' => $lesson->id,
-            'title' => 'Quiz Kiem tra',
+            'title' => 'Quiz Kiem tra' . $suffix,
             'description' => 'Kiem tra hieu biet co ban',
             'passing_score' => $passingScore,
             'is_required' => true,
@@ -194,7 +273,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $questionOne = Question::create([
             'quiz_id' => $quiz->id,
-            'question' => 'Cau hoi 1',
+            'question' => 'Cau hoi 1' . $suffix,
             'type' => 'multiple_choice',
             'order' => 1,
             'points' => 5,
@@ -202,14 +281,14 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $questionOneWrong = Option::create([
             'question_id' => $questionOne->id,
-            'option_text' => 'Sai',
+            'option_text' => 'Sai' . $suffix,
             'is_correct' => false,
             'order' => 1,
         ]);
 
         $questionOneRight = Option::create([
             'question_id' => $questionOne->id,
-            'option_text' => 'Dung',
+            'option_text' => 'Dung' . $suffix,
             'is_correct' => true,
             'order' => 2,
         ]);
@@ -220,7 +299,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
         if ($questionCount > 1) {
             $questionTwo = Question::create([
                 'quiz_id' => $quiz->id,
-                'question' => 'Cau hoi 2',
+                'question' => 'Cau hoi 2' . $suffix,
                 'type' => 'true_false',
                 'order' => 2,
                 'points' => 5,
@@ -228,14 +307,14 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
             $questionTwoWrong = Option::create([
                 'question_id' => $questionTwo->id,
-                'option_text' => 'Sai',
+                'option_text' => 'Sai' . $suffix,
                 'is_correct' => false,
                 'order' => 1,
             ]);
 
             $questionTwoRight = Option::create([
                 'question_id' => $questionTwo->id,
-                'option_text' => 'Dung',
+                'option_text' => 'Dung' . $suffix,
                 'is_correct' => true,
                 'order' => 2,
             ]);

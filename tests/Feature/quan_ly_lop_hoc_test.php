@@ -10,11 +10,24 @@ use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class quan_ly_lop_hoc_test extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_legacy_course_list_view_uses_current_class_creation_route(): void
+    {
+        view()->share('errors', new ViewErrorBag());
+
+        $html = view('khoa_hoc.index', [
+            'courses' => collect(),
+        ])->render();
+
+        $this->assertStringContainsString(route('admin.classes.create'), $html);
+        $this->assertStringNotContainsString('admin.courses.create-page', $html);
+    }
 
     public function test_admin_can_create_class_with_required_course_teacher_room_and_schedule(): void
     {

@@ -25,7 +25,7 @@
         <div>
             <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">{{ $subject->category?->name ?? 'Chua phan nhom' }}</p>
             <h1 class="mt-2 text-3xl font-bold text-gray-900">{{ $subject->name }}</h1>
-            <p class="mt-2 text-gray-600">{{ $subject->description ?? 'Chon lop dang mo hoac gui yeu cau lich hoc phu hop.' }}</p>
+            <p class="mt-2 text-gray-600">{{ $subject->description ?? 'Chọn lớp đang mở hoặc gửi yêu cầu lịch học phù hợp.' }}</p>
         </div>
         <a href="{{ route('courses.index') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:border-primary hover:text-primary">
             <i class="fas fa-arrow-left text-sm"></i>
@@ -54,7 +54,7 @@
         <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
             <div class="text-sm font-medium text-gray-500">Lop hien co</div>
             <div class="mt-2 text-xl font-bold text-gray-900">{{ $subject->courses->count() }}</div>
-            <p class="mt-2 text-sm text-gray-500">Chon lop phu hop hoac gui yeu cau lich rieng.</p>
+            <p class="mt-2 text-sm text-gray-500">Chọn lớp phù hợp hoặc gửi yêu cầu lịch riêng.</p>
         </div>
     </div>
 
@@ -67,47 +67,47 @@
                         @if($waitingOpenCourse)
                             <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">{{ $userEnrollment->course->statusLabel() }}</span>
                         @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_PENDING)
-                            <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">Dang cho duyet</span>
+                            <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">Đang chờ duyệt</span>
                         @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED)
                             <span class="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-800">Da duyet, cho xep lop</span>
                         @elseif(in_array($normalizedStatus, [\App\Models\Enrollment::STATUS_SCHEDULED, \App\Models\Enrollment::STATUS_ACTIVE, \App\Models\Enrollment::STATUS_COMPLETED], true))
                             <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">{{ $userEnrollment->statusLabel() }}</span>
                         @else
-                            <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Dang ky bi tu choi</span>
+                            <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Đăng ký bị từ chối</span>
                         @endif
                     </div>
 
                     @if($userEnrollment->course)
                         <div class="mt-3 space-y-1 text-sm text-gray-700">
-                            <p><strong>Lop:</strong> {{ $userEnrollment->course->title }}</p>
-                            <p><strong>Giang vien:</strong> {{ $userEnrollment->assignedTeacher?->displayName() ?? 'Chua phan cong' }}</p>
-                            <p><strong>Lich hoc:</strong> {{ $userEnrollment->schedule ?? 'Chua co lich' }}</p>
+                            <p><strong>Lớp:</strong> {{ $userEnrollment->course->title }}</p>
+                            <p><strong>Giảng viên:</strong> {{ $userEnrollment->assignedTeacher?->displayName() ?? 'Chưa phân công' }}</p>
+                            <p><strong>Lịch học:</strong> {{ $userEnrollment->schedule ?? 'Chưa có lịch' }}</p>
                         </div>
                     @endif
                 </div>
 
                 <div class="text-sm text-gray-600">
                     @if($userEnrollment->submitted_at)
-                        <p><strong>Gui luc:</strong> {{ $userEnrollment->submitted_at->format('d/m/Y H:i') }}</p>
+                        <p><strong>Gửi lúc:</strong> {{ $userEnrollment->submitted_at->format('d/m/Y H:i') }}</p>
                     @endif
                     @if($userEnrollment->start_time && $userEnrollment->end_time)
-                        <p class="mt-1"><strong>Khung gio mong muon:</strong> {{ $userEnrollment->start_time }} - {{ $userEnrollment->end_time }}</p>
+                        <p class="mt-1"><strong>Khung giờ mong muốn:</strong> {{ $userEnrollment->start_time }} - {{ $userEnrollment->end_time }}</p>
                     @endif
                     @if($selectedDays)
-                        <p class="mt-1"><strong>Cac ngay:</strong> {{ implode(', ', array_map(fn ($day) => $days[$day] ?? $day, $selectedDays)) }}</p>
+                        <p class="mt-1"><strong>Các ngày:</strong> {{ implode(', ', array_map(fn ($day) => $days[$day] ?? $day, $selectedDays)) }}</p>
                     @endif
                 </div>
             </div>
 
             @if($waitingOpenCourse)
                 <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    Ban dang cho lop mo.
+                    Bạn đang chờ lớp mở.
                 </div>
             @endif
 
             @if($userEnrollment->note)
                 <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-                    <strong>{{ $normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED ? 'Ly do tu choi' : 'Ghi chu tu admin' }}:</strong> {{ $userEnrollment->note }}
+                    <strong>{{ $normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED ? 'Lý do từ chối' : 'Ghi chú từ admin' }}:</strong> {{ $userEnrollment->note }}
                 </div>
             @endif
 
@@ -115,7 +115,7 @@
                 <div class="mt-4">
                     <a href="{{ route('courses.show', $userEnrollment->course_id) }}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-white transition hover:bg-primary-dark">
                         <i class="fas fa-graduation-cap"></i>
-                        Vao lop hoc noi bo
+                        Vào khóa học triển khai
                     </a>
                 </div>
             @endif
@@ -123,18 +123,18 @@
     @else
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm">
             <h2 class="text-lg font-semibold">Chua co dang ky</h2>
-            <p class="mt-2 text-sm leading-6">Ban co the chon lop dang mo hoac gui yeu cau lich hoc.</p>
+            <p class="mt-2 text-sm leading-6">Bạn có thể chọn lớp đang mở hoặc gửi yêu cầu lịch học.</p>
         </div>
     @endif
 
     <div class="grid gap-6 lg:grid-cols-5">
         <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-3">
-            <h2 class="text-2xl font-bold text-gray-900">Dang ky khoa hoc</h2>
+            <h2 class="text-2xl font-bold text-gray-900">Đăng ký khóa học</h2>
             <p class="mt-2 text-sm text-gray-600">Chon ngay va khung gio ban co the hoc.</p>
 
             @if(!$user || !$user->isStudent())
                 <div class="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-800">
-                    Ban can dang nhap bang tai khoan hoc vien truoc khi gui yeu cau dang ky.
+                    Bạn cần đăng nhập bằng tài khoản học viên trước khi gửi yêu cầu đăng ký.
                     <div class="mt-4">
                         <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-white transition hover:bg-primary-dark">
                             <i class="fas fa-right-to-bracket"></i>
@@ -183,14 +183,14 @@
                         <i class="fas fa-paper-plane text-sm"></i>
                         @if($userEnrollment)
                             @if($normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED)
-                                Gui lai yeu cau dang ky
+                                Gửi lại yêu cầu đăng ký
                             @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED)
-                                Cap nhat thoi gian mong muon
+                                Cập nhật thời gian mong muốn
                             @else
-                                Cap nhat yeu cau dang ky
+                                Cập nhật yêu cầu đăng ký
                             @endif
                         @else
-                            Gui yeu cau dang ky khoa hoc
+                            Gửi yêu cầu đăng ký khóa học
                         @endif
                     </button>
                 </form>
@@ -199,23 +199,23 @@
 
         <div class="space-y-6 lg:col-span-2">
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 class="text-lg font-semibold text-gray-900">Dang ky nhanh</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Đăng ký nhanh</h3>
                 <div class="mt-4 flex flex-col gap-3">
                     @if($openClasses->isNotEmpty())
                         <a href="{{ route('student.enroll.select', $subject) }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-100 transition">
-                            Chon lop dang mo
+                            Chọn lớp đang mở
                         </a>
                     @endif
                     <a href="{{ route('student.enroll.request-form', $subject) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
-                        Gui yeu cau lich hoc
+                        Gửi yêu cầu lịch học
                     </a>
                 </div>
             </div>
 
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 class="text-lg font-semibold text-gray-900">Cac lop hien co cua khoa nay</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Các lớp hiện có của khóa này</h3>
                 @if($subject->courses->isEmpty())
-                    <p class="mt-3 text-sm text-gray-500">Hien chua co lop dang mo cho khoa nay.</p>
+                    <p class="mt-3 text-sm text-gray-500">Hiện chưa có lớp đang mở cho khóa này.</p>
                 @else
                     <div class="mt-4 space-y-3">
                         @foreach($subject->courses as $course)
@@ -226,10 +226,10 @@
                                         {{ $course->statusLabel() }}
                                     </span>
                                 </div>
-                                <p class="mt-1 text-sm text-gray-600">{{ $course->description ?? 'Thong tin lop se cap nhat them.' }}</p>
+                                <p class="mt-1 text-sm text-gray-600">{{ $course->description ?? 'Thông tin lớp sẽ được cập nhật thêm.' }}</p>
                                 <div class="mt-3 space-y-1 text-xs text-gray-500">
-                                    <p><strong>Lich:</strong> {{ $course->formattedSchedule() }}</p>
-                                    <p><strong>Giang vien:</strong> {{ $course->teacher?->displayName() ?? 'Chua phan cong' }}</p>
+                                    <p><strong>Lịch:</strong> {{ $course->formattedSchedule() }}</p>
+                                    <p><strong>Giảng viên:</strong> {{ $course->teacher?->displayName() ?? 'Chưa phân công' }}</p>
                                 </div>
                             </div>
                         @endforeach

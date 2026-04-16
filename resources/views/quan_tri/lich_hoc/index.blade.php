@@ -69,6 +69,9 @@
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <x-quan_tri.huy_hieu :type="$course->isPendingOpen() ? 'warning' : 'info'" :text="$course->statusLabel()" />
+                        <a href="{{ route('admin.course.show', $course) }}" class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100">
+                            Sửa nhanh
+                        </a>
                         <a href="{{ $detailUrl }}" class="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100">
                             Xem lịch chi tiết
                         </a>

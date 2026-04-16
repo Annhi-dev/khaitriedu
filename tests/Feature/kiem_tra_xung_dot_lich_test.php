@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\ClassRoom;
 use App\Models\ClassSchedule;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
@@ -25,7 +26,7 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         $roomTwo = $this->createRoom('PH002');
         [, $subject] = $this->createSubject();
 
-        $this->createPendingOpenCourse($subject, $teacherOne);
+        $pendingCourse = $this->createPendingOpenCourse($subject, $teacherOne);
         $roomConflictClass = $this->createClassRoom($subject, $teacherTwo, $roomOne);
 
         $response = $this
@@ -44,8 +45,12 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         $response->assertSee('Có xung đột');
         $response->assertSee('Xung đột giảng viên');
         $response->assertSee('Xung đột phòng học');
+        $response->assertSee('Ô sửa nhanh');
+        $response->assertSee('Sửa nhanh');
         $response->assertSee('Khóa chờ mở trùng giờ');
         $response->assertSee($roomConflictClass->displayName());
+        $response->assertSee(route('admin.course.show', $pendingCourse), false);
+        $response->assertSee(route('admin.course.show', $roomConflictClass->course), false);
     }
 
     public function test_admin_can_open_conflict_checker_from_existing_class_without_self_conflict(): void
@@ -66,12 +71,73 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         $response->assertSee('Không phát hiện xung đột');
         $response->assertSee('Lớp: ' . $classRoom->displayName());
         $response->assertDontSee('Có xung đột');
+        $response->assertDontSee('Báo cáo dọn dữ liệu bẩn');
     }
 
-    private function createSubject(string $name = 'ANH VĂN KHUNG 6 BẬC', string $slug = 'anh-van-khung-6-bac'): array
+    public function test_admin_can_review_student_schedule_conflicts_for_cleanup(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->student()->create(['name' => 'Hoc vien trung lich']);
+        $teacherA = User::factory()->teacher()->create(['name' => 'Giang vien A']);
+        $teacherB = User::factory()->teacher()->create(['name' => 'Giang vien B']);
+        $roomA = $this->createRoom('PH100');
+        $roomB = $this->createRoom('PH101');
+        [, $subjectA] = $this->createSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep', 'Ngoai ngu');
+        [, $subjectB] = $this->createSubject('Lap trinh Python co ban', 'lap-trinh-python', 'Tin hoc');
+
+        $classRoomA = $this->createClassRoom($subjectA, $teacherA, $roomA, 'Lop trung lich A');
+        $classRoomB = $this->createClassRoom($subjectB, $teacherB, $roomB, 'Lop trung lich B');
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectA->id,
+            'course_id' => $classRoomA->course_id,
+            'lop_hoc_id' => $classRoomA->id,
+            'assigned_teacher_id' => $teacherA->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $classRoomA->scheduleSummary(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectB->id,
+            'course_id' => $classRoomB->course_id,
+            'lop_hoc_id' => $classRoomB->id,
+            'assigned_teacher_id' => $teacherB->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $classRoomB->scheduleSummary(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.schedules.conflicts'));
+
+        $response->assertOk();
+        $response->assertSee('Xung đột học viên toàn hệ thống');
+        $response->assertSee('Tự động rà soát');
+        $response->assertSee('Danh sách học viên cần rà soát');
+        $response->assertSee('Ô sửa nhanh');
+        $response->assertSee('Sửa nhanh');
+        $response->assertSee($student->name);
+        $response->assertSee($classRoomA->displayName());
+        $response->assertSee($classRoomB->displayName());
+        $response->assertSee('Trùng vào');
+        $response->assertSee(route('admin.course.show', $classRoomA->course), false);
+        $response->assertSee(route('admin.course.show', $classRoomB->course), false);
+    }
+
+    private function createSubject(
+        string $name = 'ANH VĂN KHUNG 6 BẬC',
+        string $slug = 'anh-van-khung-6-bac',
+        string $categoryName = 'Ngoại ngữ - Tin học'
+    ): array
     {
         $category = Category::create([
-            'name' => 'Ngoại ngữ - Tin học',
+            'name' => $categoryName,
             'slug' => $slug . '-group-' . fake()->unique()->numberBetween(100, 999),
             'status' => Category::STATUS_ACTIVE,
         ]);

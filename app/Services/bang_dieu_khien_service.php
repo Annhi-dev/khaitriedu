@@ -13,11 +13,17 @@ use App\Models\SlotRegistrationChoice;
 use App\Models\Subject;
 use App\Models\TeacherApplication;
 use App\Models\User;
+use App\Services\AdminScheduleConflictService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class AdminDashboardService
 {
+    public function __construct(protected AdminScheduleConflictService $scheduleConflictService)
+    {
+    }
+
     public function overview(): array
     {
         $infrastructureChecks = $this->infrastructureChecks();
@@ -55,6 +61,7 @@ class AdminDashboardService
         $pendingSlotRegistrationsList = $this->pendingSlotRegistrations($slotRegistrationsReady, $slotChoicesReady);
         $slotDemandSummary = $this->slotDemandSummary($timeSlotsReady, $slotChoicesReady);
         $infrastructureWarnings = $this->infrastructureWarnings($infrastructureChecks);
+        [$studentConflictStudentCount, $studentConflictPairCount] = $this->studentConflictSummary();
 
         return [
             'studentCount' => User::students()->count(),
@@ -80,6 +87,8 @@ class AdminDashboardService
             'slotDemandSummary' => $slotDemandSummary,
             'infrastructureChecks' => $infrastructureChecks,
             'infrastructureWarnings' => $infrastructureWarnings,
+            'studentConflictStudentCount' => $studentConflictStudentCount,
+            'studentConflictPairCount' => $studentConflictPairCount,
         ];
     }
 
@@ -114,6 +123,20 @@ class AdminDashboardService
         }
 
         return $warnings;
+    }
+
+    protected function studentConflictSummary(): array
+    {
+        try {
+            $studentConflicts = $this->scheduleConflictService->studentConflicts();
+
+            return [
+                $studentConflicts->count(),
+                $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
+            ];
+        } catch (Throwable) {
+            return [0, 0];
+        }
     }
 
     protected function pendingSlotRegistrations(bool $slotRegistrationsReady, bool $slotChoicesReady): Collection

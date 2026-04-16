@@ -1,20 +1,32 @@
 # KhaiTriEdu
 
-KhaiTriEdu is a Laravel 12 education management website for public course browsing and role-based administration for `admin`, `teacher`, and `student` accounts.
+KhaiTriEdu is a Laravel 12 education management system for a Vietnamese training center.
 
-It is built to support a real training workflow: public landing pages, subject and course catalogs, enrollments, class scheduling, quizzes, certificates, teacher applications, and dashboard views for each role.
+The project supports the full demo flow used in the thesis: public course browsing, student enrollment, schedule conflict warnings, class scheduling, quizzes, certificates, teacher applications, and separate dashboards for `admin`, `teacher`, and `student`.
 
-## Core Features
+## Overview
 
-- Public website pages: home, about, courses, teachers, blog, help, terms, privacy, contact, and teacher application
-- Role-based portals for `admin`, `teacher`, and `student`
-- Subject and course management
-- Enrollment flow for fixed classes and custom schedule requests
-- Class scheduling and room assignment
-- Quiz submission and certificate viewing
+The application is organized around real operational flows rather than a generic Laravel starter:
+
+- Public pages for courses, teachers, announcements, contact, help, terms, and privacy
+- Role-based portals for admin, teacher, and student
+- Subject, course, class, room, and schedule management
+- Fixed-class enrollment and custom schedule requests
+- Schedule conflict detection before and during registration
+- Attendance, grades, evaluations, quizzes, and certificates
 - Teacher application review and account activation
-- Attendance, grades, and schedule change workflows
-- Dashboard summaries and reporting screens
+- Dashboard summaries and operational reports for demo/review
+
+## Core Modules
+
+- `routes/cong_khai.php` - public website, auth, and certificates
+- `routes/quan_tri.php` - admin portal
+- `routes/giao_vien.php` - teacher portal
+- `routes/hoc_vien.php` - student portal
+- `app/Services` - enrollment, scheduling, curriculum, reports, quiz, and conflict logic
+- `app/Http/Requests` - validation rules for the main flows
+- `database/seeders` - realistic demo data for thesis/demo review
+- `resources/views` - Blade UI for public pages and role dashboards
 
 ## Tech Stack
 
@@ -22,20 +34,9 @@ It is built to support a real training workflow: public landing pages, subject a
 - PHP 8.2+
 - Blade templates
 - Vite
-- SQLite by default for local development
+- SQLite for local development
 - MySQL / MariaDB compatible schema
 - PHPUnit 11
-
-## Project Structure
-
-- `app/Http/Controllers` - public, admin, teacher, and student controllers
-- `app/Services` - business logic extracted from controllers
-- `app/Http/Requests` - request validation classes
-- `app/Models` - Eloquent models for education domain entities
-- `database/migrations` - schema definitions
-- `database/seeders` - demo data
-- `resources/views` - Blade UI for public pages and portals
-- `routes` - route entry points for web and role-based areas
 
 ## Requirements
 
@@ -44,58 +45,61 @@ It is built to support a real training workflow: public landing pages, subject a
 - Node.js and npm
 - A supported database engine
 
-## Installation
+## Quick Start
 
-1. Clone the repository and move into the project directory.
-2. Install PHP dependencies:
+1. Install PHP dependencies:
 
 ```bash
 composer install
 ```
 
-3. Install frontend dependencies:
+2. Install frontend dependencies:
 
 ```bash
 npm install
 ```
 
-4. Copy the environment file:
+3. Create the environment file:
 
 ```bash
 copy .env.example .env
 ```
 
-5. Generate the application key:
+4. Generate the application key:
 
 ```bash
 php artisan key:generate
 ```
 
-6. Configure the database, mail, and site settings in `.env`.
-7. Run migrations and seed the demo content:
+5. Configure database, mail, and site settings in `.env`.
+6. Run migrations and seed the demo data:
 
 ```bash
 php artisan migrate --seed
 ```
 
-8. Create the storage symlink if the app serves uploaded files:
+7. Create the storage symlink if you plan to serve uploaded files:
 
 ```bash
 php artisan storage:link
 ```
 
-9. Build frontend assets for production or start the Vite dev server locally.
+8. Start the backend and frontend in separate terminals:
+
+```bash
+php artisan serve
+npm run dev
+```
 
 ## Environment Setup
 
-The application reads its runtime settings from `.env`.
-
-Recommended values to review:
+Review these values in `.env` before running the project locally or deploying it:
 
 - `APP_NAME`
 - `APP_ENV`
 - `APP_DEBUG`
 - `APP_URL`
+- `APP_TIMEZONE`
 - `DB_CONNECTION`, `DB_DATABASE`, `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`
 - `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
 - `QUEUE_CONNECTION`
@@ -106,52 +110,99 @@ Recommended values to review:
 - `SITE_CONTACT_PHONE`
 - `SITE_CONTACT_HOURS`
 - `SITE_CONTACT_EMAILS`
+- `SITE_LEGAL_EMAIL`
+- `SITE_PRIVACY_EMAIL`
+- `SITE_TERMS_UPDATED_AT`
+- `SITE_PRIVACY_UPDATED_AT`
 - `SITE_FACEBOOK_URL`
 - `SITE_YOUTUBE_URL`
 - `SITE_ZALO_URL`
 - `SITE_MAP_EMBED_URL`
 
-By default, mail is configured to use the `log` mailer for local development.
+By default, local development uses the `log` mailer.
 
 ## Database Setup
 
-The project works with the default Laravel migration flow.
+The project supports the standard Laravel migration flow.
 
-Local SQLite is already supported, but you can switch to MySQL or MariaDB by updating the database environment variables and running:
+- For SQLite, ensure the database file exists before running `migrate` or `migrate --seed`.
+- For MySQL or MariaDB, update the DB env values and run:
 
 ```bash
 php artisan migrate --seed
 ```
 
-Seeded demo data includes:
-
-- Admin accounts
-- Teacher accounts
-- Student accounts
-- Sample categories, subjects, courses, modules, lessons, and blog announcements
-- Sample rooms
-
-## Run Locally
-
-Start the backend:
+If you want to reset everything and rebuild the demo set from scratch, use:
 
 ```bash
-php artisan serve
+php artisan migrate:fresh --seed
 ```
 
-Run the Vite frontend watcher:
+After seeding, you can inspect the demo snapshot with:
 
 ```bash
-npm run dev
+php artisan demo:seed-report
 ```
 
-If you need queue workers locally, run:
+Seeded demo data currently includes:
 
-```bash
-php artisan queue:listen
-```
+- 2 admin accounts
+- 16 teacher accounts
+- 26 student accounts
+- Realistic categories, subjects, courses, rooms, schedules, enrollments, attendance, grades, quizzes, certificates, announcements, and teacher applications
 
-## Test Instructions
+## Roles
+
+### Admin
+
+- Manage users, teachers, students, departments, rooms, subjects, courses, classes, schedules, enrollments, reports, and teacher applications
+- Review enrollment requests and schedule change requests
+- Check schedule conflicts before opening or updating classes
+
+### Teacher
+
+- View assigned classes and schedules
+- Record attendance, grades, and evaluations
+- Submit schedule change requests
+- Track class progress and student participation
+
+### Student
+
+- Browse public subjects and courses
+- Send fixed-class enrollments or custom schedule requests
+- View personal schedule, grades, and certificates
+- Take quizzes tied to enrolled courses
+
+## Demo Accounts
+
+Default password for seeded demo users: `123456`
+
+Suggested demo logins:
+
+- Admin: `admin@khaitriedu.vn`
+- Admin: `quanly@khaitriedu.vn`
+- Teacher: `anhdung@khaitriedu.vn`
+- Teacher: `baochau@khaitriedu.vn`
+- Teacher: `minhkhang@khaitriedu.vn`
+- Student: `nguyen.thi.an@khaitriedu.vn`
+- Student: `tran.gia.han@khaitriedu.vn`
+- Student: `le.minh.quan@khaitriedu.vn`
+
+The seed data also includes additional teacher and student accounts for broader demo coverage.
+
+## Screenshots
+
+Place final screenshots here once the UI is frozen.
+
+- Homepage
+- Public course catalog
+- Admin dashboard
+- Teacher dashboard
+- Student dashboard
+- Enrollment conflict warning
+- Quiz and certificate screens
+
+## Testing
 
 Run the full test suite:
 
@@ -159,67 +210,29 @@ Run the full test suite:
 php artisan test
 ```
 
-You can also run focused feature tests while working on a specific flow.
-
-## Roles
-
-### Admin
-
-- Manage users, teachers, students, departments, rooms, subjects, courses, classes, schedules, enrollments, teacher applications, and reports
-- Review enrollment requests and create class schedules
-- Review schedule change requests and operational workflows
-
-### Teacher
-
-- View assigned classes and schedules
-- Record attendance, grades, and evaluations
-- Submit schedule change requests
-- Inspect teaching progress and related student data
-
-### Student
-
-- Browse public subjects and courses
-- Submit fixed-class enrollments or custom schedule requests
-- View personal schedules, grades, and certificates
-- Take quizzes tied to enrolled courses
-
-## Demo Accounts
-
-The seeder currently provides sample accounts.
-
-Default password for seeded demo users: `123456`
-
-Examples:
-
-- Admin: `admin@gmail.com`
-- Admin: `admin2@gmail.com`
-- Teacher: `gv1@gmail.com` through `gv10@gmail.com`
-- Student: `hv1@gmail.com` through `hv10@gmail.com`
-
-If you change the seed data, update this section to match the new demo set.
-
-## Screenshots
-
-Add production screenshots here after the UI is finalized.
-
-- Homepage screenshot
-- Admin dashboard screenshot
-- Teacher portal screenshot
-- Student portal screenshot
+You can also run focused feature tests when working on a specific flow.
 
 ## Deployment Notes
 
 - Set `APP_ENV=production` and `APP_DEBUG=false`
 - Configure a real database, cache, queue, and mail transport
-- Set the site contact env values before deploying
+- Update the site contact env values before deploying
 - Run `php artisan optimize`
 - Run `php artisan migrate --force`
 - Run `php artisan storage:link`
 - Build frontend assets with `npm run build`
 - Make sure a queue worker is running if you rely on queued jobs or mail
 
+## Future Development
+
+- Add more polished screenshots and demo walkthroughs
+- Expand reporting around attendance and performance
+- Continue extracting heavy controller logic into services and form requests
+- Add more targeted tests for edge cases as new features are introduced
+- Prepare production-specific configuration if the project is deployed beyond demo use
+
 ## Notes
 
-- The project preserves Vietnamese UI content where it already exists.
-- Some controllers have already been partially refactored into services. Keep that direction when extending the codebase.
-- Use Laravel conventions for new modules, requests, services, and tests.
+- Vietnamese UI copy is preserved where it already exists.
+- The project already uses services for several core workflows, and new code should follow that direction.
+- Keep new features aligned with the current business model instead of replacing the existing demo flow.

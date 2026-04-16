@@ -3,10 +3,17 @@
 @section('title', 'Điều khoản dịch vụ - KhaiTriEdu')
 
 @section('content')
+@php
+    $legal = config('site.legal');
+    $termsUpdatedAt = filled($legal['terms_updated_at'] ?? null)
+        ? \Illuminate\Support\Carbon::parse($legal['terms_updated_at'])->format('d/m/Y')
+        : 'Chưa cập nhật';
+    $termsEmail = $legal['terms_email'] ?? config('site.contact.recipient');
+@endphp
 <div class="bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white py-12">
     <div class="container mx-auto px-4">
         <h1 class="text-4xl font-bold">Điều khoản dịch vụ</h1>
-        <p class="text-blue-100 mt-2">Cập nhật lần cuối: 1 tháng 3 năm 2026</p>
+        <p class="text-blue-100 mt-2">Cập nhật lần cuối: {{ $termsUpdatedAt }}</p>
     </div>
 </div>
 
@@ -44,7 +51,7 @@
             <section>
                 <h2 class="text-2xl font-bold text-gray-800 mb-3">5. Chính sách Hoàn lại Tiền</h2>
                 <p>
-                    Nếu bạn không hài lòng với bất kỳ khóa học nào trong vòng 7 ngày kể từ ngày mua, bạn có quyền yêu cầu hoàn lại tiền 100%. Để yêu cầu hoàn lại, vui lòng liên hệ với support@khaitriedu.com.
+                    Nếu bạn không hài lòng với bất kỳ khóa học nào trong vòng 7 ngày kể từ ngày mua, bạn có quyền yêu cầu hoàn lại tiền 100%. Để yêu cầu hoàn lại, vui lòng liên hệ với <a href="mailto:{{ $termsEmail }}" class="text-primary hover:underline">{{ $termsEmail }}</a>.
                 </p>
             </section>
 
@@ -91,7 +98,7 @@
             <section>
                 <h2 class="text-2xl font-bold text-gray-800 mb-3">11. Liên hệ</h2>
                 <p>
-                    Nếu bạn có câu hỏi về Điều khoản này, vui lòng liên hệ: <a href="mailto:legal@khaitriedu.com" class="text-primary hover:underline">legal@khaitriedu.com</a>
+                    Nếu bạn có câu hỏi về Điều khoản này, vui lòng liên hệ: <a href="mailto:{{ $termsEmail }}" class="text-primary hover:underline">{{ $termsEmail }}</a>
                 </p>
             </section>
         </div>

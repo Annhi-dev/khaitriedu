@@ -1,8 +1,8 @@
 @extends('bo_cuc.quan_tri')
-@section('title', 'Yêu cầu đổi lịch')
+@section('title', 'Yêu cầu dời buổi')
 @section('content')
 <div class="space-y-6">
-    <x-quan_tri.tieu_de_trang title="Yêu cầu đổi lịch" subtitle="Các đề xuất đổi lịch từ giảng viên đang chờ admin xử lý" />
+    <x-quan_tri.tieu_de_trang title="Yêu cầu dời buổi" subtitle="Các đề xuất dời buổi từ giảng viên đang chờ admin xử lý" />
 
     <x-quan_tri.thanh_loc route="{{ route('admin.schedule-change-requests.index') }}" searchPlaceholder="Giảng viên, lớp học, lý do..." :statuses="['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối']" />
 
@@ -35,7 +35,7 @@
             </div>
         @empty
             <div class="col-span-2 text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
-                <p class="text-slate-500">Không có yêu cầu đổi lịch nào.</p>
+                <p class="text-slate-500">Không có yêu cầu dời buổi nào.</p>
             </div>
         @endforelse
     </div>

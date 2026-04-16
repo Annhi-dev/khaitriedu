@@ -247,7 +247,7 @@ class quan_ly_nhom_hoc_test extends TestCase
             ]));
 
         $response->assertOk();
-        $response->assertSee('Khóa học trong nhóm ' . $category->name);
+        $response->assertSee('Khóa học triển khai trong nhóm ' . $category->name);
         $response->assertSee($course->title);
         $response->assertDontSee($otherCourse->title);
     }

@@ -18,3 +18,19 @@
         <span>{{ $session->get('warning') }}</span>
     </div>
 @endif
+@if($errors->any())
+    <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 animate-fade-in-down shadow-sm">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-circle-exclamation mt-0.5"></i>
+            <div class="min-w-0">
+                <p class="font-semibold">Dữ liệu chưa hợp lệ</p>
+                <p class="mt-1 text-sm text-rose-600">Một hoặc nhiều trường chưa đúng định dạng. Các lỗi chi tiết nằm bên dưới.</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+@endif

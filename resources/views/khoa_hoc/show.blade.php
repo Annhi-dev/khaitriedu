@@ -11,7 +11,7 @@
 @endphp
 @extends($courseLayout)
 @section('title', $course->title)
-@section('eyebrow', 'Lớp học nội bộ')
+@section('eyebrow', 'Khóa học triển khai')
 @section('content')
 @php
   $backUrl = route('dashboard');
@@ -49,11 +49,11 @@
       <div>
         <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1 text-sm font-semibold text-blue-700">
           <i class="fas fa-users-rectangle"></i>
-          Lớp học nội bộ
+          Khóa học triển khai
         </span>
         <h1 class="mt-4 text-3xl font-bold text-gray-900">{{ $course->title }}</h1>
         <p class="mt-3 max-w-3xl text-gray-600">
-          {{ $course->description ?: 'Đây là lớp học mà admin đã xếp cho học viên sau khi duyệt yêu cầu đăng ký khóa học.' }}
+          {{ $course->description ?: 'Đây là khóa học triển khai mà admin đã xếp cho học viên sau khi duyệt yêu cầu đăng ký khóa học.' }}
         </p>
       </div>
 

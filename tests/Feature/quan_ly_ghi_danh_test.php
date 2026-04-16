@@ -31,8 +31,8 @@ class quan_ly_ghi_danh_test extends TestCase
             'email' => 'minh@example.com',
         ]);
 
-        $this->createPendingEnrollment($studentA, $subjectA);
-        Enrollment::create([
+        $enrollmentA = $this->createPendingEnrollment($studentA, $subjectA);
+        $enrollmentB = Enrollment::create([
             'user_id' => $studentB->id,
             'subject_id' => $subjectB->id,
             'status' => Enrollment::STATUS_REJECTED,
@@ -52,9 +52,8 @@ class quan_ly_ghi_danh_test extends TestCase
             ]));
 
         $response->assertOk();
-        $response->assertDontSee('Phase 8');
-        $response->assertSee($studentA->name);
-        $response->assertDontSee($studentB->name);
+        $response->assertSee(route('admin.enrollments.custom.show', $enrollmentA), false);
+        $response->assertDontSee(route('admin.enrollments.custom.show', $enrollmentB), false);
     }
 
     public function test_admin_can_distinguish_custom_schedule_requests_from_fixed_class_enrollments(): void
@@ -89,7 +88,7 @@ class quan_ly_ghi_danh_test extends TestCase
         [, $subjectCustom] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
         [, $subjectFixed] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
-        $this->createPendingEnrollment($studentCustom, $subjectCustom);
+        $customEnrollment = $this->createPendingEnrollment($studentCustom, $subjectCustom);
         [, , $fixedEnrollment] = $this->createFixedClassEnrollment($studentFixed, $subjectFixed);
 
         $response = $this
@@ -100,9 +99,54 @@ class quan_ly_ghi_danh_test extends TestCase
 
         $response->assertOk();
         $response->assertSee('Loại hồ sơ');
-        $response->assertSee($studentFixed->name);
-        $response->assertDontSee($studentCustom->name);
         $response->assertSee(route('admin.enrollments.fixed.show', $fixedEnrollment), false);
+        $response->assertDontSee(route('admin.enrollments.custom.show', $customEnrollment), false);
+    }
+
+    public function test_admin_can_filter_enrollments_by_student(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $targetStudent = User::factory()->student()->create(['name' => 'Hoc Vien Can Loc']);
+        $otherStudent = User::factory()->student()->create(['name' => 'Hoc Vien Khac']);
+        [, $subjectA] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
+        [, $subjectB] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+
+        $targetPendingEnrollment = $this->createPendingEnrollment($targetStudent, $subjectA);
+        [, , $targetFixedEnrollment] = $this->createFixedClassEnrollment($targetStudent, $subjectB);
+        $otherEnrollment = $this->createPendingEnrollment($otherStudent, $subjectA);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.enrollments', [
+                'student_id' => $targetStudent->id,
+            ]));
+
+        $response->assertOk();
+        $response->assertSee(route('admin.enrollments.custom.show', $targetPendingEnrollment), false);
+        $response->assertSee(route('admin.enrollments.fixed.show', $targetFixedEnrollment), false);
+        $response->assertDontSee(route('admin.enrollments.custom.show', $otherEnrollment), false);
+    }
+
+    public function test_admin_can_filter_enrollments_by_class_room(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $studentA = User::factory()->student()->create(['name' => 'Hoc Vien Lop A']);
+        $studentB = User::factory()->student()->create(['name' => 'Hoc Vien Lop B']);
+        [, $subjectA] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
+        [, $subjectB] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+
+        [, $classRoomA, $enrollmentA] = $this->createFixedClassEnrollment($studentA, $subjectA);
+        [, $classRoomB, $enrollmentB] = $this->createFixedClassEnrollment($studentB, $subjectB);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get(route('admin.enrollments', [
+                'class_room_id' => $classRoomA->id,
+            ]));
+
+        $response->assertOk();
+        $response->assertSee(route('admin.enrollments.fixed.show', $enrollmentA), false);
+        $response->assertDontSee(route('admin.enrollments.fixed.show', $enrollmentB), false);
     }
 
     public function test_admin_can_approve_enrollment(): void
@@ -320,6 +364,52 @@ class quan_ly_ghi_danh_test extends TestCase
         $this->assertSame($classRoom->teacher_id, $updatedEnrollment->assigned_teacher_id);
         $this->assertNotNull($updatedEnrollment->reviewed_at);
         $this->assertSame($admin->id, $updatedEnrollment->reviewed_by);
+    }
+
+    public function test_activating_fixed_class_enrollment_syncs_status_for_all_students_in_same_class(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $studentA = User::factory()->student()->create(['name' => 'Hoc Vien A']);
+        $studentB = User::factory()->student()->create(['name' => 'Hoc Vien B']);
+        [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
+        [$course, $classRoom, $enrollmentA] = $this->createFixedClassEnrollment($studentA, $subject);
+
+        $enrollmentB = Enrollment::create([
+            'user_id' => $studentB->id,
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $classRoom->teacher_id,
+            'status' => Enrollment::STATUS_ENROLLED,
+            'schedule' => $course->schedule,
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.enrollments.review', $enrollmentA), [
+                'action' => 'activate',
+                'course_id' => $course->id,
+                'class_room_id' => $classRoom->id,
+                'assigned_teacher_id' => '',
+                'schedule' => $course->schedule,
+                'note' => 'Bat dau hoc dong loat cho ca lop',
+            ]);
+
+        $response->assertRedirect(route('admin.enrollments.show', $enrollmentA));
+
+        $this->assertDatabaseHas('dang_ky', [
+            'id' => $enrollmentA->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'reviewed_by' => $admin->id,
+        ]);
+
+        $this->assertDatabaseHas('dang_ky', [
+            'id' => $enrollmentB->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'reviewed_by' => $admin->id,
+        ]);
     }
 
     public function test_admin_can_approve_fixed_class_enrollment_and_restore_missing_course_from_class(): void

@@ -17,6 +17,8 @@ class WeeklyTimetableService
             ->map(fn (array $entry, int $index) => $this->normalizeEntry($entry, $index))
             ->values();
 
+        [$entries, $conflicts] = $this->annotateConflicts($entries);
+
         $reference = $reference
             ? CarbonImmutable::instance($reference->toImmutable())
             : CarbonImmutable::now();
@@ -76,6 +78,9 @@ class WeeklyTimetableService
             'slots' => $slots->all(),
             'matrix' => $sortedMatrix,
             'totalEntries' => $entries->count(),
+            'hasConflicts' => $conflicts->isNotEmpty(),
+            'conflictCount' => $conflicts->count(),
+            'conflicts' => $conflicts->all(),
         ];
     }
 
@@ -94,6 +99,7 @@ class WeeklyTimetableService
         return [
             'id' => $entry['id'] ?? 'slot-' . $index,
             'day_of_week' => (string) $entry['day_of_week'],
+            'day_label' => (string) ($entry['day_label'] ?? (ClassSchedule::$dayOptions[$entry['day_of_week']] ?? $entry['day_of_week'])),
             'start_time' => $startTime,
             'end_time' => $endTime,
             'title' => (string) ($entry['title'] ?? 'Buổi học'),
@@ -154,5 +160,89 @@ class WeeklyTimetableService
         [$hour, $minute] = array_pad(array_map('intval', explode(':', substr($time, 0, 5))), 2, 0);
 
         return $hour * 60 + $minute;
+    }
+
+    protected function annotateConflicts(Collection $entries): array
+    {
+        $entries = $entries
+            ->map(function (array $entry) {
+                $entry['conflict'] = false;
+                $entry['conflict_notes'] = [];
+                $entry['conflict_note'] = null;
+                $entry['conflict_count'] = 0;
+                return $entry;
+            })
+            ->values()
+            ->all();
+
+        $conflicts = collect();
+        $count = count($entries);
+
+        for ($i = 0; $i < $count; $i++) {
+            for ($j = $i + 1; $j < $count; $j++) {
+                $first = $entries[$i];
+                $second = $entries[$j];
+
+                if (($first['day_of_week'] ?? null) !== ($second['day_of_week'] ?? null)) {
+                    continue;
+                }
+
+                if (! $this->rangesOverlap($first['start_time'], $first['end_time'], $second['start_time'], $second['end_time'])) {
+                    continue;
+                }
+
+                $firstNote = $this->buildConflictNote($first, $second);
+                $secondNote = $this->buildConflictNote($second, $first);
+
+                $entries[$i]['conflict'] = true;
+                $entries[$i]['conflict_notes'][] = $firstNote;
+                $entries[$i]['conflict_count'] = count($entries[$i]['conflict_notes']);
+                $entries[$i]['conflict_note'] = $entries[$i]['conflict_notes'][0];
+
+                $entries[$j]['conflict'] = true;
+                $entries[$j]['conflict_notes'][] = $secondNote;
+                $entries[$j]['conflict_count'] = count($entries[$j]['conflict_notes']);
+                $entries[$j]['conflict_note'] = $entries[$j]['conflict_notes'][0];
+
+                $conflicts->push([
+                    'first_id' => $first['id'],
+                    'second_id' => $second['id'],
+                    'day_of_week' => $first['day_of_week'],
+                    'day_label' => $first['day_label'] ?? $first['day_of_week'],
+                    'first_title' => $first['title'] ?? 'Buổi học',
+                    'second_title' => $second['title'] ?? 'Buổi học',
+                    'time_label' => $first['time_label'] ?? ($first['start_time'] . ' - ' . $first['end_time']),
+                ]);
+            }
+        }
+
+        $entries = collect($entries)->map(function (array $entry) {
+            $entry['conflict_notes'] = array_values(array_unique($entry['conflict_notes']));
+            $entry['conflict_count'] = count($entry['conflict_notes']);
+            $entry['conflict_note'] = $entry['conflict_notes'][0] ?? null;
+
+            return $entry;
+        });
+
+        return [$entries, $conflicts];
+    }
+
+    protected function buildConflictNote(array $entry, array $other): string
+    {
+        $otherTitle = $other['title'] ?? 'buổi học khác';
+        $otherDayLabel = $other['day_label'] ?? ($other['day_of_week'] ?? 'chưa rõ ngày');
+        $otherTimeLabel = $other['time_label'] ?? (($other['start_time'] ?? '') . ' - ' . ($other['end_time'] ?? ''));
+
+        return sprintf('Trùng với %s, %s, %s', $otherTitle, $otherDayLabel, $otherTimeLabel);
+    }
+
+    protected function rangesOverlap(string $startA, string $endA, string $startB, string $endB): bool
+    {
+        $startA = substr($startA, 0, 5);
+        $endA = substr($endA, 0, 5);
+        $startB = substr($startB, 0, 5);
+        $endB = substr($endB, 0, 5);
+
+        return $startA < $endB && $endA > $startB;
     }
 }

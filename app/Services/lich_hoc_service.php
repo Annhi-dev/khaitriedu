@@ -138,6 +138,7 @@ class AdminScheduleService
             'subject.category',
             'teacher',
             'enrollments.user',
+            'enrollments.classRoom',
             'classRooms.room',
             'classRooms.teacher',
             'classRooms.schedules.room',
@@ -150,8 +151,13 @@ class AdminScheduleService
 
         $activeEnrollments = $course->enrollments
             ->filter(fn (Enrollment $enrollment) => in_array($enrollment->status, Enrollment::courseAccessStatuses(), true))
+            ->values();
+
+        Enrollment::syncDisplayStatusesByClass($activeEnrollments);
+
+        $activeEnrollments = $activeEnrollments
             ->sortBy(function (Enrollment $enrollment) {
-                return match ($enrollment->status) {
+                return match ($enrollment->displayStatus()) {
                     Enrollment::STATUS_SCHEDULED => 0,
                     Enrollment::STATUS_ACTIVE => 1,
                     Enrollment::STATUS_APPROVED => 2,
@@ -175,6 +181,50 @@ class AdminScheduleService
             'scheduledStudentsCount' => (int) $course->scheduled_students_count,
             'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
         ];
+    }
+
+    public function syncCourseSchedule(Course $course, ?int $roomId = null): ?ClassRoom
+    {
+        $course->loadMissing(['subject', 'classRooms.room', 'classRooms.schedules']);
+
+        $meetingDays = $course->meetingDayValues();
+
+        if ($meetingDays === [] || ! $course->start_time || ! $course->end_time) {
+            return null;
+        }
+
+        $startDate = $course->start_date?->format('Y-m-d');
+        $endDate = $course->end_date?->format('Y-m-d');
+        $currentClassRoom = $course->currentClassRoom();
+
+        if (! $startDate && $currentClassRoom?->start_date) {
+            $startDate = $currentClassRoom->start_date->format('Y-m-d');
+        }
+
+        if (! $endDate && $startDate) {
+            $duration = max(1, (int) ($course->subject?->duration ?? $currentClassRoom?->duration ?? 1));
+            $endDate = Carbon::parse($startDate)->addMonths($duration)->format('Y-m-d');
+        }
+
+        if (! $startDate || ! $endDate) {
+            return null;
+        }
+
+        $roomId ??= $currentClassRoom?->room_id;
+
+        if (! $roomId || ! $course->teacher_id) {
+            return null;
+        }
+
+        return $this->syncClassRoomForCourse(
+            $course,
+            (int) $roomId,
+            (int) $course->teacher_id,
+            $meetingDays,
+            (string) $course->start_time,
+            (string) $course->end_time,
+            $startDate
+        );
     }
 
     public function scheduleEnrollment(Enrollment $enrollment, array $data, User $admin): string
@@ -578,7 +628,7 @@ class AdminScheduleService
 
     protected function suggestedCourseTitle(Enrollment $enrollment): string
     {
-        $subjectName = trim((string) ($enrollment->subject?->name ?? 'Lop hoc'));
+        $subjectName = trim((string) ($enrollment->subject?->name ?? 'Lớp học'));
         $existingTitles = Course::query()
             ->where('subject_id', $enrollment->subject_id)
             ->pluck('title')

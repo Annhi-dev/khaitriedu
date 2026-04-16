@@ -21,7 +21,16 @@
     <nav class="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50 shadow-sm" x-data="{ mobileOpen: false }">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                @php $user = Auth::user(); @endphp
+                @php
+                    $user = Auth::user();
+                    $profileRoute = null;
+
+                    if ($user) {
+                        $profileRoute = $user->isAdmin()
+                            ? route('admin.profile.show')
+                            : ($user->isTeacher() ? route('teacher.profile.show') : route('student.profile.show'));
+                    }
+                @endphp
                 
                 <a href="{{ route('home') }}" class="flex items-center space-x-2">
                     <img src="{{ asset('images/LOGO.png') }}" alt="KhaiTriEdu Logo" class="h-10 w-auto" />
@@ -60,9 +69,13 @@
                         </a>
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none group">
-                                <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold">
-                                    {{ substr($user->name, 0, 1) }}
-                                </div>
+                                @if($user->avatarUrl())
+                                    <img src="{{ $user->avatarUrl() }}" alt="Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary-light/60">
+                                @else
+                                    <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold">
+                                        {{ substr($user->name, 0, 1) }}
+                                    </div>
+                                @endif
                                 <span class="text-gray-700 font-medium group-hover:text-primary">{{ $user->name }}</span>
                                 <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
                             </button>
@@ -74,7 +87,7 @@
                                     <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-tachometer-alt w-5 mr-2"></i>Dashboard</a>
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-book-open w-5 mr-2"></i>Đăng ký khóa học</a>
                                 @endif
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-user-circle w-5 mr-2"></i>Thông tin cá nhân</a>
+                                <a href="{{ $profileRoute ?? '#' }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-light/30 transition"><i class="fas fa-user-circle w-5 mr-2"></i>Thông tin cá nhân</a>
                                 <hr class="my-1 border-gray-200">
                                 <form method="POST" action="{{ route('logout') }}" class="block">
                                     @csrf
@@ -115,7 +128,11 @@
             @else
                 <div class="pt-2 border-t border-gray-200">
                     <div class="font-medium text-gray-800 mb-2 flex items-center">
-                        <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold mr-2">{{ substr($user->name, 0, 1) }}</div>
+                        @if($user->avatarUrl())
+                            <img src="{{ $user->avatarUrl() }}" alt="Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary-light/60 mr-2">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold mr-2">{{ substr($user->name, 0, 1) }}</div>
+                        @endif
                         {{ $user->name }}
                     </div>
                     <a href="{{ route('dashboard') }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-user-circle w-6 mr-2"></i>Về trang cá nhân</a>
@@ -124,7 +141,7 @@
                     @else
                         <a href="{{ route('dashboard') }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-tachometer-alt w-6 mr-2"></i>Dashboard</a>
                     @endif
-                    <a href="#" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-user-circle w-6 mr-2"></i>Thông tin cá nhân</a>
+                    <a href="{{ $profileRoute ?? '#' }}" class="block py-2 text-sm text-gray-600 hover:text-primary"><i class="fas fa-user-circle w-6 mr-2"></i>Thông tin cá nhân</a>
                     <form method="POST" action="{{ route('logout') }}" class="block">
                         @csrf
                         <button type="submit" class="w-full text-left py-2 text-sm text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt w-6 mr-2"></i>Đăng xuất</button>

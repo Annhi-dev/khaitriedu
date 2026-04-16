@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\User;
@@ -16,6 +17,18 @@ class CourseQuizService
     public function submit(User $student, Course $course, Quiz $quiz, array $answers): array
     {
         return DB::transaction(function () use ($student, $course, $quiz, $answers): array {
+            $hasCourseAccess = Enrollment::query()
+                ->where('user_id', $student->id)
+                ->where('course_id', $course->id)
+                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->exists();
+
+            if (! $hasCourseAccess) {
+                throw ValidationException::withMessages([
+                    'course_id' => 'Bạn chưa được xếp vào lớp học này.',
+                ]);
+            }
+
             $quiz->loadMissing('questions.options');
 
             $attempt = $this->nextAttemptNumber($student, $quiz);

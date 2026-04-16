@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewEnrollmentRequest;
+use App\Models\ClassRoom;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Services\AdminEnrollmentService;
@@ -18,12 +19,30 @@ class EnrollmentController extends Controller
             return $redirect;
         }
 
-        $filters = $request->only(['search', 'status', 'request_source']);
+        $filters = $request->only(['search', 'status', 'request_source', 'student_id', 'class_room_id']);
         $enrollments = $enrollmentService->paginateEnrollments($filters);
         $statusOptions = Enrollment::statusOptions();
         $requestSourceOptions = Enrollment::requestSourceOptions();
+        $studentOptions = User::query()
+            ->students()
+            ->whereHas('enrollments')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+        $classRoomOptions = ClassRoom::query()
+            ->has('enrollments')
+            ->with(['subject', 'course', 'room'])
+            ->orderByDesc('id')
+            ->get();
 
-        return view('quan_tri.ghi_danh.index', compact('current', 'filters', 'enrollments', 'statusOptions', 'requestSourceOptions'));
+        return view('quan_tri.ghi_danh.index', compact(
+            'current',
+            'filters',
+            'enrollments',
+            'statusOptions',
+            'requestSourceOptions',
+            'studentOptions',
+            'classRoomOptions',
+        ));
     }
 
     public function show(Enrollment $enrollment, AdminEnrollmentService $enrollmentService)

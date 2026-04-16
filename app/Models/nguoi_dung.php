@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -27,6 +28,7 @@ class User extends Authenticatable
         'username',
         'email',
         'phone',
+        'avatar_path',
         'password',
         'role_id',
         'department_id',
@@ -231,5 +233,20 @@ class User extends Authenticatable
     public function receivedTeacherEvaluations()
     {
         return $this->hasMany(TeacherEvaluation::class, 'student_id');
+    }
+
+    public function avatarUrl(): ?string
+    {
+        $path = trim((string) $this->avatar_path);
+
+        if ($path === '') {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return Storage::disk('public')->url($path);
     }
 }

@@ -78,7 +78,7 @@ class AdminScheduleChangeRequestService
 
             if (! $scheduleChangeRequest->course && ! $scheduleChangeRequest->classSchedule) {
                 throw ValidationException::withMessages([
-                    'action' => 'Lịch gắn với yêu cầu đổi lịch không còn tồn tại.',
+                    'action' => 'Lịch gắn với yêu cầu dời buổi không còn tồn tại.',
                 ]);
             }
 
@@ -103,7 +103,7 @@ class AdminScheduleChangeRequestService
 
                 $this->notifyTeacher($scheduleChangeRequest, true);
 
-                return 'Đã duyệt yêu cầu đổi lịch và cập nhật lịch mới: ' . $newSchedule;
+                return 'Đã duyệt yêu cầu dời buổi và cập nhật lịch mới: ' . $newSchedule;
             }
 
             $scheduleChangeRequest->update([
@@ -115,7 +115,7 @@ class AdminScheduleChangeRequestService
 
             $this->notifyTeacher($scheduleChangeRequest, false);
 
-            return 'Đã từ chối yêu cầu đổi lịch của giảng viên.';
+            return 'Đã từ chối yêu cầu dời buổi của giảng viên.';
         });
     }
 
@@ -170,7 +170,7 @@ class AdminScheduleChangeRequestService
 
         if ($conflict) {
             throw ValidationException::withMessages([
-                'action' => 'Lịch đề xuất đang trùng với lớp khác mà giảng viên này phụ trách.',
+                    'action' => 'Buổi dạy bù đề xuất đang trùng với lớp khác mà giảng viên này phụ trách.',
             ]);
         }
     }
@@ -217,7 +217,7 @@ class AdminScheduleChangeRequestService
 
         if ($conflict) {
             throw ValidationException::withMessages([
-                'action' => 'Lịch đề xuất sẽ làm học viên ' . ($conflict->user?->name ?? 'trong lớp') . ' bị trùng lịch với lớp khác.',
+                'action' => 'Buổi dạy bù đề xuất sẽ làm học viên ' . ($conflict->user?->name ?? 'trong lớp') . ' bị trùng lịch với lớp khác.',
             ]);
         }
     }
@@ -286,7 +286,7 @@ class AdminScheduleChangeRequestService
 
         if ($conflict) {
             throw ValidationException::withMessages([
-                'action' => 'Lịch đề xuất đang trùng với một buổi học khác của giảng viên này.',
+                'action' => 'Buổi dạy bù đề xuất đang trùng với một buổi học khác của giảng viên này.',
             ]);
         }
     }
@@ -337,7 +337,7 @@ class AdminScheduleChangeRequestService
             $conflictingEnrollment = $conflict->classRoom?->enrollments->first();
 
             throw ValidationException::withMessages([
-                'action' => 'Lịch đề xuất sẽ làm học viên '
+                'action' => 'Buổi dạy bù đề xuất sẽ làm học viên '
                     . ($conflictingEnrollment?->user?->name ?? 'trong lớp')
                     . ' bị trùng với buổi học khác.',
             ]);
@@ -485,8 +485,8 @@ class AdminScheduleChangeRequestService
     {
         Notification::create([
             'user_id' => $scheduleChangeRequest->teacher_id,
-            'title' => $approved ? 'Yêu cầu đổi lịch đã được duyệt' : 'Yêu cầu đổi lịch bị từ chối',
-            'message' => ($approved ? 'Admin đã duyệt lịch mới cho ' : 'Admin đã từ chối yêu cầu đổi lịch của ')
+            'title' => $approved ? 'Yêu cầu dạy bù đã được duyệt' : 'Yêu cầu dạy bù bị từ chối',
+            'message' => ($approved ? 'Admin đã duyệt buổi dạy bù cho ' : 'Admin đã từ chối yêu cầu dạy bù của ')
                 . $scheduleChangeRequest->targetTitle()
                 . '.',
             'type' => $approved ? 'success' : 'warning',

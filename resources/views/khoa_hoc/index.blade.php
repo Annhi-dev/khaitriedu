@@ -2,8 +2,8 @@
 @section('title', 'Quản lý lớp học')
 @section('content')
 <div class="space-y-6">
-    <x-quan_tri.tieu_de_trang title="Quản lý lớp học" subtitle="Lớp học nội bộ để xếp học viên">
-        <a href="{{ route('admin.courses.create-page') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+    <x-quan_tri.tieu_de_trang title="Quản lý lớp học" subtitle="Khóa học triển khai để xếp học viên">
+        <a href="{{ route('admin.classes.create') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
             <i class="fas fa-plus mr-1"></i> Tạo lớp mới
         </a>
     </x-quan_tri.tieu_de_trang>

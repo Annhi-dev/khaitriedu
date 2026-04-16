@@ -10,6 +10,7 @@ class Subject extends Model
 {
     use HasFactory;
 
+    public const DEFAULT_TEST_COUNT = 3;
     public const STATUS_DRAFT = 'draft';
     public const STATUS_OPEN = 'open';
     public const STATUS_CLOSED = 'closed';
@@ -22,6 +23,7 @@ class Subject extends Model
         'description',
         'price',
         'duration',
+        'test_count',
         'status',
         'image',
         'category_id',
@@ -30,6 +32,7 @@ class Subject extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'duration' => 'integer',
+        'test_count' => 'integer',
     ];
 
     public function scopePubliclyAvailable(Builder $query): Builder
@@ -77,6 +80,13 @@ class Subject extends Model
         }
 
         return $this->duration . ' tháng';
+    }
+
+    public function resolvedTestCount(): int
+    {
+        $count = (int) ($this->test_count ?? self::DEFAULT_TEST_COUNT);
+
+        return max(1, min(12, $count));
     }
 
     public function isOpenForEnrollment(): bool

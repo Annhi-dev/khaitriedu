@@ -1,135 +1,194 @@
 @extends('bo_cuc.hoc_vien')
 @section('title', 'Chọn lớp học — ' . $subject->name)
-@section('eyebrow', 'Chọn lớp')
-@section('content')
-<div class="max-w-4xl mx-auto">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-primary-dark">Chọn lớp — {{ $subject->name }}</h1>
-            <p class="text-gray-600 text-sm">{{ $subject->category?->name ?? '' }} • {{ $subject->durationLabel() }}</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('student.enroll.request-form', $subject) }}" class="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-100">
-                Gửi yêu cầu lịch học
-            </a>
-            <a href="{{ route('student.enroll.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
-                ← Quay lại
-            </a>
-        </div>
-    </div>
+@section('eyebrow', 'Chọn lớp học')
 
-    
-    @if($existingEnrollment)
-        <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <p class="font-semibold text-amber-800">Bạn đã đăng ký khóa học này</p>
-            <p class="mt-1 text-sm text-amber-700">
-                Trạng thái: <strong>{{ $existingEnrollment->statusLabel() }}</strong>.
-                @if($existingEnrollment->classRoom)
-                    Lớp: <strong>{{ $existingEnrollment->classRoom->displayName() }}</strong>
-                @elseif($existingEnrollment->start_time && $existingEnrollment->end_time)
-                    Bạn đã gửi khung giờ: <strong>{{ $existingEnrollment->start_time }} - {{ $existingEnrollment->end_time }}</strong>
-                @endif
-            </p>
-            <div class="mt-3 flex flex-wrap gap-3 text-sm">
-                <a href="{{ route('student.enroll.my-classes') }}" class="font-medium text-amber-700 underline">Xem lớp của tôi</a>
-                @if(! $existingEnrollment->hasCourseAccess())
-                    <a href="{{ route('student.enroll.request-form', $subject) }}" class="font-medium text-cyan-700 underline">Cập nhật yêu cầu lịch học</a>
-                @endif
+@section('content')
+<div class="space-y-6">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-3xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Khóa học đang mở</p>
+                <h2 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Chọn lớp học — {{ $subject->name }}</h2>
+                <p class="mt-3 text-sm leading-7 text-slate-600">
+                    Chọn lớp cố định phù hợp với lịch của bạn hoặc gửi yêu cầu lịch học riêng nếu chưa có lớp phù hợp.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">{{ $subject->category?->name ?? 'Chưa phân nhóm' }}</span>
+                    <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">{{ $subject->durationLabel() }}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('student.enroll.request-form', $subject) }}" class="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100">
+                    <i class="fas fa-paper-plane"></i>
+                    Gửi yêu cầu lịch học
+                </a>
+                <a href="{{ route('student.enroll.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
             </div>
         </div>
+    </section>
+
+    @if($existingEnrollment)
+        <section class="rounded-3xl border {{ $existingEnrollment->hasCourseAccess() ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50' }} p-5 shadow-sm">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.22em] {{ $existingEnrollment->hasCourseAccess() ? 'text-emerald-700' : 'text-amber-700' }}">Trạng thái hiện tại</p>
+                    <p class="mt-2 text-lg font-semibold {{ $existingEnrollment->hasCourseAccess() ? 'text-emerald-900' : 'text-amber-900' }}">
+                        {{ $existingEnrollment->displayStatusLabel() }}
+                    </p>
+                    @if($existingEnrollment->classRoom)
+                        <p class="mt-2 text-sm leading-6 text-slate-700">Bạn đã được ghi danh vào lớp <strong>{{ $existingEnrollment->classRoom->displayName() }}</strong>.</p>
+                    @elseif($existingEnrollment->start_time && $existingEnrollment->end_time)
+                        <p class="mt-2 text-sm leading-6 text-slate-700">Khung giờ đã gửi: <strong>{{ $existingEnrollment->start_time }} - {{ $existingEnrollment->end_time }}</strong></p>
+                    @endif
+                </div>
+
+                <div class="text-sm leading-6 text-slate-600">
+                    @if(!empty($existingEnrollment->preferred_days))
+                        <p><strong>Ngày có thể học:</strong> {{ collect($existingEnrollment->preferred_days)->map(fn ($day) => $dayOptions[$day] ?? $day)->implode(', ') }}</p>
+                    @endif
+                    @if($existingEnrollment->preferred_schedule)
+                        <p class="mt-1"><strong>Ghi chú thêm:</strong> {{ $existingEnrollment->preferred_schedule }}</p>
+                    @endif
+                </div>
+            </div>
+
+            @if($existingEnrollment->note)
+                <div class="mt-4 rounded-2xl border border-white/80 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                    <strong>Ghi chú từ admin:</strong> {{ $existingEnrollment->note }}
+                </div>
+            @endif
+        </section>
     @endif
 
-    
     @if($classes->isEmpty())
-        <div class="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-gray-400">
-            <i class="fas fa-door-closed text-4xl mb-3 block"></i>
+        <section class="rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-center text-slate-500 shadow-sm">
+            <i class="fas fa-door-closed mb-3 block text-4xl text-slate-300"></i>
             <p>Hiện chưa có lớp đang mở cho khóa này.</p>
-            <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
+            <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700">
                 <i class="fas fa-paper-plane"></i>
                 Gửi yêu cầu lịch học
             </a>
-        </div>
+        </section>
     @else
-        <div class="space-y-4">
+        @if(!empty($scheduleConflictMap))
+            <section class="rounded-3xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-900">
+                            Phát hiện {{ $scheduleConflictCount ?? count($scheduleConflictMap) }} lớp bị trùng lịch với thời khóa biểu hiện tại.
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-rose-800">
+                            Các lớp bị trùng sẽ được khóa đăng ký để tránh tạo lịch học chồng chéo.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        @endif
+
+        <section class="space-y-4">
             @foreach($classes as $class)
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="font-semibold text-gray-900">{{ $class->subject->name ?? '—' }}</h3>
-                            @if($class->availableSlots() <= 3)
-                                <span class="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600">
-                                    Còn {{ $class->availableSlots() }} chỗ
-                                </span>
-                            @else
-                                <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-600">
-                                    Còn {{ $class->availableSlots() }} chỗ
-                                </span>
+                @php
+                    $scheduleConflict = $scheduleConflictMap[$class->id] ?? null;
+                @endphp
+                <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-cyan-200 hover:shadow-md">
+                    <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-lg font-semibold text-slate-900">{{ $class->subject->name ?? '—' }}</h3>
+                                @if($class->availableSlots() <= 3)
+                                    <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-600">
+                                        Còn {{ $class->availableSlots() }} chỗ
+                                    </span>
+                                @else
+                                    <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                        Còn {{ $class->availableSlots() }} chỗ
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                <div>
+                                    <span class="font-medium text-slate-500">Giảng viên:</span>
+                                    {{ $class->teacher?->displayName() ?? 'Chưa phân công' }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-slate-500">Phòng:</span>
+                                    {{ $class->room ? $class->room->name . ' (' . $class->room->code . ')' : 'Chưa chọn' }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-slate-500">Ngày bắt đầu:</span>
+                                    {{ $class->start_date?->format('d/m/Y') ?? 'Chưa xác định' }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-slate-500">Thời lượng:</span>
+                                    {{ $class->duration ? $class->duration . ' tháng' : '—' }}
+                                </div>
+                            </div>
+
+                            @if($class->schedules->isNotEmpty())
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    @foreach($class->schedules as $s)
+                                        <span class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                                            <i class="fas fa-clock text-slate-400"></i>
+                                            {{ \App\Models\ClassSchedule::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}
+                                            {{ $s->start_time }}–{{ $s->end_time }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($scheduleConflict)
+                                <div class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                                    <p class="font-semibold">Khung giờ này bị trùng với lịch học hiện tại.</p>
+                                    <p class="mt-1 leading-6">{{ $scheduleConflict['message'] }}</p>
+                                </div>
                             @endif
                         </div>
 
-                        <div class="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
-                            <div>
-                                <span class="font-medium text-gray-500">Giảng viên:</span>
-                                {{ $class->teacher?->displayName() ?? 'Chưa phân công' }}
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-500">Phòng:</span>
-                                {{ $class->room ? $class->room->name . ' (' . $class->room->code . ')' : 'Chưa chọn' }}
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-500">Ngày bắt đầu:</span>
-                                {{ $class->start_date?->format('d/m/Y') ?? 'Chưa xác định' }}
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-500">Thời lượng:</span>
-                                {{ $class->duration ? $class->duration . ' tháng' : '—' }}
-                            </div>
-                        </div>
-
-                        @if($class->schedules->isNotEmpty())
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach($class->schedules as $s)
-                                <span class="rounded-lg bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                                    <i class="fas fa-clock mr-1"></i>
-                                    {{ \App\Models\ClassSchedule::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}
-                                    {{ $s->start_time }}–{{ $s->end_time }}
+                        <div class="shrink-0">
+                            @if($existingEnrollment)
+                                <span class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-medium text-slate-400">
+                                    Đã đăng ký
                                 </span>
-                            @endforeach
+                            @else
+                                <form method="POST" action="{{ route('student.enroll.store', $subject) }}">
+                                    @csrf
+                                    <input type="hidden" name="lop_hoc_id" value="{{ $class->id }}">
+                                    <button type="submit"
+                                        @if($scheduleConflict) disabled aria-disabled="true" @endif
+                                        onclick="return confirm('Xác nhận đăng ký lớp này?')"
+                                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition {{ $scheduleConflict ? 'cursor-not-allowed bg-slate-300 text-slate-600 hover:bg-slate-300' : 'bg-cyan-600 hover:bg-cyan-700' }}">
+                                        <i class="fas {{ $scheduleConflict ? 'fa-ban' : 'fa-check' }}"></i>
+                                        {{ $scheduleConflict ? 'Bị trùng lịch' : 'Đăng ký lớp này' }}
+                                    </button>
+                                </form>
+                            @endif
                         </div>
-                        @endif
                     </div>
-
-                    <div class="shrink-0">
-                        @if($existingEnrollment)
-                            <span class="block rounded-xl bg-gray-100 px-5 py-2.5 text-center text-sm font-medium text-gray-400 cursor-not-allowed">
-                                Đã đăng ký
-                            </span>
-                        @else
-                            <form method="POST" action="{{ route('student.enroll.store', $subject) }}">
-                                @csrf
-                                <input type="hidden" name="lop_hoc_id" value="{{ $class->id }}">
-                                <button type="submit"
-                                    onclick="return confirm('Xác nhận đăng ký lớp này?')"
-                                    class="rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700 transition">
-                                    Đăng ký lớp này
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-            </div>
+                </article>
             @endforeach
-        </div>
+        </section>
 
         @if(! $existingEnrollment || ! $existingEnrollment->hasCourseAccess())
-            <div class="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
-                <h2 class="text-lg font-semibold text-cyan-900">Chưa thấy lớp phù hợp?</h2>
-                <a href="{{ route('student.enroll.request-form', $subject) }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition">
-                    <i class="fas fa-calendar-plus"></i>
-                    Gửi yêu cầu lịch học
-                </a>
-            </div>
+            <section class="rounded-3xl border border-cyan-200 bg-cyan-50 p-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-cyan-900">Chưa thấy lớp phù hợp?</h2>
+                        <p class="mt-1 text-sm text-cyan-800">Bạn có thể gửi yêu cầu lịch học riêng để admin sắp xếp lớp phù hợp hơn.</p>
+                    </div>
+                    <a href="{{ route('student.enroll.request-form', $subject) }}" class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700">
+                        <i class="fas fa-calendar-plus"></i>
+                        Gửi yêu cầu lịch học
+                    </a>
+                </div>
+            </section>
         @endif
     @endif
 </div>

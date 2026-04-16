@@ -77,7 +77,7 @@
                 <h2 class="text-lg font-semibold text-slate-900">Thông tin lớp cố định</h2>
                 <div class="mt-5 grid gap-4 md:grid-cols-2">
                     <div>
-                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học public</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học công khai</p>
                         <p class="mt-1 text-sm font-medium text-slate-900">{{ $course?->subject?->name ?? $enrollment->subject?->name ?? 'Chưa xác định' }}</p>
                     </div>
                     <div>
@@ -85,7 +85,7 @@
                         <p class="mt-1 text-sm font-medium text-slate-900">{{ $course?->subject?->category?->name ?? $enrollment->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>
                     </div>
                     <div>
-                        <p class="text-xs uppercase tracking-wide text-slate-400">Lớp nội bộ</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học triển khai</p>
                         <p class="mt-1 text-sm font-medium text-slate-900">{{ $classRoom?->displayName() ?? $course?->title ?? 'Chưa gắn lớp' }}</p>
                     </div>
                     <div>

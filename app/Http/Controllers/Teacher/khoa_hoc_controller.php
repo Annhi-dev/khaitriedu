@@ -29,9 +29,11 @@ class CourseController extends Controller
 
         $enrollments = Enrollment::whereIn('course_id', $courses->pluck('id'))
             ->whereIn('status', Enrollment::courseAccessStatuses())
-            ->with(['user', 'course.subject'])
+            ->with(['user', 'course.subject', 'classRoom'])
             ->orderByDesc('id')
             ->get();
+
+        Enrollment::syncDisplayStatusesByClass($enrollments);
 
         return view('giao_vien.khoa_hoc', compact('user', 'courses', 'enrollments'));
     }
@@ -50,12 +52,15 @@ class CourseController extends Controller
                 'modules.lessons',
                 'enrollments' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
                 'enrollments.user',
+                'enrollments.classRoom',
             ])
             ->find($id);
 
         if (! $course) {
             return redirect()->route('teacher.courses')->with('error', 'Lớp học không tồn tại.');
         }
+
+        Enrollment::syncDisplayStatusesByClass($course->enrollments);
 
         $gradeMap = Grade::whereIn('enrollment_id', $course->enrollments->pluck('id'))
             ->get()

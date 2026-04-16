@@ -223,7 +223,7 @@ class quan_ly_giao_vien_test extends TestCase
             'requested_date' => '2026-04-01',
             'requested_start_time' => '19:00',
             'requested_end_time' => '21:00',
-            'reason' => 'Can doi lich do cong tac',
+            'reason' => 'Cần dời buổi do công tác',
             'status' => ScheduleChangeRequest::STATUS_PENDING,
         ]);
 
@@ -239,7 +239,7 @@ class quan_ly_giao_vien_test extends TestCase
         $response->assertDontSee('Tieng Anh giao tiep - Lop toi');
         $response->assertSee('Thu 3 - Thu 5, 18:30 - 20:30');
         $response->assertSee('5 nam day giao tiep');
-        $response->assertSee('Can doi lich do cong tac');
+        $response->assertSee('Cần dời buổi do công tác');
     }
 
     public function test_admin_can_lock_and_unlock_teacher(): void

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ClassRoom;
 use App\Models\ClassSchedule;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\User;
 use Carbon\Carbon;
@@ -16,12 +17,15 @@ class AdminScheduleConflictService
     public function preview(array $filters): array
     {
         $candidate = $this->resolveCandidate($filters);
+        $studentConflicts = $this->studentConflicts();
 
         if (! $candidate['ready']) {
             return [
                 'candidate' => $candidate,
                 'teacherConflicts' => collect(),
                 'roomConflicts' => collect(),
+                'studentConflicts' => $studentConflicts,
+                'studentConflictCount' => $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
                 'hasConflicts' => false,
             ];
         }
@@ -37,7 +41,42 @@ class AdminScheduleConflictService
             'candidate' => $candidate,
             'teacherConflicts' => $teacherConflicts,
             'roomConflicts' => $roomConflicts,
+            'studentConflicts' => $studentConflicts,
+            'studentConflictCount' => $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
             'hasConflicts' => $teacherConflicts->isNotEmpty() || $roomConflicts->isNotEmpty(),
+        ];
+    }
+
+    public function previewCourse(array $filters): array
+    {
+        $candidate = $this->resolveCandidate($filters);
+
+        if (! $candidate['ready']) {
+            return [
+                'candidate' => $candidate,
+                'teacherConflicts' => collect(),
+                'roomConflicts' => collect(),
+                'studentConflicts' => collect(),
+                'studentConflictCount' => 0,
+                'hasConflicts' => false,
+            ];
+        }
+
+        $teacherConflicts = $candidate['teacher_id']
+            ? $this->teacherConflicts($candidate)
+            : collect();
+        $roomConflicts = $candidate['room_id']
+            ? $this->roomConflicts($candidate)
+            : collect();
+        $studentConflicts = $this->candidateStudentConflicts($candidate);
+
+        return [
+            'candidate' => $candidate,
+            'teacherConflicts' => $teacherConflicts,
+            'roomConflicts' => $roomConflicts,
+            'studentConflicts' => $studentConflicts,
+            'studentConflictCount' => $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
+            'hasConflicts' => $teacherConflicts->isNotEmpty() || $roomConflicts->isNotEmpty() || $studentConflicts->isNotEmpty(),
         ];
     }
 
@@ -347,6 +386,250 @@ class AdminScheduleConflictService
     protected function meetingDaysOverlap(array $sourceDays, array $targetDays): bool
     {
         return array_intersect($sourceDays, $targetDays) !== [];
+    }
+
+    public function studentConflicts(): Collection
+    {
+        $enrollments = Enrollment::query()
+            ->with([
+                'user',
+                'subject.category',
+                'course.subject.category',
+                'course.classRooms.schedules',
+                'classRoom.course.subject.category',
+                'classRoom.room',
+                'classRoom.teacher',
+                'classRoom.schedules',
+            ])
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereNotNull('lop_hoc_id')
+            ->get();
+
+        Enrollment::syncDisplayStatusesByClass($enrollments);
+
+        return $enrollments
+            ->groupBy('user_id')
+            ->map(function (Collection $studentEnrollments) {
+                $student = $studentEnrollments->first()?->user;
+                $pairs = collect();
+                $classRoomIds = collect();
+                $items = $studentEnrollments->values();
+
+                for ($i = 0; $i < $items->count(); $i++) {
+                    $firstEnrollment = $items[$i];
+                    $firstClassRoom = $firstEnrollment->currentClassRoom();
+
+                    if (! $firstClassRoom) {
+                        continue;
+                    }
+
+                    $classRoomIds->push($firstClassRoom->id);
+
+                    for ($j = $i + 1; $j < $items->count(); $j++) {
+                        $secondEnrollment = $items[$j];
+                        $secondClassRoom = $secondEnrollment->currentClassRoom();
+
+                        if (! $secondClassRoom || (int) $firstClassRoom->id === (int) $secondClassRoom->id) {
+                            continue;
+                        }
+
+                        $conflict = $firstClassRoom->firstScheduleConflictWith($secondClassRoom);
+
+                        if (! $conflict) {
+                            continue;
+                        }
+
+                        $pairs->push([
+                            'first' => [
+                                'enrollment_id' => $firstEnrollment->id,
+                                'class_room_id' => $firstClassRoom->id,
+                                'title' => $firstClassRoom->displayName(),
+                                'schedule' => $firstClassRoom->scheduleSummary(),
+                                'status' => $firstEnrollment->displayStatusLabel(),
+                                'url' => route('admin.classes.show', $firstClassRoom),
+                                'edit_url' => $firstClassRoom->course
+                                    ? route('admin.course.show', $firstClassRoom->course)
+                                    : route('admin.classes.show', $firstClassRoom),
+                            ],
+                            'second' => [
+                                'enrollment_id' => $secondEnrollment->id,
+                                'class_room_id' => $secondClassRoom->id,
+                                'title' => $secondClassRoom->displayName(),
+                                'schedule' => $secondClassRoom->scheduleSummary(),
+                                'status' => $secondEnrollment->displayStatusLabel(),
+                                'url' => route('admin.classes.show', $secondClassRoom),
+                                'edit_url' => $secondClassRoom->course
+                                    ? route('admin.course.show', $secondClassRoom->course)
+                                    : route('admin.classes.show', $secondClassRoom),
+                            ],
+                            'day_label' => $conflict['day_label'] ?? 'Chưa rõ ngày',
+                            'existing_time_label' => $conflict['existing_time_label'] ?? '',
+                            'candidate_time_label' => $conflict['candidate_time_label'] ?? '',
+                            'note' => sprintf(
+                                'Trùng vào %s, %s - %s.',
+                                $conflict['day_label'] ?? 'chưa rõ ngày',
+                                $conflict['existing_time_label'] ?? '',
+                                $conflict['candidate_time_label'] ?? ''
+                            ),
+                        ]);
+                    }
+                }
+
+                if ($pairs->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'student' => $student,
+                    'student_name' => $student?->name ?? 'Chưa rõ',
+                    'student_email' => $student?->email ?? '',
+                    'student_url' => $student ? route('admin.students.show', $student) : null,
+                    'class_count' => $classRoomIds->unique()->count(),
+                    'conflict_count' => $pairs->count(),
+                    'conflicts' => $pairs->values(),
+                ];
+            })
+            ->filter()
+            ->sortByDesc(fn (array $item) => $item['conflict_count'])
+            ->values();
+    }
+
+    protected function candidateStudentConflicts(array $candidate): Collection
+    {
+        $course = $candidate['course'] ?? null;
+        $classRoom = $candidate['classRoom'] ?? null;
+        $targetClassRoom = $classRoom ?: $course?->currentClassRoom();
+
+        if (! $targetClassRoom) {
+            return collect();
+        }
+
+        $studentIds = $targetClassRoom->enrollments()
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->pluck('user_id');
+
+        if ($studentIds->isEmpty()) {
+            return collect();
+        }
+
+        $conflictingEnrollments = Enrollment::query()
+            ->with([
+                'user',
+                'course.subject.category',
+                'course.classRooms.room',
+                'course.classRooms.teacher',
+                'course.classRooms.schedules',
+            ])
+            ->whereIn('user_id', $studentIds)
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereHas('course', function (Builder $query) use ($candidate) {
+                $query->whereIn('status', Course::schedulingStatuses())
+                    ->when($candidate['exclude_course_id'] ?? null, fn (Builder $builder) => $builder->whereKeyNot($candidate['exclude_course_id']))
+                    ->where('start_time', '<', $candidate['end_time'])
+                    ->where('end_time', '>', $candidate['start_time'])
+                    ->whereDate('start_date', '<=', $candidate['end_date'])
+                    ->where(function (Builder $builder) use ($candidate) {
+                        $builder->whereNull('end_date')
+                            ->orWhereDate('end_date', '>=', $candidate['start_date']);
+                    });
+            })
+            ->get()
+            ->filter(fn (Enrollment $enrollment) => $enrollment->course !== null
+                && $this->meetingDaysOverlap($candidate['days'], $enrollment->course->meetingDayValues()));
+
+        return $conflictingEnrollments
+            ->groupBy('user_id')
+            ->map(function (Collection $studentEnrollments) use ($candidate) {
+                $student = $studentEnrollments->first()?->user;
+                $pairs = $studentEnrollments
+                    ->map(function (Enrollment $enrollment) use ($candidate) {
+                        $conflictingCourse = $enrollment->course;
+                        $conflictingClassRoom = $conflictingCourse?->currentClassRoom();
+
+                        if (! $conflictingCourse) {
+                            return null;
+                        }
+
+                        return [
+                            'enrollment_id' => $enrollment->id,
+                            'course_title' => $conflictingCourse->title,
+                            'schedule' => $conflictingCourse->formattedSchedule(),
+                            'candidate_schedule' => $candidate['schedule_label'] ?? $conflictingCourse->formattedSchedule(),
+                            'day_label' => $conflictingCourse->meetingDaysLabel(),
+                            'note' => 'Trùng với lịch đang chọn ' . ($candidate['schedule_label'] ?? 'chưa rõ'),
+                            'url' => $conflictingClassRoom
+                                ? route('admin.classes.show', $conflictingClassRoom)
+                                : route('admin.course.show', $conflictingCourse),
+                            'edit_url' => $conflictingCourse
+                                ? route('admin.course.show', $conflictingCourse)
+                                : null,
+                        ];
+                    })
+                    ->filter()
+                    ->values();
+
+                if ($pairs->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'student_name' => $student?->name ?? 'Chưa rõ',
+                    'student_email' => $student?->email ?? '',
+                    'student_url' => $student ? route('admin.students.show', $student) : null,
+                    'conflict_count' => $pairs->count(),
+                    'conflicts' => $pairs,
+                ];
+            })
+            ->filter()
+            ->values();
+    }
+
+    public function studentConflictPairCount(): int
+    {
+        $enrollments = Enrollment::query()
+            ->with([
+                'user',
+                'subject.category',
+                'course.subject.category',
+                'course.classRooms.schedules',
+                'classRoom.course.subject.category',
+                'classRoom.room',
+                'classRoom.teacher',
+                'classRoom.schedules',
+            ])
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereNotNull('lop_hoc_id')
+            ->get();
+
+        Enrollment::syncDisplayStatusesByClass($enrollments);
+
+        $count = 0;
+
+        foreach ($enrollments->groupBy('user_id') as $studentEnrollments) {
+            $items = $studentEnrollments->values();
+
+            for ($i = 0; $i < $items->count(); $i++) {
+                $firstClassRoom = $items[$i]->currentClassRoom();
+
+                if (! $firstClassRoom) {
+                    continue;
+                }
+
+                for ($j = $i + 1; $j < $items->count(); $j++) {
+                    $secondClassRoom = $items[$j]->currentClassRoom();
+
+                    if (! $secondClassRoom || (int) $firstClassRoom->id === (int) $secondClassRoom->id) {
+                        continue;
+                    }
+
+                    if ($firstClassRoom->firstScheduleConflictWith($secondClassRoom)) {
+                        $count++;
+                    }
+                }
+            }
+        }
+
+        return $count;
     }
 
     protected function normalizeDays(mixed $days): array

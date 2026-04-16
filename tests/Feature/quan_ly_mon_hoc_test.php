@@ -159,6 +159,65 @@ class quan_ly_mon_hoc_test extends TestCase
         ]);
     }
 
+    public function test_updating_subject_syncs_inherited_internal_course_data_only(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $category = Category::create([
+            'name' => 'Ngoai ngu',
+            'slug' => 'ngoai-ngu',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+
+        $subject = Subject::create([
+            'name' => 'Tieng Anh giao tiep',
+            'description' => 'Mo ta cu',
+            'category_id' => $category->id,
+            'status' => Subject::STATUS_OPEN,
+            'price' => 1200000,
+        ]);
+
+        $inheritedCourse = Course::create([
+            'subject_id' => $subject->id,
+            'title' => 'KhaiTriEdu 2026 - Tieng Anh giao tiep',
+            'description' => 'Mo ta cu',
+            'price' => 1200000,
+        ]);
+
+        $customizedCourse = Course::create([
+            'subject_id' => $subject->id,
+            'title' => 'Lop dac biet cho doanh nghiep',
+            'description' => 'Noi dung tuy chinh',
+            'price' => 1999000,
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->post(route('admin.subjects.update', $subject), [
+                'name' => 'Tieng Anh giao tiep nang cao',
+                'description' => 'Mo ta moi',
+                'category_id' => $category->id,
+                'price' => 1500000,
+                'duration' => 48,
+                'status' => Subject::STATUS_OPEN,
+            ]);
+
+        $response->assertRedirect(route('admin.subject.show', $subject));
+
+        $this->assertDatabaseHas('khoa_hoc', [
+            'id' => $inheritedCourse->id,
+            'title' => 'KhaiTriEdu 2026 - Tieng Anh giao tiep nang cao',
+            'description' => 'Mo ta moi',
+            'price' => 1500000,
+        ]);
+
+        $this->assertDatabaseHas('khoa_hoc', [
+            'id' => $customizedCourse->id,
+            'title' => 'Lop dac biet cho doanh nghiep',
+            'description' => 'Noi dung tuy chinh',
+            'price' => 1999000,
+        ]);
+    }
+
     public function test_admin_can_view_public_course_detail_with_counts(): void
     {
         $admin = User::factory()->admin()->create();

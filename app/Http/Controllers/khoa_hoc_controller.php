@@ -215,10 +215,10 @@ class CourseController extends Controller
         $course = Course::find($id);
 
         if (! $course) {
-            return redirect()->route('courses.index')->with('error', 'Lop hoc khong ton tai.');
+            return redirect()->route('courses.index')->with('error', 'Lớp học không tồn tại.');
         }
 
-        return redirect()->route('khoa-hoc.show', $course->subject_id)->with('error', 'Hoc vien khong dang ky truc tiep vao lop hoc. Vui long gui yeu cau o trang khoa hoc.');
+        return redirect()->route('khoa-hoc.show', $course->subject_id)->with('error', 'Học viên không đăng ký trực tiếp vào lớp học. Vui lòng gửi yêu cầu ở trang khóa học.');
     }
 
     public function review(Request $request, $id)
@@ -235,7 +235,7 @@ class CourseController extends Controller
             ->first();
 
         if (! $enrollment) {
-            return back()->with('error', 'Ban chua duoc xep vao lop hoc nay.');
+            return back()->with('error', 'Bạn chưa được xếp vào lớp học này.');
         }
 
         $data = $request->validate([
@@ -248,7 +248,7 @@ class CourseController extends Controller
             $data
         );
 
-        return back()->with('status', 'Danh gia da duoc gui.');
+        return back()->with('status', 'Đánh giá đã được gửi.');
     }
 
     public function showSubject($id)
@@ -257,7 +257,7 @@ class CourseController extends Controller
         $subject = Subject::with(['category', 'courses.teacher'])->find($id);
 
         if (! $subject || ($subject->category && ! $subject->category->isActive())) {
-            return redirect()->route('courses.index')->with('error', 'Khoa hoc khong ton tai hoac dang tam an.');
+            return redirect()->route('courses.index')->with('error', 'Khóa học không tồn tại hoặc đang tạm ẩn.');
         }
 
         $userEnrollment = $user && $user->isStudent()
@@ -278,7 +278,7 @@ class CourseController extends Controller
         $subject = Subject::find($id);
 
         if (! $subject) {
-            return back()->with('error', 'Khoa hoc khong ton tai.');
+            return back()->with('error', 'Khóa học không tồn tại.');
         }
 
         $data = validator(

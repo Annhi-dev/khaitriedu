@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\ClassRoom;
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\CourseTimeSlot;
 use App\Models\Enrollment;
@@ -13,6 +15,7 @@ use App\Models\SlotRegistrationChoice;
 use App\Models\Subject;
 use App\Models\TeacherApplication;
 use App\Models\User;
+use App\Services\AdminScheduleConflictService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -130,6 +133,143 @@ class bang_dieu_khien_test extends TestCase
                 && $pendingSlotRegistrationsList->first()->student?->is($student)
                 && (int) $pendingSlotRegistrationsList->first()->choices_count === 1;
         });
+    }
+
+    public function test_admin_dashboard_shows_schedule_conflict_warning_when_conflicts_exist(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => \App\Models\Role::idByName(User::ROLE_ADMIN),
+        ]);
+        $student = User::factory()->create([
+            'role_id' => \App\Models\Role::idByName(User::ROLE_STUDENT),
+            'name' => 'Hoc vien trung lich',
+        ]);
+        $teacherA = User::factory()->create([
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
+        ]);
+        $teacherB = User::factory()->create([
+            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
+        ]);
+
+        $category = Category::create([
+            'name' => 'Ngoại ngữ - Tin học',
+            'slug' => 'ngoai-ngu-tin-hoc-conflict',
+            'status' => Category::STATUS_ACTIVE,
+        ]);
+
+        $subjectA = Subject::create([
+            'name' => 'Tin học văn phòng',
+            'price' => 1500000,
+            'category_id' => $category->id,
+        ]);
+        $subjectB = Subject::create([
+            'name' => 'Tiếng Anh giao tiếp',
+            'price' => 1800000,
+            'category_id' => $category->id,
+        ]);
+
+        $roomA = Room::create([
+            'code' => 'P201',
+            'name' => 'Phòng 201',
+            'capacity' => 30,
+            'status' => Room::STATUS_ACTIVE,
+        ]);
+        $roomB = Room::create([
+            'code' => 'P202',
+            'name' => 'Phòng 202',
+            'capacity' => 30,
+            'status' => Room::STATUS_ACTIVE,
+        ]);
+
+        $courseA = Course::create([
+            'subject_id' => $subjectA->id,
+            'title' => 'Tin học văn phòng - Ca tối',
+            'teacher_id' => $teacherA->id,
+            'start_date' => '2026-05-01',
+            'end_date' => '2026-07-01',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+            'status' => Course::STATUS_ACTIVE,
+        ]);
+        $courseB = Course::create([
+            'subject_id' => $subjectB->id,
+            'title' => 'Tiếng Anh giao tiếp - Ca tối',
+            'teacher_id' => $teacherB->id,
+            'start_date' => '2026-05-01',
+            'end_date' => '2026-07-01',
+            'start_time' => '18:00',
+            'end_time' => '20:00',
+            'status' => Course::STATUS_ACTIVE,
+        ]);
+
+        $classRoomA = ClassRoom::create([
+            'subject_id' => $subjectA->id,
+            'course_id' => $courseA->id,
+            'name' => $courseA->title,
+            'room_id' => $roomA->id,
+            'teacher_id' => $teacherA->id,
+            'start_date' => '2026-05-01',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+        $classRoomB = ClassRoom::create([
+            'subject_id' => $subjectB->id,
+            'course_id' => $courseB->id,
+            'name' => $courseB->title,
+            'room_id' => $roomB->id,
+            'teacher_id' => $teacherB->id,
+            'start_date' => '2026-05-01',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        foreach ([[$classRoomA, $teacherA, $roomA], [$classRoomB, $teacherB, $roomB]] as [$classRoom, $teacher, $room]) {
+            ClassSchedule::create([
+                'lop_hoc_id' => $classRoom->id,
+                'teacher_id' => $teacher->id,
+                'room_id' => $room->id,
+                'day_of_week' => 'Monday',
+                'start_time' => '18:00',
+                'end_time' => '20:00',
+            ]);
+        }
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectA->id,
+            'course_id' => $courseA->id,
+            'lop_hoc_id' => $classRoomA->id,
+            'assigned_teacher_id' => $teacherA->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $courseA->formattedSchedule(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectB->id,
+            'course_id' => $courseB->id,
+            'lop_hoc_id' => $classRoomB->id,
+            'assigned_teacher_id' => $teacherB->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $courseB->formattedSchedule(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $admin->id])
+            ->get('/admin/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Cảnh báo xung đột lịch');
+        $response->assertSee('Học viên đang bị trùng lịch');
+        $response->assertSee('Kiểm tra xung đột');
+        $response->assertSee(route('admin.schedules.conflicts'), false);
+        $response->assertViewHas('studentConflictStudentCount', 1);
+        $response->assertViewHas('studentConflictPairCount', 1);
+        $this->assertSame(1, app(AdminScheduleConflictService::class)->studentConflictPairCount());
     }
 
     public function test_student_is_blocked_from_admin_dashboard(): void

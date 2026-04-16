@@ -48,7 +48,14 @@ class AdminSubjectService
 
     public function updateSubject(Subject $subject, array $data, ?UploadedFile $image = null): Subject
     {
+        $previous = [
+            'name' => (string) $subject->name,
+            'description' => $subject->description,
+            'price' => (float) ($subject->price ?? 0),
+        ];
+
         $subject->update($this->buildPayload($data, $image, $subject));
+        $this->syncRelatedCourses($subject, $previous);
 
         return $subject;
     }
@@ -92,6 +99,7 @@ class AdminSubjectService
             'description' => $data['description'] ?? null,
             'price' => $data['price'] ?? 0,
             'duration' => $data['duration'] ?? null,
+            'test_count' => $data['test_count'] ?? Subject::DEFAULT_TEST_COUNT,
             'status' => $data['status'],
             'category_id' => $data['category_id'] ?? null,
         ];
@@ -103,5 +111,94 @@ class AdminSubjectService
         }
 
         return $payload;
+    }
+
+    protected function syncRelatedCourses(Subject $subject, array $previous): void
+    {
+        $subject->loadMissing('courses');
+
+        $oldName = (string) ($previous['name'] ?? '');
+        $oldDescription = $this->normalizeText($previous['description'] ?? null);
+        $oldPrice = (float) ($previous['price'] ?? 0);
+        $newName = (string) $subject->name;
+        $newDescription = $subject->description;
+        $newPrice = (float) ($subject->price ?? 0);
+
+        foreach ($subject->courses as $course) {
+            $updates = [];
+            $syncedTitle = $this->syncTitleByPattern((string) $course->title, $oldName, $newName);
+
+            if ($syncedTitle !== null && $syncedTitle !== $course->title) {
+                $updates['title'] = $syncedTitle;
+            }
+
+            if ($this->normalizeText($course->description) === $oldDescription) {
+                $updates['description'] = $newDescription;
+            }
+
+            if ($this->samePrice((float) ($course->price ?? 0), $oldPrice)) {
+                $updates['price'] = $newPrice;
+            }
+
+            if ($updates !== []) {
+                $course->update($updates);
+            }
+        }
+    }
+
+    protected function syncTitleByPattern(string $title, string $oldName, string $newName): ?string
+    {
+        $normalizedTitle = $this->normalizeText($title);
+        $normalizedOldName = $this->normalizeText($oldName);
+
+        if ($normalizedTitle === '' || $normalizedOldName === '') {
+            return null;
+        }
+
+        if ($normalizedTitle === $normalizedOldName) {
+            return $newName;
+        }
+
+        $patterns = [
+            '/^(KhaiTriEdu\s+\d{4}\s*-\s*)(.+)$/u',
+            '/^(Khoa\s+\d+\s*-\s*)(.+)$/u',
+            '/^(Khóa\s+\d+\s*-\s*)(.+)$/u',
+            '/^(Khóa nội bộ\s*-\s*)(.+)$/u',
+            '/^(Khoa noi bo\s*-\s*)(.+)$/u',
+            '/^(Lop\s+\d+\s*-\s*)(.+)$/u',
+            '/^(Lớp\s+\d+\s*-\s*)(.+)$/u',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $title, $matches) !== 1) {
+                continue;
+            }
+
+            $titleSubjectPart = $this->normalizeText($matches[2] ?? '');
+
+            if ($titleSubjectPart === $normalizedOldName) {
+                return ($matches[1] ?? '') . $newName;
+            }
+        }
+
+        return null;
+    }
+
+    protected function normalizeText(?string $value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+
+        return mb_strtolower($value, 'UTF-8');
+    }
+
+    protected function samePrice(float $left, float $right): bool
+    {
+        return abs($left - $right) < 0.0001;
     }
 }

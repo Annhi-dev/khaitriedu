@@ -16,12 +16,14 @@ class Grade extends Model
         'teacher_id',
         'test_name',
         'score',
+        'weight',
         'grade',
         'feedback',
     ];
 
     protected $casts = [
         'score' => 'decimal:2',
+        'weight' => 'integer',
     ];
 
     public function enrollment()

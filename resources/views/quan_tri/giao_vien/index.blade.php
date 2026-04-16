@@ -43,7 +43,7 @@
 
                 <h1 class="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Quản lý giảng viên</h1>
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-cyan-50/90">
-                    Quản lý tài khoản giảng viên, chuyên môn giảng dạy, phòng ban phụ trách, trạng thái hoạt động và các yêu cầu đổi lịch ở cùng một nơi.
+                    Quản lý tài khoản giảng viên, chuyên môn giảng dạy, phòng ban phụ trách, trạng thái hoạt động và các yêu cầu dời buổi ở cùng một nơi.
                 </p>
 
                 <div class="mt-5 flex flex-wrap gap-3">
@@ -137,7 +137,7 @@
                         <th class="px-6 py-4 text-left font-semibold">Chuyên môn</th>
                         <th class="px-6 py-4 text-left font-semibold">Liên hệ</th>
                         <th class="px-6 py-4 text-left font-semibold">Trạng thái</th>
-                        <th class="px-6 py-4 text-left font-semibold">Yêu cầu đổi lịch</th>
+                        <th class="px-6 py-4 text-left font-semibold">Yêu cầu dời buổi</th>
                         <th class="px-6 py-4 text-right font-semibold">Hành động</th>
                     </tr>
                 </thead>

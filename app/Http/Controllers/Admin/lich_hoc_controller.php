@@ -39,13 +39,16 @@ class ScheduleController extends Controller
         }
 
         $filters = $request->validated();
-        $preview = $conflictService->preview($filters);
+        $preview = ! empty($filters['course_id']) || ! empty($filters['class_room_id'])
+            ? $conflictService->previewCourse($filters)
+            : $conflictService->preview($filters);
 
         return view('quan_tri.lich_hoc.xung_dot', array_merge(
             ['current' => $current],
             $preview,
             [
                 'filters' => $filters,
+                'showCleanupReport' => empty($filters['course_id']) && empty($filters['class_room_id']),
                 'teachers' => $scheduleService->teacherOptions(),
                 'rooms' => $scheduleService->roomOptions(),
                 'courses' => $scheduleService->courseOptions(),

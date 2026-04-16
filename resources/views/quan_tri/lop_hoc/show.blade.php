@@ -27,6 +27,53 @@
         </div>
     @endif
 
+    <div class="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-5 shadow-sm">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-cyan-900">Cấu hình hệ số kiểm tra</h2>
+                <p class="mt-1 text-sm text-cyan-800">Chỉ admin được chỉnh hệ số. Giáo viên chỉ xem để nhập điểm theo đúng cấu hình.</p>
+            </div>
+            @unless($gradeWeightsSupported ?? true)
+                <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    Cơ sở dữ liệu chưa có cột <code>weight</code> để lưu hệ số.
+                </div>
+            @endunless
+        </div>
+
+        <form method="POST" action="{{ route('admin.classes.grade-weights.update', $class) }}" class="mt-4 space-y-4">
+            @csrf
+            <div class="flex flex-wrap gap-3">
+                @forelse($gradeColumns as $column)
+                    <label class="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-cyan-100">
+                        <span class="text-sm font-semibold text-cyan-900">KT {{ $column['index'] }}</span>
+                        <input
+                            type="number"
+                            min="1"
+                            max="12"
+                            step="1"
+                            name="weights[{{ $column['index'] }}]"
+                            value="{{ old('weights.' . $column['index'], $column['weight'] ?? 1) }}"
+                            @disabled(!($gradeWeightsSupported ?? true))
+                            class="w-20 rounded-xl border border-cyan-200 px-3 py-2 text-center text-sm text-slate-900 focus:border-cyan-500 focus:outline-none"
+                        >
+                    </label>
+                @empty
+                    <div class="rounded-2xl bg-white px-4 py-3 text-sm text-slate-500 ring-1 ring-cyan-100">
+                        Chưa xác định được số cột kiểm tra cho lớp này.
+                    </div>
+                @endforelse
+            </div>
+
+            @if($gradeWeightsSupported ?? true)
+                <div class="flex justify-end">
+                    <button type="submit" class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700">Lưu hệ số</button>
+                </div>
+            @else
+                <p class="text-sm text-amber-800">Hãy chạy migrate trước khi chỉnh hệ số.</p>
+            @endif
+        </form>
+    </div>
+
     <div class="grid gap-5 md:grid-cols-2">
         
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

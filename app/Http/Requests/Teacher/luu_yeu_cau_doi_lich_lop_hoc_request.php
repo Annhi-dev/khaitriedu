@@ -85,13 +85,13 @@ class StoreTeacherClassScheduleChangeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'requested_date.required_without' => 'Vui long chon ngay moi.',
-            'requested_start_time.required_without' => 'Vui long chon gio bat dau moi.',
-            'requested_end_time.required_without' => 'Vui long chon gio ket thuc moi.',
-            'requested_end_time.after' => 'Gio ket thuc phai sau gio bat dau.',
-            'requested_end_at.after' => 'Thoi gian ket thuc phai sau thoi gian bat dau.',
-            'requested_room_id.exists' => 'Phong hoc de xuat khong hop le hoac dang tam ngung.',
-            'reason.required' => 'Vui long nhap ly do doi lich.',
+            'requested_date.required_without' => 'Vui lòng chọn ngày dạy bù.',
+            'requested_start_time.required_without' => 'Vui lòng chọn giờ dạy bù bắt đầu.',
+            'requested_end_time.required_without' => 'Vui lòng chọn giờ dạy bù kết thúc.',
+            'requested_end_time.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
+            'requested_end_at.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
+            'requested_room_id.exists' => 'Phòng học đề xuất không hợp lệ hoặc đang tạm ngừng.',
+            'reason.required' => 'Vui lòng nhập lý do dời buổi.',
         ];
     }
 }

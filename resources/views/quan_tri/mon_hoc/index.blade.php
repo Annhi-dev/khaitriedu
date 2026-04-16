@@ -1,5 +1,5 @@
 @extends('bo_cuc.quan_tri')
-@section('title', 'Quản lý khóa học')
+@section('title', 'Quản lý khóa học công khai')
 @section('content')
 @php
     $createRouteParams = [];
@@ -10,7 +10,7 @@
     }
 @endphp
 <div class="space-y-6">
-    <x-quan_tri.tieu_de_trang title="Quản lý khóa học" subtitle="Các khóa học public để học viên đăng ký">
+    <x-quan_tri.tieu_de_trang title="Quản lý khóa học công khai" subtitle="Danh sách khóa học hiển thị cho học viên ngoài trang công khai">
         <a href="{{ route('admin.subjects.create-page', $createRouteParams) }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
             <i class="fas fa-plus mr-1"></i> Thêm khóa học
         </a>

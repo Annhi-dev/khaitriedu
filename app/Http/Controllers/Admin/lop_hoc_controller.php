@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\TeacherClassroomService;
 use App\Services\AdminClassRoomService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -82,7 +83,7 @@ class ClassRoomController extends Controller
             ->with('status', 'Lớp học đã được tạo thành công.');
     }
 
-    public function show(ClassRoom $class)
+    public function show(ClassRoom $class, TeacherClassroomService $gradeService)
     {
         [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
         if ($redirect) {
@@ -90,8 +91,27 @@ class ClassRoomController extends Controller
         }
 
         $class->load(['subject', 'course', 'room', 'teacher', 'schedules', 'enrollments.user']);
+        $gradeColumns = $gradeService->gradeColumnsForClass($class);
+        $gradeWeightsSupported = $gradeService->gradeWeightsSupported();
 
-        return view('quan_tri.lop_hoc.show', compact('current', 'class'));
+        return view('quan_tri.lop_hoc.show', compact('current', 'class', 'gradeColumns', 'gradeWeightsSupported'));
+    }
+
+    public function updateGradeWeights(Request $request, ClassRoom $class, TeacherClassroomService $gradeService)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $data = $request->validate([
+            'weights' => ['required', 'array', 'min:1'],
+            'weights.*' => ['nullable', 'integer', 'min:1', 'max:12'],
+        ]);
+
+        $gradeService->updateGradeWeights($class, $data['weights']);
+
+        return redirect()->route('admin.classes.show', $class)->with('status', 'Đã cập nhật hệ số các lần kiểm tra.');
     }
 
     public function destroy(ClassRoom $class)

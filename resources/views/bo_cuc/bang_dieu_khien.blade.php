@@ -29,7 +29,16 @@
             </div>
             
             <nav class="sidebar-nav">
-                @php $user = Auth::user(); @endphp
+                @php
+                    $user = Auth::user();
+                    $profileRoute = '#';
+
+                    if ($user) {
+                        $profileRoute = $user->isAdmin()
+                            ? route('admin.profile.show')
+                            : ($user->isTeacher() ? route('teacher.profile.show') : route('student.profile.show'));
+                    }
+                @endphp
                 
                 @if($user)
                     
@@ -82,7 +91,7 @@
                         <a href="{{ route('student.schedule') }}" class="nav-item {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
                             <i class="fas fa-calendar-alt nav-icon"></i> Lịch học
                         </a>
-                        <a href="#" class="nav-item">
+                        <a href="{{ $profileRoute }}" class="nav-item">
                             <i class="fas fa-user nav-icon"></i> Cá nhân
                         </a>
                     @endif
@@ -116,9 +125,13 @@
                     @if(Auth::check())
                         <div class="relative" x-data="{ profileOpen: false }" @click.away="profileOpen = false">
                             <button @click="profileOpen = !profileOpen" class="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1 border border-gray-200 hover:bg-gray-50 transition">
-                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
-                                    {{ substr(Auth::user()->name, 0, 1) }}
-                                </div>
+                                @if (Auth::user()->avatarUrl())
+                                    <img src="{{ Auth::user()->avatarUrl() }}" alt="Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-blue-100">
+                                @else
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+                                        {{ substr(Auth::user()->name, 0, 1) }}
+                                    </div>
+                                @endif
                                 <span class="text-sm font-medium text-gray-700 hidden md:block px-1">{{ Auth::user()->name }}</span>
                                 <i class="fas fa-chevron-down text-xs text-gray-400 pr-1 hidden md:block"></i>
                             </button>
@@ -129,7 +142,7 @@
                                     <p class="text-sm text-gray-900 font-bold truncate">{{ Auth::user()->name }}</p>
                                     <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                                 </div>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600"><i class="fas fa-user mr-2 w-4 text-center text-gray-400"></i> Hồ sơ</a>
+                                <a href="{{ $profileRoute }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600"><i class="fas fa-user mr-2 w-4 text-center text-gray-400"></i> Hồ sơ</a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit" class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"><i class="fas fa-sign-out-alt mr-2 w-4 text-center"></i> Đăng xuất</button>

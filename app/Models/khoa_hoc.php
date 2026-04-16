@@ -9,6 +9,7 @@ class Course extends Model
 {
     use HasFactory;
 
+    public const DEFAULT_CAPACITY = 30;
     public const STATUS_DRAFT = 'draft';
     public const STATUS_PENDING_OPEN = 'pending_open';
     public const STATUS_SCHEDULED = 'scheduled';
@@ -66,6 +67,11 @@ class Course extends Model
     public static function minimumStudentsToOpen(): int
     {
         return 5;
+    }
+
+    public static function defaultCapacity(): int
+    {
+        return self::DEFAULT_CAPACITY;
     }
 
     public function subject()

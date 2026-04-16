@@ -1,5 +1,5 @@
 @extends('bo_cuc.quan_tri')
-@section('title', 'Quản lý khóa học')
+@section('title', 'Quản lý khóa học triển khai')
 @section('content')
 @php
   $selectedCategoryId = old('category_id', $selectedCategory?->id ?? '');
@@ -10,11 +10,11 @@
 <div class="max-w-6xl mx-auto space-y-6">
   <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-primary-dark">{{ $selectedCategory ? 'Khóa học trong nhóm ' . $selectedCategory->name : 'Quản lý khóa học' }}</h1>
+      <h1 class="text-2xl font-bold text-primary-dark">{{ $selectedCategory ? 'Khóa học triển khai trong nhóm ' . $selectedCategory->name : 'Quản lý khóa học triển khai' }}</h1>
     </div>
     <div class="flex flex-wrap gap-2">
       @if ($selectedCategory)
-        <a href="{{ route('admin.courses') }}" class="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary-light/20 transition">Tất cả khóa học</a>
+        <a href="{{ route('admin.courses') }}" class="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary-light/20 transition">Tất cả khóa học triển khai</a>
         <a href="{{ route('admin.categories.show', $selectedCategory) }}" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:border-primary hover:text-primary transition">Quay lại nhóm học</a>
       @else
         <a href="{{ route('admin.subjects') }}" class="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary-light/20 transition">Danh mục</a>
@@ -29,7 +29,7 @@
   <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
     <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
-        <h2 class="text-lg font-semibold text-gray-900">{{ $selectedCategory ? 'Tạo khóa học mới trong nhóm' : 'Tạo khóa học mới' }}</h2>
+        <h2 class="text-lg font-semibold text-gray-900">{{ $selectedCategory ? 'Tạo khóa học triển khai mới trong nhóm' : 'Tạo khóa học triển khai mới' }}</h2>
       </div>
     </div>
 

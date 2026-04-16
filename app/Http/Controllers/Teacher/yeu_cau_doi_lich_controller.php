@@ -42,11 +42,11 @@ class ScheduleChangeRequestController extends Controller
             ->find($course->id);
 
         if (! $course) {
-            return redirect()->route('teacher.courses')->with('error', 'Bạn không có quyền gửi yêu cầu đổi lịch cho lớp học này.');
+            return redirect()->route('teacher.courses')->with('error', 'Bạn không có quyền gửi yêu cầu dời buổi cho lớp học này.');
         }
 
         if (! in_array($course->status, Course::schedulingStatuses(), true) || ! $course->day_of_week || ! $course->start_date || ! $course->start_time || ! $course->end_time) {
-            return redirect()->route('teacher.course.show', $course->id)->with('error', 'Lớp học này chưa có lịch chính thức để gửi yêu cầu đổi lịch.');
+            return redirect()->route('teacher.course.show', $course->id)->with('error', 'Lớp học này chưa có lịch chính thức để gửi yêu cầu dời buổi.');
         }
 
         return view('giao_vien.yeu_cau_doi_lich.create', compact('current', 'course'));
@@ -62,12 +62,12 @@ class ScheduleChangeRequestController extends Controller
         $course = Course::query()->where('teacher_id', $current->id)->find($course->id);
 
         if (! $course) {
-            return redirect()->route('teacher.courses')->with('error', 'Bạn không có quyền gửi yêu cầu đổi lịch cho lớp học này.');
+            return redirect()->route('teacher.courses')->with('error', 'Bạn không có quyền gửi yêu cầu dời buổi cho lớp học này.');
         }
 
         $service->createRequest($course, $current, $request->validated());
 
-        return redirect()->route('teacher.schedule-change-requests.index')->with('status', 'Yêu cầu đổi lịch đã được gửi tới admin.');
+        return redirect()->route('teacher.schedule-change-requests.index')->with('status', 'Yêu cầu dời buổi đã được gửi tới admin.');
     }
 
     public function storeForSchedule(StoreTeacherClassScheduleChangeRequest $request, ClassSchedule $schedule, TeacherScheduleChangeRequestService $service)
@@ -79,6 +79,6 @@ class ScheduleChangeRequestController extends Controller
 
         $service->createForClassSchedule($schedule, $current, $request->validated());
 
-        return redirect()->route('teacher.schedules.index')->with('status', 'Yêu cầu đổi lịch cho buổi học đã được gửi tới admin.');
+        return redirect()->route('teacher.schedules.index')->with('status', 'Yêu cầu dời buổi cho buổi học đã được gửi tới admin.');
     }
 }

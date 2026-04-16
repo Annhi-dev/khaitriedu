@@ -26,7 +26,7 @@
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Lớp học</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Khóa học public</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Khóa học công khai</th>
                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Giảng viên</th>
                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Thống kê module</th>
                         <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Hành động</th>
@@ -40,7 +40,7 @@
                                 <div class="mt-1 text-xs text-slate-500">{{ $course->formattedSchedule() }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-slate-700">{{ $course->subject?->name ?? 'Chưa gắn khóa học public' }}</div>
+                                <div class="text-sm text-slate-700">{{ $course->subject?->name ?? 'Chưa gắn khóa học công khai' }}</div>
                                 <div class="mt-1 text-xs text-slate-500">{{ $course->subject?->category?->name ?? 'Chưa phân nhóm học' }}</div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-700">

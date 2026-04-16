@@ -46,7 +46,8 @@
             'items' => [
                 ['label' => 'Nhóm học', 'icon' => 'fas fa-layer-group', 'route' => 'admin.categories', 'active' => request()->routeIs('admin.categories*')],
 
-                ['label' => 'Khóa học', 'icon' => 'fas fa-laptop-code', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
+                ['label' => 'Khóa học công khai', 'icon' => 'fas fa-book-open', 'route' => 'admin.subjects', 'active' => request()->routeIs('admin.subjects*') || request()->routeIs('admin.subject.*')],
+                ['label' => 'Khóa học triển khai', 'icon' => 'fas fa-laptop-code', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
                 ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.classes.index', 'active' => request()->routeIs('admin.classes.*')],
                 ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
                 ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
@@ -59,7 +60,14 @@
                 ],
                 ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
                 [
-                    'label' => 'Yêu cầu đổi lịch',
+                    'label' => 'Kiểm tra xung đột',
+                    'icon' => 'fas fa-triangle-exclamation',
+                    'route' => 'admin.schedules.conflicts',
+                    'active' => request()->routeIs('admin.schedules.conflicts'),
+                    'badge' => ($sidebarBadges['schedule_conflicts'] ?? 0) ?: null,
+                ],
+                [
+                    'label' => 'Yêu cầu dời buổi',
                     'icon' => 'fas fa-calendar-rotate',
                     'route' => 'admin.schedule-change-requests.index',
                     'active' => request()->routeIs('admin.schedule-change-requests.*'),
@@ -153,10 +161,16 @@
                             @endif
                         </button>
                         <div class="flex items-center gap-2">
-                            <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
-                                <span class="text-sm font-semibold">{{ substr($adminUser?->name ?? 'A', 0, 1) }}</span>
-                            </div>
-                            <span class="hidden sm:inline text-sm font-medium text-slate-700">{{ $adminUser?->name ?? 'Admin' }}</span>
+                            <a href="{{ route('admin.profile.show') }}" class="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-slate-100" title="Thong tin ca nhan">
+                                @if ($adminUser?->avatarUrl())
+                                    <img src="{{ $adminUser->avatarUrl() }}" alt="Avatar" class="h-8 w-8 rounded-full object-cover ring-2 ring-cyan-100">
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
+                                        <span class="text-sm font-semibold">{{ substr($adminUser?->name ?? 'A', 0, 1) }}</span>
+                                    </div>
+                                @endif
+                                <span class="hidden sm:inline text-sm font-medium text-slate-700">{{ $adminUser?->name ?? 'Admin' }}</span>
+                            </a>
                             <form method="POST" action="{{ route('logout') }}" class="inline">
                                 @csrf
                                 <button type="submit" class="ml-2 p-2 rounded-lg hover:bg-slate-100 hover:bg-red-50 cursor-pointer" title="Đăng xuất">

@@ -9,7 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StudentEnrollmentService
@@ -19,11 +19,11 @@ class StudentEnrollmentService
         return Subject::query()
             ->with([
                 'category',
-                'classRooms' => fn (Builder $query) => $query
+                'classRooms' => fn ($query) => $query
                     ->with(['room', 'teacher', 'schedules'])
                     ->withCount('enrollments')
                     ->where('status', ClassRoom::STATUS_OPEN),
-                'enrollments' => fn (Builder $query) => $query
+                'enrollments' => fn ($query) => $query
                     ->where('user_id', $student->id)
                     ->latest('id'),
             ])
@@ -37,9 +37,12 @@ class StudentEnrollmentService
         $this->ensureSubjectIsAvailable($subject);
         $subject->loadMissing('category');
 
+        $classes = $this->openClassesForSubject($subject);
+        $scheduleConflictMap = $this->buildScheduleConflictMap($student, $classes);
+
         return [
             'subject' => $subject,
-            'classes' => $this->openClassesForSubject($subject),
+            'classes' => $classes,
             'existingEnrollment' => $this->findSubjectEnrollment($student->id, $subject->id, [
                 'classRoom.room',
                 'classRoom.teacher',
@@ -47,6 +50,8 @@ class StudentEnrollmentService
                 'assignedTeacher',
                 'course',
             ]),
+            'scheduleConflictMap' => $scheduleConflictMap,
+            'scheduleConflictCount' => count($scheduleConflictMap),
         ];
     }
 
@@ -56,7 +61,7 @@ class StudentEnrollmentService
 
         $subject->load([
             'category',
-            'classRooms' => fn (Builder $query) => $query
+            'classRooms' => fn ($query) => $query
                 ->with(['room', 'teacher', 'schedules'])
                 ->withCount('enrollments')
                 ->where('status', ClassRoom::STATUS_OPEN),
@@ -100,7 +105,7 @@ class StudentEnrollmentService
             if ($classRoom->isFull()) {
                 $this->syncClassStatus($classRoom);
 
-                throw new EnrollmentOperationException('Lop nay da du cho. Vui long chon lop khac hoac gui yeu cau lich hoc rieng.');
+                throw new EnrollmentOperationException('Lớp này đã đủ chỗ. Vui lòng chọn lớp khác hoặc gửi yêu cầu lịch học riêng.');
             }
 
             $existingEnrollment = $this->findSubjectEnrollment($student->id, $subject->id);
@@ -111,14 +116,16 @@ class StudentEnrollmentService
                 ->first();
 
             if ($existingClassEnrollment && $existingClassEnrollment->hasCourseAccess()) {
-                return 'Ban da ghi danh vao lop co dinh nay roi.';
+                return 'Bạn đã ghi danh vào lớp cố định này rồi.';
             }
 
             if ($existingEnrollment && $existingEnrollment->hasCourseAccess() && (int) $existingEnrollment->lop_hoc_id !== (int) $classRoom->id) {
-                throw new EnrollmentOperationException('Ban da co lop cho khoa hoc nay. Neu muon doi lop, vui long lien he admin.');
+                throw new EnrollmentOperationException('Bạn đã có lớp cho khóa học này. Nếu muốn đổi lớp, vui lòng liên hệ admin.');
             }
 
             $targetEnrollment = $existingClassEnrollment ?? $existingEnrollment;
+
+            $this->ensureStudentHasNoScheduleConflict($student, $classRoom, $targetEnrollment?->id);
 
             $payload = [
                 'subject_id' => $subject->id,
@@ -160,7 +167,7 @@ class StudentEnrollmentService
             $existingEnrollment = $this->findSubjectEnrollment($student->id, $subject->id);
 
             if ($existingEnrollment && $existingEnrollment->hasCourseAccess()) {
-                throw new EnrollmentOperationException('Ban da duoc ghi danh hoac xep lop cho khoa hoc nay. Neu can doi lich, vui long lien he admin.');
+                throw new EnrollmentOperationException('Bạn đã được ghi danh hoặc xếp lớp cho khóa học này. Nếu cần dời buổi, vui lòng liên hệ admin.');
             }
 
             $payload = [
@@ -191,7 +198,7 @@ class StudentEnrollmentService
 
                 $existingEnrollment->update($payload);
 
-                return 'Yeu cau dang ky cua ban da duoc cap nhat. Admin se xem lai va xep lop phu hop.';
+                return 'Yêu cầu đăng ký của bạn đã được cập nhật. Admin sẽ xem lại và xếp lớp phù hợp.';
             }
 
             Enrollment::create(array_merge($payload, [
@@ -201,13 +208,13 @@ class StudentEnrollmentService
                 'reviewed_at' => null,
             ]));
 
-            return 'Da gui yeu cau dang ky khoa hoc. Admin se xem lich mong muon va xep lop phu hop.';
+            return 'Đã gửi yêu cầu đăng ký khóa học. Admin sẽ xem lịch mong muốn và xếp lớp phù hợp.';
         });
     }
 
     public function paginateStudentEnrollments(User $student): LengthAwarePaginator
     {
-        return Enrollment::query()
+        $paginator = Enrollment::query()
             ->with([
                 'subject.category',
                 'course',
@@ -219,6 +226,12 @@ class StudentEnrollmentService
             ->where('user_id', $student->id)
             ->latest()
             ->paginate(10);
+
+        $collection = $paginator->getCollection();
+        Enrollment::syncDisplayStatusesByClass($collection);
+        $paginator->setCollection($collection);
+
+        return $paginator;
     }
 
     protected function openClassesForSubject(Subject $subject)
@@ -258,5 +271,85 @@ class StudentEnrollmentService
         $classRoom->update([
             'status' => $classRoom->isFull() ? ClassRoom::STATUS_FULL : ClassRoom::STATUS_OPEN,
         ]);
+    }
+
+    protected function ensureStudentHasNoScheduleConflict(User $student, ClassRoom $targetClassRoom, ?int $ignoreEnrollmentId = null): void
+    {
+        $conflict = Enrollment::query()
+            ->with([
+                'classRoom.course',
+                'classRoom.schedules',
+                'course.classRooms.schedules',
+            ])
+            ->where('user_id', $student->id)
+            ->when($ignoreEnrollmentId, fn ($query) => $query->whereKeyNot($ignoreEnrollmentId))
+            ->whereIn('status', [
+                Enrollment::LEGACY_STATUS_CONFIRMED,
+                Enrollment::STATUS_ENROLLED,
+                Enrollment::STATUS_SCHEDULED,
+                Enrollment::STATUS_ACTIVE,
+            ])
+            ->get()
+            ->first(function (Enrollment $enrollment) use ($targetClassRoom): bool {
+                $existingClassRoom = $enrollment->currentClassRoom();
+
+                return $existingClassRoom !== null
+                    && (int) $existingClassRoom->id !== (int) $targetClassRoom->id
+                    && $existingClassRoom->conflictsWith($targetClassRoom);
+            });
+
+        if ($conflict) {
+            throw new EnrollmentOperationException('Học viên đã có lớp khác trùng lịch trong cùng khung giờ. Vui lòng chọn lớp khác.');
+        }
+    }
+
+    protected function buildScheduleConflictMap(User $student, Collection $classes): array
+    {
+        $activeEnrollments = Enrollment::query()
+            ->with([
+                'classRoom.course',
+                'classRoom.schedules',
+            ])
+            ->where('user_id', $student->id)
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereNotNull('lop_hoc_id')
+            ->get();
+
+        $conflictMap = [];
+
+        foreach ($classes as $classRoom) {
+            foreach ($activeEnrollments as $enrollment) {
+                $existingClassRoom = $enrollment->currentClassRoom();
+
+                if (! $existingClassRoom || (int) $existingClassRoom->id === (int) $classRoom->id) {
+                    continue;
+                }
+
+                $conflict = $existingClassRoom->firstScheduleConflictWith($classRoom);
+
+                if (! $conflict) {
+                    continue;
+                }
+
+                $conflictMap[$classRoom->id] = [
+                    'existing_enrollment_id' => $enrollment->id,
+                    'existing_class_room_id' => $existingClassRoom->id,
+                    'existing_class_name' => $existingClassRoom->displayName(),
+                    'existing_day_label' => $conflict['day_label'] ?? 'Chưa rõ ngày',
+                    'existing_time_label' => $conflict['existing_time_label'] ?? '',
+                    'candidate_time_label' => $conflict['candidate_time_label'] ?? '',
+                    'message' => sprintf(
+                        'Trùng với lớp %s, %s, %s.',
+                        $existingClassRoom->displayName(),
+                        $conflict['day_label'] ?? 'chưa rõ ngày',
+                        $conflict['existing_time_label'] ?? ''
+                    ),
+                ];
+
+                break;
+            }
+        }
+
+        return $conflictMap;
     }
 }

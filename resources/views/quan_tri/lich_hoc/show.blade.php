@@ -233,14 +233,14 @@
                                     </div>
                                     <div class="shrink-0">
                                         <x-quan_tri.huy_hieu
-                                            :type="match ($enrollment->status) {
+                                            :type="match ($enrollment->displayStatus()) {
                                                 'scheduled', 'active' => 'success',
                                                 'approved' => 'info',
                                                 'completed' => 'default',
                                                 'rejected' => 'danger',
                                                 default => 'warning',
                                             }"
-                                            :text="$enrollment->statusLabel()"
+                                            :text="$enrollment->displayStatusLabel()"
                                         />
                                     </div>
                                 </div>

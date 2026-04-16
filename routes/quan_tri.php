@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TeacherApplicationController;
 use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,6 +28,8 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 Route::get('/reports', [ReportController::class, 'index'])->name('report');
 Route::get('/report', fn () => redirect()->route('admin.report'))->name('report.legacy');
 
@@ -111,6 +114,7 @@ Route::prefix('courses')->group(function () {
     Route::get('/{course}/modules/{module}/edit', [ModuleController::class, 'edit'])->name('courses.modules.edit');
     Route::post('/{course}/modules/{module}/update', [ModuleController::class, 'update'])->name('courses.modules.update');
     Route::post('/{course}/modules/{module}/delete', [ModuleController::class, 'destroy'])->name('courses.modules.delete');
+    Route::get('/{course}/schedule-preview', [CourseController::class, 'previewSchedule'])->name('courses.schedule-preview');
     Route::get('/{course}', [CourseController::class, 'show'])->name('course.show');
     Route::post('/', [CourseController::class, 'store'])->name('courses.create');
     Route::post('/{course}/update', [CourseController::class, 'update'])->name('courses.update');
@@ -212,5 +216,6 @@ Route::prefix('classes')->name('classes.')->group(function () {
     Route::get('/create', [ClassRoomController::class, 'create'])->name('create');
     Route::post('/', [ClassRoomController::class, 'store'])->name('store');
     Route::get('/{class}', [ClassRoomController::class, 'show'])->name('show');
+    Route::post('/{class}/grade-weights', [ClassRoomController::class, 'updateGradeWeights'])->name('grade-weights.update');
     Route::post('/{class}/delete', [ClassRoomController::class, 'destroy'])->name('delete');
 });

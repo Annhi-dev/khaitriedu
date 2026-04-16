@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Enrollment extends Model
 {
@@ -112,6 +113,100 @@ class Enrollment extends Model
         return self::statusOptions()[$this->normalizedStatus()] ?? ucfirst((string) $this->status);
     }
 
+    public function displayStatus(): string
+    {
+        $displayStatus = $this->getAttribute('display_status');
+
+        if (is_string($displayStatus) && $displayStatus !== '') {
+            return $displayStatus;
+        }
+
+        if ($this->lop_hoc_id !== null) {
+            return self::resolveUnifiedStatusForClassGroup(collect([$this]), $this->classRoom);
+        }
+
+        return $this->normalizedStatus();
+    }
+
+    public function displayStatusLabel(): string
+    {
+        return self::statusOptions()[$this->displayStatus()] ?? ucfirst((string) $this->displayStatus());
+    }
+
+    public static function syncDisplayStatusesByClass(Collection $enrollments): Collection
+    {
+        $enrollments->each(function (Enrollment $enrollment): void {
+            $enrollment->setAttribute('display_status', $enrollment->normalizedStatus());
+        });
+
+        $classGroups = $enrollments
+            ->filter(fn (Enrollment $enrollment) => $enrollment->lop_hoc_id !== null)
+            ->groupBy(fn (Enrollment $enrollment) => (int) $enrollment->lop_hoc_id);
+
+        foreach ($classGroups as $group) {
+            $classRoom = $group->first()?->classRoom;
+            $unifiedStatus = self::resolveUnifiedStatusForClassGroup($group, $classRoom);
+
+            foreach ($group as $enrollment) {
+                $enrollment->setAttribute('display_status', $unifiedStatus);
+            }
+        }
+
+        return $enrollments;
+    }
+
+    protected static function resolveUnifiedStatusForClassGroup(Collection $group, ?ClassRoom $classRoom = null): string
+    {
+        if ($classRoom) {
+            if (in_array($classRoom->status, [ClassRoom::STATUS_COMPLETED, ClassRoom::STATUS_CLOSED], true)) {
+                return self::STATUS_COMPLETED;
+            }
+
+            if ($classRoom->start_date) {
+                $today = now()->startOfDay();
+                $startDate = $classRoom->start_date->copy()->startOfDay();
+                $endDate = $classRoom->scheduleRangeEnd()?->startOfDay();
+
+                if ($endDate && $today->gt($endDate)) {
+                    return self::STATUS_COMPLETED;
+                }
+
+                if ($today->gte($startDate)) {
+                    return self::STATUS_ACTIVE;
+                }
+
+                return self::STATUS_SCHEDULED;
+            }
+        }
+
+        $statuses = $group
+            ->map(fn (Enrollment $enrollment) => $enrollment->normalizedStatus())
+            ->values();
+
+        if ($statuses->isEmpty()) {
+            return self::STATUS_ENROLLED;
+        }
+
+        if ($statuses->every(fn (string $status) => $status === self::STATUS_COMPLETED)) {
+            return self::STATUS_COMPLETED;
+        }
+
+        foreach ([
+            self::STATUS_ACTIVE,
+            self::STATUS_SCHEDULED,
+            self::STATUS_ENROLLED,
+            self::STATUS_APPROVED,
+            self::STATUS_PENDING,
+            self::STATUS_REJECTED,
+        ] as $status) {
+            if ($statuses->contains($status)) {
+                return $status;
+            }
+        }
+
+        return (string) $statuses->first();
+    }
+
     public function requestSourceKey(): string
     {
         return $this->isFixedClassEnrollment()
@@ -142,7 +237,7 @@ class Enrollment extends Model
 
     public function hasCourseAccess(): bool
     {
-        return in_array($this->status, self::courseAccessStatuses(), true);
+        return in_array($this->normalizedStatus(), self::courseAccessStatuses(), true);
     }
 
     public function user()

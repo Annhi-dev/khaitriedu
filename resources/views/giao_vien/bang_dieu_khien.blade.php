@@ -11,11 +11,11 @@
 
 <div class="space-y-6">
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article class="rounded-3xl bg-slate-950 p-5 text-white shadow-xl shadow-slate-900/10">
-            <p class="text-sm text-slate-300">Lớp đang phụ trách</p>
+        <article class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <p class="text-sm text-slate-500">Lớp đang phụ trách</p>
             <div class="mt-4 flex items-end justify-between">
-                <p class="text-4xl font-semibold">{{ $classes->count() }}</p>
-                <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-200">Classroom</span>
+                <p class="text-4xl font-semibold text-slate-900">{{ $classes->count() }}</p>
+                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">Lớp</span>
             </div>
         </article>
 
@@ -23,7 +23,7 @@
             <p class="text-sm text-slate-500">Buổi dạy trong tuần</p>
             <div class="mt-4 flex items-end justify-between">
                 <p class="text-4xl font-semibold text-slate-900">{{ $weekSchedule->count() }}</p>
-                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">Weekly</span>
+                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">Tuần</span>
             </div>
         </article>
 
@@ -31,7 +31,7 @@
             <p class="text-sm text-slate-500">Yêu cầu chờ duyệt</p>
             <div class="mt-4 flex items-end justify-between">
                 <p class="text-4xl font-semibold text-slate-900">{{ $pendingRequests }}</p>
-                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">Pending</span>
+                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">Chờ duyệt</span>
             </div>
         </article>
 
@@ -39,7 +39,7 @@
             <p class="text-sm text-slate-500">Thông báo chưa đọc</p>
             <div class="mt-4 flex items-end justify-between">
                 <p class="text-4xl font-semibold text-slate-900">{{ $unreadNotifications }}</p>
-                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">Inbox</span>
+                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">Hộp thư</span>
             </div>
         </article>
     </section>
@@ -73,9 +73,9 @@
                                 </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
-                            Hôm nay bạn chưa có buổi dạy nào được phân công.
+                            @empty
+                                <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
+                            Hôm nay bạn chưa có buổi dạy nào được phân công. Khi có lớp mới, lịch sẽ xuất hiện ở đây.
                         </div>
                     @endforelse
                 </div>
@@ -85,8 +85,8 @@
                 'grid' => $weeklyTimetable,
                 'sectionEyebrow' => 'Week View',
                 'sectionTitle' => 'Khung tuần này',
-                'sectionSubtitle' => 'Lịch lặp theo tuần của các lớp bạn đang phụ trách. Bam vao tung o de xem chi tiet va mo lop.',
-                'emptyMessage' => 'Chua co buoi day nao trong tuan nay.',
+                'sectionSubtitle' => 'Lịch lặp theo tuần của các lớp bạn đang phụ trách. Bấm vào từng ô để xem chi tiết và mở lớp.',
+                'emptyMessage' => 'Chưa có buổi dạy nào trong tuần này.',
             ])
         </div>
 
@@ -96,7 +96,7 @@
                     <div>
                         <h2 class="text-xl font-semibold text-slate-900">Thông báo</h2>
                     </div>
-                    <a href="{{ route('teacher.schedule-change-requests.index') }}" class="text-sm font-medium text-cyan-700 hover:text-cyan-800">Lịch sử</a>
+                    <a href="{{ route('teacher.schedule-change-requests.index') }}" class="text-sm font-medium text-cyan-700 hover:text-cyan-800">Xem lịch sử</a>
                 </div>
 
                 <div class="mt-5 space-y-3">
@@ -107,9 +107,9 @@
                                     <p class="font-medium text-slate-900">{{ $notification->title }}</p>
                                     <p class="mt-2 text-sm leading-6 text-slate-500">{{ $notification->message }}</p>
                                 </div>
-                                <span class="mt-1 h-2.5 w-2.5 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
+                                    <span class="mt-1 h-2.5 w-2.5 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
+                                </div>
                             </div>
-                        </div>
                     @empty
                         @forelse ($requestUpdates as $requestItem)
                             @php
@@ -128,7 +128,7 @@
                             </div>
                         @empty
                             <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
-                                Chưa có thông báo nào cho giảng viên.
+                                Chưa có thông báo nào cho giảng viên. Các cập nhật mới sẽ xuất hiện tại đây.
                             </div>
                         @endforelse
                     @endforelse
@@ -151,7 +151,7 @@
                         </a>
                     @empty
                         <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
-                            Chưa có lớp học nào được giao.
+                            Chưa có lớp học nào được giao. Khi admin phân công, lớp sẽ hiện ở đây để bạn vào nhanh.
                         </div>
                     @endforelse
                 </div>

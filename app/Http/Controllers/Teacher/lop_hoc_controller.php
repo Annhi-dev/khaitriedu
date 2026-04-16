@@ -37,7 +37,7 @@ class TeacherClassroomController extends Controller
         }
 
         try {
-            $detail = $service->getClassDetail($current, $classRoom, $request->only(['schedule_id', 'date', 'test_name', 'student_id']));
+            $detail = $service->getClassDetail($current, $classRoom, $request->only(['schedule_id', 'date', 'student_id']));
         } catch (ModelNotFoundException) {
             return redirect()->route('teacher.classes.index')->with('error', 'Bạn không có quyền truy cập lớp học này.');
         }
@@ -93,7 +93,6 @@ class TeacherClassroomController extends Controller
         return redirect()->route('teacher.classes.show', [
             'classRoom' => $classRoom->id,
             'tab' => 'grades',
-            'test_name' => $request->validated('test_name'),
         ])->with('status', 'Đã cập nhật bảng điểm của lớp.');
     }
 

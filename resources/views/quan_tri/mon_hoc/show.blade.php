@@ -65,6 +65,10 @@
                     <p class="mt-1 text-sm font-medium text-slate-900">{{ $subject->durationLabel() }}</p>
                 </div>
                 <div>
+                    <p class="text-xs uppercase tracking-wide text-slate-400">Số lần kiểm tra</p>
+                    <p class="mt-1 text-sm font-medium text-slate-900">{{ $subject->resolvedTestCount() }} lần</p>
+                </div>
+                <div>
                     <p class="text-xs uppercase tracking-wide text-slate-400">Học phí</p>
                     <p class="mt-1 text-sm font-medium text-slate-900">{{ number_format((float) $subject->price, 0, ',', '.') }} đ</p>
                 </div>
@@ -97,7 +101,7 @@
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">Lớp học nội bộ thuộc khóa này</h2>
+                <h2 class="text-lg font-semibold text-slate-900">Khóa học triển khai thuộc khóa này</h2>
             </div>
             <a href="{{ route('admin.courses') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Mở quản lý lớp học</a>
         </div>
@@ -120,7 +124,7 @@
                     </div>
                 </div>
             @empty
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Chưa có lớp học nội bộ nào được tạo.</div>
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Chưa có khóa học triển khai nào được tạo.</div>
             @endforelse
         </div>
     </section>

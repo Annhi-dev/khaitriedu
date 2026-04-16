@@ -77,7 +77,7 @@ class ScheduleController extends Controller
             $periodLabel = $periodStart->format('d/m') . ' - ' . $periodEnd->format('d/m/Y');
             $modeTitle = 'Lich day theo tuan';
             $modeEyebrow = 'Week View';
-            $modeDescription = 'Moi buoi hien thi theo lop noi bo ma admin da phan cong. Ban co the gui yeu cau doi lich truc tiep tu tung slot.';
+            $modeDescription = 'Mỗi buổi hiển thị theo lớp nội bộ mà admin đã phân công. Bạn có thể gửi yêu cầu dời buổi trực tiếp từ từng slot.';
             $prevDate = $periodStart->subWeek()->format('Y-m-d');
             $nextDate = $periodStart->addWeek()->format('Y-m-d');
         }

@@ -17,6 +17,8 @@ class AdminEnrollmentService
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
         $requestSource = trim((string) ($filters['request_source'] ?? ''));
+        $studentId = ! empty($filters['student_id']) ? (int) $filters['student_id'] : null;
+        $classRoomId = ! empty($filters['class_room_id']) ? (int) $filters['class_room_id'] : null;
 
         return Enrollment::query()
             ->with([
@@ -51,6 +53,8 @@ class AdminEnrollmentService
                 });
             })
             ->when($status !== '', fn (Builder $query) => $query->where('status', $status))
+            ->when($studentId !== null, fn (Builder $query) => $query->where('user_id', $studentId))
+            ->when($classRoomId !== null, fn (Builder $query) => $query->where('lop_hoc_id', $classRoomId))
             ->when($requestSource !== '', function (Builder $query) use ($requestSource) {
                 if ($requestSource === Enrollment::REQUEST_SOURCE_FIXED_CLASS) {
                     $query->where(function (Builder $builder) {
@@ -99,6 +103,7 @@ class AdminEnrollmentService
     public function reviewEnrollment(Enrollment $enrollment, array $data, User $admin): string
     {
         $action = (string) $data['action'];
+        $enrollment->loadMissing(['user']);
 
         if ($action === 'schedule' && $this->shouldCreateNewClassInPhase9($enrollment)) {
             throw ValidationException::withMessages([
@@ -131,6 +136,10 @@ class AdminEnrollmentService
         }
 
         $finalSchedule = $finalSchedule !== '' ? $finalSchedule : null;
+
+        if ($action === 'approve' && $selectedClassRoom) {
+            $this->ensureStudentHasNoScheduleConflict($enrollment->user, $selectedClassRoom, $enrollment->id);
+        }
 
         switch ($action) {
             case 'approve':
@@ -241,6 +250,10 @@ class AdminEnrollmentService
         $enrollment->reviewed_at = now();
         $enrollment->save();
 
+        if (in_array($action, ['schedule', 'activate', 'complete'], true)) {
+            $this->syncClassEnrollmentStatuses($enrollment, $admin);
+        }
+
         return $message;
     }
 
@@ -312,5 +325,68 @@ class AdminEnrollmentService
         }
 
         return $classRoom;
+    }
+
+    protected function ensureStudentHasNoScheduleConflict(User $student, ClassRoom $targetClassRoom, ?int $ignoreEnrollmentId = null): void
+    {
+        $conflict = Enrollment::query()
+            ->with([
+                'classRoom.course',
+                'classRoom.schedules',
+                'course.classRooms.schedules',
+            ])
+            ->where('user_id', $student->id)
+            ->when($ignoreEnrollmentId, fn (Builder $query) => $query->whereKeyNot($ignoreEnrollmentId))
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->get()
+            ->first(function (Enrollment $enrollment) use ($targetClassRoom): bool {
+                $existingClassRoom = $enrollment->currentClassRoom();
+
+                return $existingClassRoom !== null
+                    && (int) $existingClassRoom->id !== (int) $targetClassRoom->id
+                    && $existingClassRoom->conflictsWith($targetClassRoom);
+            });
+
+        if ($conflict) {
+            throw ValidationException::withMessages([
+                'class_room_id' => 'Học viên đã có lớp khác trùng lịch trong cùng khung giờ. Vui lòng chọn lớp khác.',
+            ]);
+        }
+    }
+
+    protected function syncClassEnrollmentStatuses(Enrollment $sourceEnrollment, User $admin): void
+    {
+        if (! $sourceEnrollment->lop_hoc_id) {
+            return;
+        }
+
+        if (! in_array($sourceEnrollment->normalizedStatus(), [
+            Enrollment::STATUS_SCHEDULED,
+            Enrollment::STATUS_ACTIVE,
+            Enrollment::STATUS_COMPLETED,
+        ], true)) {
+            return;
+        }
+
+        Enrollment::query()
+            ->where('lop_hoc_id', $sourceEnrollment->lop_hoc_id)
+            ->whereKeyNot($sourceEnrollment->id)
+            ->whereIn('status', [
+                Enrollment::STATUS_APPROVED,
+                Enrollment::STATUS_ENROLLED,
+                Enrollment::STATUS_SCHEDULED,
+                Enrollment::STATUS_ACTIVE,
+                Enrollment::STATUS_COMPLETED,
+                Enrollment::LEGACY_STATUS_CONFIRMED,
+            ])
+            ->update([
+                'status' => $sourceEnrollment->normalizedStatus(),
+                'course_id' => $sourceEnrollment->course_id,
+                'subject_id' => $sourceEnrollment->subject_id,
+                'assigned_teacher_id' => $sourceEnrollment->assigned_teacher_id,
+                'schedule' => $sourceEnrollment->schedule,
+                'reviewed_by' => $admin->id,
+                'reviewed_at' => now(),
+            ]);
     }
 }

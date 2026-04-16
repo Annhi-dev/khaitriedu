@@ -5,6 +5,10 @@
 @section('content')
 @php
     $attendanceStatuses = \App\Models\AttendanceRecord::statusOptions();
+    $timeRanges = $classRoom->schedules
+        ->map(fn ($schedule) => substr((string) $schedule->start_time, 0, 5) . ' - ' . substr((string) $schedule->end_time, 0, 5))
+        ->unique()
+        ->values();
 @endphp
 
 <div class="space-y-6" x-data="{ tab: '{{ $activeTab }}' }">
@@ -30,8 +34,10 @@
                 </div>
                 <div class="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
                     <p><strong>Lịch lớp:</strong> {{ $classRoom->scheduleSummary() }}</p>
+                    <p class="mt-1"><strong>Thời gian học:</strong> {{ $timeRanges->isNotEmpty() ? $timeRanges->implode(' | ') : 'Chưa chốt' }}</p>
                     <p class="mt-1"><strong>Số học viên:</strong> {{ $enrollments->count() }}</p>
                     <p class="mt-1"><strong>Bắt đầu:</strong> {{ $classRoom->start_date?->format('d/m/Y') ?? 'Chưa chốt' }}</p>
+                    <p class="mt-1"><strong>Kết thúc:</strong> {{ $classRoom->scheduleRangeEnd()?->format('d/m/Y') ?? 'Chưa chốt' }}</p>
                 </div>
             </div>
         </div>
@@ -85,7 +91,7 @@
                             <td class="px-4 py-4 text-slate-600">{{ $enrollment->user?->email }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ $enrollment->schedule ?: $classRoom->scheduleSummary() }}</td>
                             <td class="px-4 py-4">
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $enrollment->statusLabel() }}</span>
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $enrollment->displayStatusLabel() }}</span>
                             </td>
                         </tr>
                     @empty
@@ -167,28 +173,36 @@
     </section>
 
     <section x-show="tab === 'grades'" x-cloak class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <h3 class="text-2xl font-semibold text-slate-900">Bảng điểm thủ công</h3>
-            </div>
-            <form method="GET" action="{{ route('teacher.classes.show', $classRoom) }}" class="grid gap-3 sm:grid-cols-[280px_auto]">
-                <input type="hidden" name="tab" value="grades">
-                <input type="text" name="test_name" list="grade-test-names" value="{{ $selectedTestName }}" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Tên bài kiểm tra">
-                <datalist id="grade-test-names">
-                    @foreach ($testNames as $testName)
-                        <option value="{{ $testName }}"></option>
-                    @endforeach
-                </datalist>
-                <button type="submit" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Tải bảng điểm</button>
-            </form>
+        <div>
+            <h3 class="text-2xl font-semibold text-slate-900">Bảng điểm theo lần kiểm tra</h3>
         </div>
 
         <form method="POST" action="{{ route('teacher.classes.grades.store', $classRoom) }}" class="mt-6 space-y-5">
             @csrf
-            <input type="hidden" name="test_name" value="{{ $selectedTestName }}">
 
             <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <strong>Bài kiểm tra hiện tại:</strong> {{ $selectedTestName }}
+                <strong>Số lần kiểm tra theo môn:</strong> {{ $gradeColumns->count() }} lần.
+                <span class="ml-2 text-slate-500">TB được tính theo công thức: tổng (điểm x hệ số) / tổng hệ số.</span>
+            </div>
+
+            @unless ($gradeWeightsSupported ?? true)
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Cảnh báo: cơ sở dữ liệu hiện chưa sẵn sàng cho cấu hình hệ số, nên hệ số từng cột đang tạm dùng mặc định <strong>1</strong>.
+                    Sau khi admin chạy migrate, hệ số sẽ được lưu ở màn quản trị lớp học.
+                </div>
+            @endunless
+
+            <div class="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-4 text-sm text-cyan-900">
+                <div class="flex flex-wrap items-center gap-4">
+                    <span class="font-semibold">Hệ số từng cột:</span>
+                    <span class="text-cyan-700">Chỉ admin mới được chỉnh.</span>
+                    @foreach ($gradeColumns as $column)
+                        <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-cyan-800 ring-1 ring-cyan-100">
+                            <span>KT {{ $column['index'] }}</span>
+                            <span class="rounded-full bg-cyan-50 px-2 py-1 font-semibold text-cyan-700">x{{ $column['weight'] ?? 1 }}</span>
+                        </span>
+                    @endforeach
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -196,30 +210,47 @@
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-4 py-3 text-left font-medium text-slate-500">Học viên</th>
-                            <th class="px-4 py-3 text-left font-medium text-slate-500">Điểm</th>
-                            <th class="px-4 py-3 text-left font-medium text-slate-500">Xếp loại</th>
-                            <th class="px-4 py-3 text-left font-medium text-slate-500">Nhận xét</th>
+                            @foreach ($gradeColumns as $column)
+                                <th class="px-4 py-3 text-center font-medium text-slate-500" title="{{ $column['name'] }}">KT {{ $column['index'] }}</th>
+                            @endforeach
+                            <th class="px-4 py-3 text-center font-medium text-slate-500">TB</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach ($enrollments as $enrollment)
-                            @php $grade = $gradeMap->get($enrollment->user_id); @endphp
                             <tr>
                                 <td class="px-4 py-4 font-medium text-slate-900">{{ $enrollment->user?->name }}</td>
-                                <td class="px-4 py-4">
-                                    <input type="number" min="0" max="100" step="0.01" name="grades[{{ $enrollment->user_id }}][score]" value="{{ $grade->score ?? '' }}" class="w-28 rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none">
-                                </td>
-                                <td class="px-4 py-4">
-                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $grade->grade ?? 'Chưa chấm' }}</span>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <input type="text" name="grades[{{ $enrollment->user_id }}][feedback]" value="{{ $grade->feedback ?? '' }}" class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Phản hồi">
+                                @foreach ($gradeColumns as $column)
+                                    @php
+                                        $grade = $gradeMap->get($enrollment->user_id . '|' . $column['name']);
+                                        $oldKey = 'scores.' . $enrollment->user_id . '.' . $column['index'];
+                                    @endphp
+                                    <td class="px-4 py-4 text-center">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            name="scores[{{ $enrollment->user_id }}][{{ $column['index'] }}]"
+                                            value="{{ old($oldKey, $grade?->score) }}"
+                                            class="w-24 rounded-2xl border border-slate-300 px-3 py-2 text-center text-sm focus:border-cyan-500 focus:outline-none"
+                                        >
+                                    </td>
+                                @endforeach
+                                <td class="px-4 py-4 text-center">
+                                    @php $avg = $averageScoreMap->get($enrollment->user_id); @endphp
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                        {{ $avg !== null ? rtrim(rtrim(number_format((float) $avg, 2, '.', ''), '0'), '.') : '—' }}
+                                    </span>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+            @if ($errors->has('scores') || $errors->has('scores.*.*'))
+                <p class="text-sm text-rose-600">{{ $errors->first('scores') ?: $errors->first('scores.*.*') }}</p>
+            @endif
 
             <div class="flex justify-end">
                 <button type="submit" class="rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700">Lưu bảng điểm</button>
@@ -236,8 +267,16 @@
                 <form method="GET" action="{{ route('teacher.classes.show', $classRoom) }}" class="grid gap-3 sm:grid-cols-[260px_auto]">
                     <input type="hidden" name="tab" value="evaluations">
                     <select name="student_id" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
-                        @foreach ($enrollments as $enrollment)
-                            <option value="{{ $enrollment->user_id }}" @selected($selectedStudentId === (int) $enrollment->user_id)>{{ $enrollment->user?->name }}</option>
+                        @php
+                            $activeStudentIds = $enrollments->pluck('user_id')->map(fn ($id) => (int) $id)->all();
+                        @endphp
+                        @foreach ($evaluationStudentOptions as $studentOption)
+                            @php
+                                $isHistoricalOnly = ! in_array((int) $studentOption->id, $activeStudentIds, true);
+                            @endphp
+                            <option value="{{ $studentOption->id }}" @selected($selectedStudentId === (int) $studentOption->id)>
+                                {{ $studentOption->name }}{{ $isHistoricalOnly ? ' (lịch sử)' : '' }}
+                            </option>
                         @endforeach
                     </select>
                     <button type="submit" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Tải đánh giá</button>
@@ -248,22 +287,33 @@
                 <form method="POST" action="{{ route('teacher.classes.evaluations.store', $classRoom) }}" class="mt-6 space-y-5">
                     @csrf
                     <input type="hidden" name="student_id" value="{{ $selectedStudentId }}">
+                    @php
+                        $selectedRating = (int) old('rating', $currentEvaluation?->rating ?? 0);
+                    @endphp
 
                     <div>
                         <label class="text-sm font-medium text-slate-700">Điểm thái độ học tập</label>
                         <div class="mt-3 grid grid-cols-5 gap-2">
                             @for ($rating = 1; $rating <= 5; $rating++)
-                                <label class="cursor-pointer rounded-2xl border border-slate-200 px-3 py-3 text-center text-sm font-medium text-slate-700 hover:border-cyan-200 hover:bg-cyan-50">
-                                    <input type="radio" class="sr-only" name="rating" value="{{ $rating }}" @checked((int) ($currentEvaluation?->rating ?? 0) === $rating)>
-                                    {{ $rating }}/5
+                                <label class="cursor-pointer">
+                                    <input type="radio" class="peer sr-only" name="rating" value="{{ $rating }}" @checked($selectedRating === $rating)>
+                                    <span class="block rounded-2xl border border-slate-200 px-3 py-3 text-center text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 peer-checked:text-cyan-700">
+                                        {{ $rating }}/5
+                                    </span>
                                 </label>
                             @endfor
                         </div>
+                        @error('rating')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
                         <label class="text-sm font-medium text-slate-700">Nhận xét</label>
-                        <textarea name="comments" rows="8" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Nhận xét">{{ $currentEvaluation?->comments }}</textarea>
+                        <textarea name="comments" rows="8" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none" placeholder="Nhận xét">{{ old('comments', $currentEvaluation?->comments) }}</textarea>
+                        @error('comments')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div class="flex justify-end">
@@ -293,7 +343,15 @@
                                 <p class="font-medium text-slate-900">{{ $evaluation->student?->name ?? 'Học viên' }}</p>
                                 <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ optional($evaluation->updated_at)->format('d/m/Y H:i') }}</p>
                             </div>
-                            <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">{{ $evaluation->rating }}/5</span>
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">{{ $evaluation->rating }}/5</span>
+                                <a
+                                    href="{{ route('teacher.classes.show', ['classRoom' => $classRoom->id, 'tab' => 'evaluations', 'student_id' => $evaluation->student_id]) }}"
+                                    class="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                                >
+                                    Chỉnh sửa
+                                </a>
+                            </div>
                         </div>
                         <p class="mt-3 text-sm leading-6 text-slate-600">{{ $evaluation->comments ?: 'Chưa có nhận xét chi tiết.' }}</p>
                     </div>

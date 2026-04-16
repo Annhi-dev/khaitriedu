@@ -19,6 +19,7 @@ class UpdateSubjectRequest extends FormRequest
             'name' => trim((string) $this->input('name', '')),
             'description' => $this->filled('description') ? trim((string) $this->input('description')) : null,
             'duration' => $this->filled('duration') ? (int) $this->input('duration') : null,
+            'test_count' => $this->filled('test_count') ? (int) $this->input('test_count') : Subject::DEFAULT_TEST_COUNT,
             'category_id' => $this->filled('category_id') ? (int) $this->input('category_id') : null,
         ]);
     }
@@ -30,6 +31,7 @@ class UpdateSubjectRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
             'duration' => ['required', 'integer', 'min:1', 'max:120'],
+            'test_count' => ['required', 'integer', 'min:1', 'max:12'],
             'status' => ['required', Rule::in([
                 Subject::STATUS_DRAFT,
                 Subject::STATUS_OPEN,

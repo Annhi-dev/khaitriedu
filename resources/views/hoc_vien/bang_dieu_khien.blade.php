@@ -1,99 +1,130 @@
 @extends('bo_cuc.hoc_vien')
 
-@section('title', 'Tong quan hoc vien')
-@section('eyebrow', 'Student Dashboard')
+@section('title', 'Tổng quan học viên')
+@section('eyebrow', 'Tổng quan')
 
 @section('header_actions')
-    <a href="{{ route('student.enroll.index') }}" class="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700">
+    <a href="{{ route('student.enroll.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100">
         <i class="fas fa-book-open"></i>
-        <span>Dang ky khoa hoc</span>
+        <span>Đăng ký khóa học</span>
     </a>
 @endsection
 
 @section('content')
+@php
+    $notificationList = collect($notifications ?? []);
+    $totalNotifications = $notificationList->count();
+    $readNotifications = $notificationList->where('is_read', true)->count();
+    $unreadNotifications = $totalNotifications - $readNotifications;
+@endphp
+
 <div class="space-y-6">
-    <section class="rounded-[2rem] bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-700 p-6 text-white shadow-lg shadow-cyan-900/20">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-2xl">
-                <p class="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-100/80">Khu vuc hoc vien</p>
-                <h2 class="mt-3 text-3xl font-bold leading-tight">Xin chao, {{ $user->name }}.</h2>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Tổng quan học viên</p>
+                <h2 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+                    Xin chào, {{ $user->name }}.
+                </h2>
+                <p class="mt-3 max-w-xl text-sm leading-7 text-slate-600">
+                    Theo dõi khóa học, lịch học, lớp của tôi và kết quả học tập trong một giao diện gọn gàng, đồng nhất với phong cách quản trị.
+                </p>
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-3">
-                <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                    <p class="text-xs uppercase tracking-[0.24em] text-cyan-100/80">Vai tro</p>
-                    <p class="mt-2 text-lg font-semibold">{{ $user->roleLabel() }}</p>
+            <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[420px]">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Vai trò</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ $user->roleLabel() }}</p>
                 </div>
-                <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                    <p class="text-xs uppercase tracking-[0.24em] text-cyan-100/80">Trang thai</p>
-                    <p class="mt-2 text-lg font-semibold">{{ $user->statusLabel() }}</p>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Trạng thái</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ $user->statusLabel() }}</p>
                 </div>
-                <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                    <p class="text-xs uppercase tracking-[0.24em] text-cyan-100/80">Thong bao moi</p>
-                    <p class="mt-2 text-lg font-semibold">{{ ($notifications ?? collect())->count() }}</p>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Thông báo</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ $totalNotifications }}</p>
+                    <p class="text-xs text-slate-500">{{ $unreadNotifications }} chưa đọc</p>
                 </div>
             </div>
         </div>
     </section>
 
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <a href="{{ route('student.enroll.index') }}" class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-lg">
+        <a href="{{ route('student.enroll.index') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
                 <i class="fas fa-book-open"></i>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-slate-900">Dang ky khoa hoc</h3>
+            <h3 class="mt-4 text-lg font-semibold text-slate-900">Đăng ký khóa học</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Khám phá các khóa học đang mở và gửi yêu cầu ngay.</p>
         </a>
 
-        <a href="{{ route('student.enroll.my-classes') }}" class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-lg">
+        <a href="{{ route('student.enroll.my-classes') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
                 <i class="fas fa-users"></i>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-slate-900">Lop cua toi</h3>
+            <h3 class="mt-4 text-lg font-semibold text-slate-900">Lớp của tôi</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Theo dõi lớp đang chờ mở hoặc lớp đã ghi danh.</p>
         </a>
 
-        <a href="{{ route('student.schedule') }}" class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-lg">
+        <a href="{{ route('student.schedule') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
                 <i class="fas fa-calendar-days"></i>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-slate-900">Thoi khoa bieu</h3>
+            <h3 class="mt-4 text-lg font-semibold text-slate-900">Thời khóa biểu</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Xem lịch học theo tuần, tháng hoặc năm.</p>
         </a>
 
-        <a href="{{ route('student.grades') }}" class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-lg">
+        <a href="{{ route('student.grades') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
                 <i class="fas fa-square-poll-horizontal"></i>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-slate-900">Ket qua hoc tap</h3>
+            <h3 class="mt-4 text-lg font-semibold text-slate-900">Kết quả học tập</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Xem điểm số và phản hồi theo từng khóa học.</p>
         </a>
     </section>
 
     <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 class="text-lg font-semibold text-slate-900">Loi tat thuong dung</h3>
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Lối tắt thường dùng</h3>
+                    <p class="mt-1 text-sm text-slate-500">Các thao tác hay dùng được đặt ngay bên dưới cho dễ bấm.</p>
+                </div>
+                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">Học viên</span>
+            </div>
+
             <div class="mt-5 grid gap-3 md:grid-cols-2">
                 <a href="{{ route('student.enroll.index') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
-                    <i class="fas fa-compass mr-2"></i>
-                    Mo danh sach khoa hoc
+                    <i class="fas fa-compass mr-2 text-slate-400"></i>
+                    Mở danh sách khóa học
                 </a>
                 <a href="{{ route('student.enroll.my-classes') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
-                    <i class="fas fa-layer-group mr-2"></i>
-                    Theo doi lop dang cho mo
+                    <i class="fas fa-layer-group mr-2 text-slate-400"></i>
+                    Theo dõi lớp đang chờ mở
                 </a>
                 <a href="{{ route('student.schedule') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
-                    <i class="fas fa-calendar-check mr-2"></i>
-                    Xem lich hoc hien tai
+                    <i class="fas fa-calendar-check mr-2 text-slate-400"></i>
+                    Xem lịch học hiện tại
                 </a>
                 <a href="{{ route('home') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
-                    <i class="fas fa-house mr-2"></i>
-                    Quay ve website
+                    <i class="fas fa-house mr-2 text-slate-400"></i>
+                    Quay về website
                 </a>
             </div>
         </div>
 
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 class="text-lg font-semibold text-slate-900">Thong bao gan day</h3>
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Thông báo gần đây</h3>
+                    <p class="mt-1 text-sm text-slate-500">Những cập nhật mới nhất từ hệ thống.</p>
+                </div>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $unreadNotifications }} chưa đọc</span>
+            </div>
+
             <div class="mt-4 space-y-3">
-                @forelse (($notifications ?? collect()) as $notification)
-                    <div class="rounded-2xl border {{ $notification->is_read ? 'border-slate-200 bg-slate-50' : 'border-cyan-200 bg-cyan-50/60' }} px-4 py-4">
+                @forelse ($notificationList as $notification)
+                    <div class="rounded-2xl border {{ $notification->is_read ? 'border-slate-200 bg-slate-50' : 'border-cyan-200 bg-cyan-50/70' }} px-4 py-4">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="font-medium text-slate-900">{{ $notification->title }}</p>
@@ -104,7 +135,7 @@
                     </div>
                 @empty
                     <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">
-                        Chua co thong bao nao gui den ban.
+                        Chưa có thông báo nào gửi đến bạn. Khi có cập nhật mới, hệ thống sẽ hiển thị tại đây.
                     </div>
                 @endforelse
             </div>

@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "khaitriedu/education-management",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "KhaiTriEdu education management system for public course browsing, enrollment, scheduling, quizzes, certificates, and role-based administration.",
+    "keywords": ["laravel", "education", "management", "vietnamese", "thesis"],
     "license": "MIT",
     "require": {
         "php": "^8.2",
@@ -26,7 +26,8 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "classmap": [
-            "app"
+            "app",
+            "database/seeders"
         ]
     },
     "autoload-dev": {

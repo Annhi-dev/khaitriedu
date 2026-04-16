@@ -48,12 +48,12 @@ class StoreTeacherScheduleChangeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'requested_day_of_week.required' => 'Vui long chon thu moi.',
-            'requested_date.required' => 'Vui long chon ngay bat dau.',
-            'requested_start_time.required' => 'Vui long chon gio bat dau.',
-            'requested_end_time.required' => 'Vui long chon gio ket thuc.',
-            'requested_end_time.after' => 'Gio ket thuc phai sau gio bat dau.',
-            'reason.required' => 'Vui long nhap ly do doi lich.',
+            'requested_day_of_week.required' => 'Vui lòng chọn ngày dạy bù trong tuần.',
+            'requested_date.required' => 'Vui lòng chọn ngày dạy bù bắt đầu.',
+            'requested_start_time.required' => 'Vui lòng chọn giờ dạy bù bắt đầu.',
+            'requested_end_time.required' => 'Vui lòng chọn giờ dạy bù kết thúc.',
+            'requested_end_time.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
+            'reason.required' => 'Vui lòng nhập lý do dời buổi.',
         ];
     }
 }

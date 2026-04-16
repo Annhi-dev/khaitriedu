@@ -15,7 +15,7 @@
                     <p class="mt-2 text-xl font-semibold">{{ $user->name }}</p>
                 </div>
                 <div class="rounded-2xl bg-slate-950/20 p-4 backdrop-blur-sm">
-                    <p class="text-xs uppercase tracking-wider text-cyan-100">Hạ tầng dashboard</p>
+                    <p class="text-xs uppercase tracking-wider text-cyan-100">Tình trạng hệ thống</p>
                     <p class="mt-2 text-2xl font-semibold">{{ collect($infrastructureChecks)->filter()->count() }}/{{ count($infrastructureChecks) }}</p>
                 </div>
             </div>
@@ -24,7 +24,8 @@
 
     @if ($infrastructureWarnings)
         <section class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-            <p class="font-semibold">Hạ tầng dashboard chưa sẵn sàng</p>
+            <p class="font-semibold">Một số hạ tầng chưa sẵn sàng</p>
+            <p class="mt-1 text-amber-800">Các mục bên dưới cần hoàn thiện để quy trình xếp lịch và mở lớp chạy trơn tru.</p>
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 @foreach ($infrastructureWarnings as $warning)
                     <li>{{ $warning }}</li>
@@ -33,17 +34,41 @@
         </section>
     @endif
 
+    @if (($studentConflictPairCount ?? 0) > 0)
+        <section class="rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 to-amber-50 p-5 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-rose-600">Cảnh báo xung đột lịch</p>
+                    <h2 class="mt-2 text-2xl font-semibold text-slate-900">Học viên đang bị trùng lịch</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Phát hiện {{ number_format($studentConflictPairCount) }} cặp xung đột trên {{ number_format($studentConflictStudentCount) }} học viên.
+                        Mở trang kiểm tra để rà soát từng lớp và chỉnh ngay tại màn chi tiết lớp.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('admin.schedules.conflicts') }}" class="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition">
+                        Rà soát xung đột ngay
+                    </a>
+                    <a href="{{ route('admin.schedules.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition">
+                        Mở lịch học
+                    </a>
+                </div>
+            </div>
+        </section>
+    @endif
+
     <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <x-quan_tri.the_thong_ke label="Học viên" value="{{ $studentCount }}" icon="fas fa-user-graduate" color="cyan" trend="Tổng tài khoản học viên" />
         <x-quan_tri.the_thong_ke label="Giảng viên" value="{{ $teacherCount }}" icon="fas fa-chalkboard-user" color="emerald" trend="Tổng tài khoản giảng viên" />
-        <x-quan_tri.the_thong_ke label="Đơn ứng tuyển chờ" value="{{ $pendingTeacherApplications }}" icon="fas fa-file-signature" color="amber" trend="Teacher application pending" />
-        <x-quan_tri.the_thong_ke label="Khóa học" value="{{ $subjectCount }}" icon="fas fa-book-open" color="violet" trend="Khóa học public hiện có" />
+        <x-quan_tri.the_thong_ke label="Đơn ứng tuyển chờ" value="{{ $pendingTeacherApplications }}" icon="fas fa-file-signature" color="amber" trend="Hồ sơ giảng viên đang chờ duyệt" />
+        <x-quan_tri.the_thong_ke label="Khóa học" value="{{ $subjectCount }}" icon="fas fa-book-open" color="violet" trend="Khóa học công khai hiện có" />
         <x-quan_tri.the_thong_ke label="Nhóm học" value="{{ $groupCount }}" icon="fas fa-layer-group" color="slate" trend="Danh mục đào tạo" />
         <x-quan_tri.the_thong_ke label="Phòng học" value="{{ $roomCount }}" icon="fas fa-door-open" color="cyan" trend="{{ $maintenanceRoomCount }} phòng bảo trì" />
         <x-quan_tri.the_thong_ke label="Khung giờ mở đăng ký" value="{{ $openTimeSlotCount }}" icon="fas fa-clock" color="emerald" trend="{{ $configuredTimeSlotCount }} slot đã cấu hình" />
         <x-quan_tri.the_thong_ke label="Nguyện vọng chờ xử lý" value="{{ $pendingSlotRegistrationCount }}" icon="fas fa-list-check" color="amber" trend="{{ $slotChoiceCount }} lựa chọn đã ghi nhận" />
         <x-quan_tri.the_thong_ke label="Slot đủ điều kiện mở lớp" value="{{ $readyToOpenClassSlotCount }}" icon="fas fa-chart-simple" color="rose" trend="Có thể chuyển sang mở lớp" />
-        <x-quan_tri.the_thong_ke label="Yêu cầu đổi lịch chờ" value="{{ $pendingScheduleChangeRequests }}" icon="fas fa-calendar-rotate" color="slate" trend="{{ $activeClassCount }} lớp đang hoạt động" />
+        <x-quan_tri.the_thong_ke label="Yêu cầu dời buổi chờ" value="{{ $pendingScheduleChangeRequests }}" icon="fas fa-calendar-rotate" color="slate" trend="{{ $activeClassCount }} lớp đang hoạt động" />
     </section>
 
     <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -76,7 +101,7 @@
                 <i class="fas fa-calendar-rotate text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold">Duyệt đổi lịch</p>
+                <p class="font-semibold">Duyệt dời buổi</p>
             </div>
         </a>
     </section>
@@ -206,7 +231,7 @@
 
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-                <h2 class="font-semibold text-slate-800">Yêu cầu đổi lịch chờ xử lý</h2>
+                <h2 class="font-semibold text-slate-800">Yêu cầu dời buổi chờ xử lý</h2>
                 <a href="{{ route('admin.schedule-change-requests.index') }}" class="text-sm text-cyan-600 hover:underline">Xem tất cả</a>
             </div>
             <div class="divide-y divide-slate-100">
@@ -217,7 +242,7 @@
                         <p class="text-xs text-rose-600 mt-1">{{ $request->reason }}</p>
                     </a>
                 @empty
-                    <div class="p-8 text-center text-slate-500">Không có yêu cầu đổi lịch nào đang chờ.</div>
+                    <div class="p-8 text-center text-slate-500">Không có yêu cầu dời buổi nào đang chờ.</div>
                 @endforelse
             </div>
         </div>

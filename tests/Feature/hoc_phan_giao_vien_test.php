@@ -31,7 +31,7 @@ class hoc_phan_giao_vien_test extends TestCase
 
         Notification::create([
             'user_id' => $teacher->id,
-            'title' => 'Yêu cầu đổi lịch đã được duyệt',
+            'title' => 'Yêu cầu dạy bù đã được duyệt',
             'message' => 'Admin đã cập nhật lịch giảng mới cho lớp của bạn.',
             'type' => 'success',
             'link' => route('teacher.schedule-change-requests.index'),
@@ -45,8 +45,8 @@ class hoc_phan_giao_vien_test extends TestCase
         $response->assertSee('Lịch giảng trong ngày');
         $response->assertSee($classRoom->displayName());
         $response->assertSee($schedule->timeRangeLabel());
-        $response->assertSee('Xem chi tiet');
-        $response->assertSee('Yêu cầu đổi lịch đã được duyệt');
+        $response->assertSee('Xem chi tiết');
+        $response->assertSee('Yêu cầu dạy bù đã được duyệt');
     }
 
     public function test_teacher_can_manage_attendance_grades_and_evaluations_for_assigned_class(): void
@@ -80,7 +80,7 @@ class hoc_phan_giao_vien_test extends TestCase
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => Enrollment::STATUS_ENROLLED,
             'schedule' => $schedule->label(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -94,6 +94,8 @@ class hoc_phan_giao_vien_test extends TestCase
         $showResponse->assertSee('Danh sách học viên');
         $showResponse->assertSee($studentA->name);
         $showResponse->assertSee($studentB->name);
+        $showResponse->assertSee('Đang học');
+        $showResponse->assertDontSee('Đã ghi danh');
 
         $attendanceResponse = $this
             ->actingAs($teacher)
@@ -123,26 +125,46 @@ class hoc_phan_giao_vien_test extends TestCase
         $gradeResponse = $this
             ->actingAs($teacher)
             ->post(route('teacher.classes.grades.store', $classRoom), [
-                'test_name' => 'Kiem tra giua ky',
-                'grades' => [
-                    $studentA->id => ['score' => 91, 'feedback' => 'Lam bai tot'],
-                    $studentB->id => ['score' => 77, 'feedback' => 'Can on them'],
+                'scores' => [
+                    $studentA->id => [1 => 78, 2 => 76],
+                    $studentB->id => [1 => 77],
                 ],
             ]);
 
         $gradeResponse->assertRedirect(route('teacher.classes.show', [
             'classRoom' => $classRoom->id,
             'tab' => 'grades',
-            'test_name' => 'Kiem tra giua ky',
         ]));
 
         $this->assertDatabaseHas('diem', [
             'class_room_id' => $classRoom->id,
             'student_id' => $studentA->id,
-            'test_name' => 'Kiem tra giua ky',
-            'score' => 91.00,
-            'grade' => 'A',
+            'test_name' => 'Kiểm tra 1',
+            'score' => 78.00,
+            'weight' => 1,
+            'grade' => 'C',
         ]);
+
+        $this->assertDatabaseHas('diem', [
+            'class_room_id' => $classRoom->id,
+            'student_id' => $studentA->id,
+            'test_name' => 'Kiểm tra 2',
+            'score' => 76.00,
+            'weight' => 1,
+            'grade' => 'C',
+        ]);
+
+        $detailResponse = $this
+            ->actingAs($teacher)
+            ->get(route('teacher.classes.show', [
+                'classRoom' => $classRoom->id,
+                'tab' => 'grades',
+            ]));
+
+        $detailResponse->assertOk();
+        $detailResponse->assertSee('51.33');
+        $detailResponse->assertSee('Chỉ admin mới được chỉnh');
+        $detailResponse->assertSee('TB được tính theo công thức');
 
         $evaluationResponse = $this
             ->actingAs($teacher)
@@ -166,6 +188,82 @@ class hoc_phan_giao_vien_test extends TestCase
         ]);
     }
 
+    public function test_admin_can_update_grade_weights_on_class(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+        ['classRoom' => $classRoom] = $this->createClassroomBundle($teacher);
+
+        $response = $this
+            ->actingAs($admin)
+            ->post(route('admin.classes.grade-weights.update', $classRoom), [
+                'weights' => [
+                    1 => 2,
+                    2 => 1,
+                    3 => 3,
+                ],
+            ]);
+
+        $response->assertRedirect(route('admin.classes.show', $classRoom));
+
+        $this->assertDatabaseHas('lop_hoc', [
+            'id' => $classRoom->id,
+        ]);
+
+        $classRoom->refresh();
+
+        $this->assertSame([1 => 2, 2 => 1, 3 => 3], $classRoom->grade_weights);
+    }
+
+    public function test_teacher_can_edit_historical_evaluation_even_when_student_not_in_active_enrollment(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $student = User::factory()->student()->create(['name' => 'Hoc vien cu']);
+        ['classRoom' => $classRoom] = $this->createClassroomBundle($teacher);
+
+        // Simulate an old enrollment that is no longer in the active status list.
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $classRoom->subject_id,
+            'course_id' => $classRoom->course_id,
+            'lop_hoc_id' => $classRoom->id,
+            'assigned_teacher_id' => $teacher->id,
+            'status' => Enrollment::STATUS_REJECTED,
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        TeacherEvaluation::create([
+            'class_room_id' => $classRoom->id,
+            'student_id' => $student->id,
+            'teacher_id' => $teacher->id,
+            'rating' => 3,
+            'comments' => 'Nhan xet cu',
+        ]);
+
+        $response = $this
+            ->actingAs($teacher)
+            ->post(route('teacher.classes.evaluations.store', $classRoom), [
+                'student_id' => $student->id,
+                'rating' => 4,
+                'comments' => 'Da cap nhat lai danh gia',
+            ]);
+
+        $response->assertRedirect(route('teacher.classes.show', [
+            'classRoom' => $classRoom->id,
+            'tab' => 'evaluations',
+            'student_id' => $student->id,
+        ]));
+
+        $this->assertDatabaseHas('teacher_evaluations', [
+            'class_room_id' => $classRoom->id,
+            'student_id' => $student->id,
+            'teacher_id' => $teacher->id,
+            'rating' => 4,
+            'comments' => 'Da cap nhat lai danh gia',
+        ]);
+    }
+
     public function test_teacher_can_submit_schedule_change_request_from_schedule_slot(): void
     {
         $teacher = User::factory()->teacher()->create();
@@ -184,7 +282,7 @@ class hoc_phan_giao_vien_test extends TestCase
                 'requested_start_at' => $startAt->format('Y-m-d H:i:s'),
                 'requested_end_at' => $endAt->format('Y-m-d H:i:s'),
                 'requested_room_id' => $requestedRoom->id,
-                'reason' => 'Can doi lich de phu hop lich day moi.',
+                'reason' => 'Cần dời buổi để phù hợp lịch dạy mới.',
             ]);
 
         $response->assertRedirect(route('teacher.schedules.index'));
@@ -271,7 +369,7 @@ class hoc_phan_giao_vien_test extends TestCase
 
         $this->assertDatabaseHas('thong_bao', [
             'user_id' => $teacher->id,
-            'title' => 'Yêu cầu đổi lịch đã được duyệt',
+            'title' => 'Yêu cầu dạy bù đã được duyệt',
             'type' => 'success',
         ]);
     }

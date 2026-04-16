@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\ScheduleChangeRequest;
 use App\Models\TeacherApplication;
 use App\Models\User;
+use App\Services\AdminScheduleConflictService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,10 @@ use Throwable;
 
 class EnsureAdmin
 {
+    public function __construct(protected AdminScheduleConflictService $scheduleConflictService)
+    {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
@@ -45,6 +50,8 @@ class EnsureAdmin
         }
 
         try {
+            $studentConflictCount = $scheduleConflictService->studentConflictPairCount();
+
             $adminSidebarBadges = [
                 'teacher_applications_pending' => TeacherApplication::query()
                     ->where('status', TeacherApplication::STATUS_PENDING)
@@ -55,12 +62,14 @@ class EnsureAdmin
                 'schedule_change_requests_pending' => ScheduleChangeRequest::query()
                     ->where('status', ScheduleChangeRequest::STATUS_PENDING)
                     ->count(),
+                'schedule_conflicts' => $studentConflictCount,
             ];
         } catch (Throwable $exception) {
             $adminSidebarBadges = [
                 'teacher_applications_pending' => 0,
                 'enrollments_pending' => 0,
                 'schedule_change_requests_pending' => 0,
+                'schedule_conflicts' => 0,
             ];
         }
 

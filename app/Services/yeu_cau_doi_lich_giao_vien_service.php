@@ -50,27 +50,27 @@ class TeacherScheduleChangeRequestService
     {
         if ((int) $course->teacher_id !== (int) $teacher->id) {
             throw ValidationException::withMessages([
-                'course' => 'Bạn không có quyền gửi yêu cầu đổi lịch cho lớp học này.',
+                'course' => 'Bạn không có quyền gửi yêu cầu dời buổi cho lớp học này.',
             ]);
         }
 
         if (! in_array($course->status, Course::schedulingStatuses(), true)) {
             throw ValidationException::withMessages([
-                'course' => 'Chỉ lớp đã có lịch chính thức mới được gửi yêu cầu đổi lịch.',
+                'course' => 'Chỉ lớp đã có lịch chính thức mới được gửi yêu cầu dời buổi.',
             ]);
         }
 
         foreach (['day_of_week', 'start_date', 'start_time', 'end_time'] as $attribute) {
             if (! $course->{$attribute}) {
                 throw ValidationException::withMessages([
-                    'course' => 'Lớp học này chưa có đủ thông tin lịch hiện tại để tạo yêu cầu đổi lịch.',
+                'course' => 'Lớp học này chưa có đủ thông tin lịch hiện tại để tạo yêu cầu dời buổi.',
                 ]);
             }
         }
 
         if (ScheduleChangeRequest::query()->pending()->where('teacher_id', $teacher->id)->where('course_id', $course->id)->exists()) {
             throw ValidationException::withMessages([
-                'course' => 'Lớp học này đang có một yêu cầu đổi lịch chờ admin xử lý.',
+                'course' => 'Lớp học này đang có một yêu cầu dời buổi chờ admin xử lý.',
             ]);
         }
 
@@ -86,7 +86,7 @@ class TeacherScheduleChangeRequestService
 
         if ($requestedSchedule === $currentSchedule) {
             throw ValidationException::withMessages([
-                'requested_start_time' => 'Lịch đề xuất đang trùng với lịch hiện tại của lớp học.',
+                'requested_start_time' => 'Buổi dạy bù đề xuất đang trùng với lịch hiện tại của lớp học.',
             ]);
         }
 
@@ -110,7 +110,7 @@ class TeacherScheduleChangeRequestService
 
         if (! $schedule->classRoom || (int) $schedule->classRoom->teacher_id !== (int) $teacher->id) {
             throw ValidationException::withMessages([
-                'schedule' => 'Bạn không có quyền gửi yêu cầu đổi lịch cho buổi học này.',
+                'schedule' => 'Bạn không có quyền gửi yêu cầu dời buổi cho buổi học này.',
             ]);
         }
 
@@ -120,7 +120,7 @@ class TeacherScheduleChangeRequestService
             ->where('class_schedule_id', $schedule->id)
             ->exists()) {
             throw ValidationException::withMessages([
-                'schedule' => 'Buổi học này đang có một yêu cầu đổi lịch chờ admin xử lý.',
+                'schedule' => 'Buổi học này đang có một yêu cầu dời buổi chờ admin xử lý.',
             ]);
         }
 
@@ -139,7 +139,7 @@ class TeacherScheduleChangeRequestService
             && $requestedEndAt->format('H:i') === substr((string) $schedule->end_time, 0, 5)
             && $requestedRoomId === null) {
             throw ValidationException::withMessages([
-                'requested_start_at' => 'Lịch đề xuất đang trùng với lịch hiện tại của buổi học.',
+                'requested_start_at' => 'Buổi dạy bù đề xuất đang trùng với lịch hiện tại của buổi học.',
             ]);
         }
 

@@ -17,7 +17,7 @@
             </a>
             <h1 class="mt-3 text-3xl font-semibold text-slate-900">Chi tiết yêu cầu lịch học riêng #{{ $enrollment->id }}</h1>
             <p class="mt-2 text-sm text-slate-600">
-                Hồ sơ chờ xếp lớp nội bộ. Duyệt để chuyển sang bước xử lý tiếp theo.
+                Hồ sơ chờ xếp khóa học triển khai. Duyệt để chuyển sang bước xử lý tiếp theo.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -54,7 +54,7 @@
                 <h2 class="text-lg font-semibold text-slate-900">Nhu cầu học của học viên</h2>
                 <div class="mt-5 grid gap-4 md:grid-cols-2">
                     <div>
-                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học public</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-400">Khóa học công khai</p>
                         <p class="mt-1 text-sm font-medium text-slate-900">{{ $enrollment->subject?->name ?? 'Chưa xác định' }}</p>
                     </div>
                     <div>
