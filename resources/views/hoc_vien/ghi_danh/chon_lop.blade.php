@@ -96,19 +96,34 @@
             @foreach($classes as $class)
                 @php
                     $scheduleConflict = $scheduleConflictMap[$class->id] ?? null;
+                    $availabilityState = $class->enrollmentAvailabilityState();
+                    $availabilityLabel = $class->enrollmentAvailabilityLabel();
+                    $availabilityStyles = match ($availabilityState) {
+                        'available' => ['badge' => 'bg-emerald-100 text-emerald-700', 'panel' => 'border-emerald-200 bg-emerald-50', 'text' => 'text-emerald-700', 'title' => 'text-emerald-800', 'icon' => 'text-emerald-500'],
+                        'full' => ['badge' => 'bg-amber-100 text-amber-700', 'panel' => 'border-amber-200 bg-amber-50', 'text' => 'text-amber-700', 'title' => 'text-amber-800', 'icon' => 'text-amber-500'],
+                        'started', 'ended' => ['badge' => 'bg-rose-100 text-rose-700', 'panel' => 'border-rose-200 bg-rose-50', 'text' => 'text-rose-700', 'title' => 'text-rose-800', 'icon' => 'text-rose-500'],
+                        'closed' => ['badge' => 'bg-slate-100 text-slate-700', 'panel' => 'border-slate-200 bg-slate-50', 'text' => 'text-slate-600', 'title' => 'text-slate-800', 'icon' => 'text-slate-500'],
+                        default => ['badge' => 'bg-slate-100 text-slate-700', 'panel' => 'border-slate-200 bg-slate-50', 'text' => 'text-slate-600', 'title' => 'text-slate-800', 'icon' => 'text-slate-500'],
+                    };
+                    $canEnroll = $class->canAcceptEnrollment();
+                    $blockReason = $class->enrollmentBlockReason();
                 @endphp
                 <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-cyan-200 hover:shadow-md">
                     <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
                                 <h3 class="text-lg font-semibold text-slate-900">{{ $class->subject->name ?? '—' }}</h3>
-                                @if($class->availableSlots() <= 3)
+                                @if($class->availableSlots() <= 3 && $canEnroll)
                                     <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-600">
                                         Còn {{ $class->availableSlots() }} chỗ
                                     </span>
-                                @else
+                                @elseif($canEnroll)
                                     <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                                         Còn {{ $class->availableSlots() }} chỗ
+                                    </span>
+                                @else
+                                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $availabilityStyles['badge'] }}">
+                                        {{ $availabilityLabel }}
                                     </span>
                                 @endif
                             </div>
@@ -130,6 +145,10 @@
                                     <span class="font-medium text-slate-500">Thời lượng:</span>
                                     {{ $class->duration ? $class->duration . ' tháng' : '—' }}
                                 </div>
+                                <div>
+                                    <span class="font-medium text-slate-500">Kết thúc:</span>
+                                    {{ $class->scheduleRangeEnd()?->format('d/m/Y') ?? 'Chưa xác định' }}
+                                </div>
                             </div>
 
                             @if($class->schedules->isNotEmpty())
@@ -143,6 +162,20 @@
                                     @endforeach
                                 </div>
                             @endif
+
+                            <div class="mt-4 rounded-2xl border {{ $availabilityStyles['panel'] }} px-4 py-3 text-sm">
+                                <div class="flex items-center justify-between gap-3">
+                                    <p class="font-medium {{ $availabilityStyles['title'] }}">
+                                        {{ $availabilityLabel }}
+                                    </p>
+                                    <i class="fas {{ $canEnroll ? 'fa-circle-check' : 'fa-circle-xmark' }} {{ $availabilityStyles['icon'] }}"></i>
+                                </div>
+                                @if($blockReason)
+                                    <p class="mt-1 leading-6 {{ $availabilityStyles['text'] }}">{{ $blockReason }}</p>
+                                @else
+                                    <p class="mt-1 leading-6 text-emerald-700">Lớp đang mở và sẵn sàng nhận đăng ký.</p>
+                                @endif
+                            </div>
 
                             @if($scheduleConflict)
                                 <div class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -162,11 +195,11 @@
                                     @csrf
                                     <input type="hidden" name="lop_hoc_id" value="{{ $class->id }}">
                                     <button type="submit"
-                                        @if($scheduleConflict) disabled aria-disabled="true" @endif
+                                        @if($scheduleConflict || ! $canEnroll) disabled aria-disabled="true" @endif
                                         onclick="return confirm('Xác nhận đăng ký lớp này?')"
-                                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition {{ $scheduleConflict ? 'cursor-not-allowed bg-slate-300 text-slate-600 hover:bg-slate-300' : 'bg-cyan-600 hover:bg-cyan-700' }}">
-                                        <i class="fas {{ $scheduleConflict ? 'fa-ban' : 'fa-check' }}"></i>
-                                        {{ $scheduleConflict ? 'Bị trùng lịch' : 'Đăng ký lớp này' }}
+                                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition {{ $scheduleConflict || ! $canEnroll ? 'cursor-not-allowed bg-slate-300 text-slate-600 hover:bg-slate-300' : 'bg-cyan-600 hover:bg-cyan-700' }}">
+                                        <i class="fas {{ $scheduleConflict || ! $canEnroll ? 'fa-ban' : 'fa-check' }}"></i>
+                                        {{ $scheduleConflict ? 'Bị trùng lịch' : ($canEnroll ? 'Đăng ký lớp này' : 'Không thể đăng ký') }}
                                     </button>
                                 </form>
                             @endif

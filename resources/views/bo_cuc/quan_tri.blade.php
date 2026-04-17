@@ -16,7 +16,8 @@
     $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
     $sidebarBadges = $adminSidebarBadges ?? [];
-    $totalPendingItems = (int) ($sidebarBadges['teacher_applications_pending'] ?? 0) + (int) ($sidebarBadges['enrollments_pending'] ?? 0) + (int) ($sidebarBadges['schedule_change_requests_pending'] ?? 0);
+    $adminNotificationItems = $adminUser ? $adminUser->notifications()->latest('id')->take(5)->get() : collect();
+    $adminUnreadNotifications = $adminUser ? $adminUser->notifications()->where('is_read', false)->count() : 0;
     $menuSections = [
         [
             'label' => 'Tổng quan',
@@ -152,14 +153,47 @@
                             <i class="fas fa-house"></i>
                             <span class="hidden sm:inline">Trang chủ</span>
                         </a>
-                        <button class="relative p-2 rounded-full hover:bg-slate-100" title="Muc can xu ly">
-                            <i class="fas fa-bell text-slate-500"></i>
-                            @if ($totalPendingItems > 0)
-                                <span class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
-                                    {{ $totalPendingItems > 99 ? '99+' : $totalPendingItems }}
-                                </span>
-                            @endif
-                        </button>
+                        <div x-data="{ notificationsOpen: false }" class="relative" data-notification-poller data-notification-poller-url="{{ route('admin.notifications.poll') }}">
+                            <button @click="notificationsOpen = !notificationsOpen" class="relative rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-cyan-700" title="Thông báo">
+                                <i class="fas fa-bell"></i>
+                                @if ($adminUnreadNotifications > 0)
+                                    <span data-notification-badge class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
+                                        {{ $adminUnreadNotifications > 99 ? '99+' : $adminUnreadNotifications }}
+                                    </span>
+                                @else
+                                    <span data-notification-badge class="absolute -right-1 -top-1 hidden min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white"></span>
+                                @endif
+                            </button>
+
+                            <div x-show="notificationsOpen" x-cloak @click.away="notificationsOpen = false" class="absolute right-0 z-50 mt-3 w-96 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                                <div class="border-b border-slate-100 px-5 py-4">
+                                    <p class="text-sm font-semibold text-slate-900">Thông báo</p>
+                                    <p class="mt-1 text-xs text-slate-500"><span data-notification-unread-count>{{ $adminUnreadNotifications }}</span> chưa đọc</p>
+                                </div>
+
+                                <div class="max-h-96 overflow-y-auto" data-notification-list>
+                                    @forelse ($adminNotificationItems as $notification)
+                                        <a href="{{ route('admin.notifications.show', $notification) }}" class="block border-b border-slate-100 px-5 py-4 transition hover:bg-slate-50">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-slate-900">{{ $notification->title }}</p>
+                                                    <p class="mt-1 text-sm leading-6 text-slate-500">{{ $notification->message }}</p>
+                                                </div>
+                                                <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-5 py-8 text-center text-sm text-slate-500" data-notification-empty>
+                                            Chưa có thông báo nào.
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <a href="{{ route('admin.notifications.index') }}" class="block border-t border-slate-100 px-5 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50">
+                                    Mở hộp thông báo
+                                </a>
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2">
                             <a href="{{ route('admin.profile.show') }}" class="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-slate-100" title="Thong tin ca nhan">
                                 @if ($adminUser?->avatarUrl())

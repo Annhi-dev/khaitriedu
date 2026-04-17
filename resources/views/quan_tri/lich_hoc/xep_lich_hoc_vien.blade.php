@@ -1,5 +1,5 @@
 @extends('bo_cuc.quan_tri')
-@section('title', 'Xep lich hoc vien')
+@section('title', 'Xếp lịch học viên')
 @section('content')
 @php
     $dayLabels = \App\Models\Course::dayOptions();
@@ -25,10 +25,10 @@
         <div>
             <a href="{{ route('admin.schedules.queue') }}" class="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800">
                 <i class="fas fa-arrow-left"></i>
-                Quay lai hang cho xep lich
+                Quay lại hàng chờ xếp lịch
             </a>
-            <h1 class="mt-3 text-3xl font-semibold text-slate-900">Xep lich cho {{ $enrollment->user?->name }}</h1>
-            <p class="mt-2 text-sm text-slate-500">Luu y kiem tra thong tin truoc khi xep lich.</p>
+            <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Xếp lịch cho {{ $enrollment->user?->name }}</h1>
+            <p class="mt-2 text-sm text-slate-500">Lưu ý kiểm tra thông tin trước khi xếp lịch.</p>
         </div>
         <span class="inline-flex rounded-full bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700">{{ $enrollment->statusLabel() }}</span>
     </div>
@@ -37,12 +37,30 @@
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-slate-900">Nhu cau hoc vien</h2>
             <div class="mt-5 grid gap-4 text-sm text-slate-600 md:grid-cols-2">
-                <p><strong>Hoc vien:</strong> {{ $enrollment->user?->name ?? 'Khong co du lieu' }}</p>
-                <p><strong>Khoa hoc:</strong> {{ $enrollment->subject?->name ?? 'Chua xac dinh' }}</p>
-                <p><strong>Nhom hoc:</strong> {{ $enrollment->subject?->category?->name ?? 'Chua phan nhom' }}</p>
-                <p><strong>Loai ho so:</strong> {{ $enrollment->requestSourceLabel() }}</p>
-                <p><strong>Khung gio mong muon:</strong> {{ $enrollment->start_time ?: '--:--' }} - {{ $enrollment->end_time ?: '--:--' }}</p>
-                <p class="md:col-span-2"><strong>Ngay co the hoc:</strong> {{ $selectedDays ? implode(', ', array_map(fn ($day) => $dayLabels[$day] ?? $day, $selectedDays)) : 'Chua chon ngay hoc' }}</p>
+                <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Học viên</p>
+                    <p class="mt-1 font-medium text-slate-700">{{ $enrollment->user?->name ?? 'Khong co du lieu' }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Khóa học</p>
+                    <p class="mt-1 font-medium text-slate-700">{{ $enrollment->subject?->name ?? 'Chua xac dinh' }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Nhóm học</p>
+                    <p class="mt-1 font-medium text-slate-700">{{ $enrollment->subject?->category?->name ?? 'Chua phan nhom' }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Loại hồ sơ</p>
+                    <p class="mt-1 font-medium text-slate-700">{{ $enrollment->requestSourceLabel() }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Khung giờ mong muốn</p>
+                    <p class="mt-1 font-medium text-slate-700">{{ $enrollment->start_time ?: '--:--' }} - {{ $enrollment->end_time ?: '--:--' }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 px-4 py-3 md:col-span-2">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Ngày có thể học</p>
+                    <p class="mt-1 font-medium text-slate-700">{{ $selectedDays ? implode(', ', array_map(fn ($day) => $dayLabels[$day] ?? $day, $selectedDays)) : 'Chua chon ngay hoc' }}</p>
+                </div>
             </div>
 
         </section>
@@ -54,9 +72,9 @@
                 @if ($forceCreateNewClass)
                     @if (($waitingCourses ?? collect())->isNotEmpty())
                         <div>
-                            <label class="text-sm font-medium text-slate-700">Ghep vao lop cho mo da co</label>
+                        <label class="text-sm font-medium text-slate-700">Ghép vào lớp chờ mở đã có</label>
                             <select id="waiting-course-select" name="course_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
-                                <option value="">Tao lop cho mo moi ben duoi</option>
+                                <option value="">Tạo lớp chờ mở mới bên dưới</option>
                                 @foreach ($waitingCourses as $waitingCourse)
                                     <option
                                         value="{{ $waitingCourse->id }}"
@@ -68,7 +86,7 @@
                                         data-capacity="{{ $waitingCourse->capacity ?? 20 }}"
                                         @selected($selectedCourseId === (string) $waitingCourse->id)
                                     >
-                                        {{ $waitingCourse->title }} - {{ $waitingCourse->scheduled_students_count }}/{{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} hoc vien
+                                        {{ $waitingCourse->title }} - {{ $waitingCourse->scheduled_students_count }}/{{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} học viên
                                     </option>
                                 @endforeach
                             </select>
@@ -77,9 +95,9 @@
                     @endif
                 @else
                     <div>
-                        <label class="text-sm font-medium text-slate-700">Chon lop hoc co san</label>
+                        <label class="text-sm font-medium text-slate-700">Chọn lớp học có sẵn</label>
                         <select name="course_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
-                            <option value="">Tao lop moi ben duoi</option>
+                            <option value="">Tạo lớp mới bên dưới</option>
                             @foreach ($courses as $course)
                                 <option value="{{ $course->id }}" @selected(old('course_id', $enrollment->course_id) == $course->id)>
                                     {{ $course->title }} - {{ $course->formattedSchedule() }}
@@ -91,15 +109,15 @@
                 @endif
 
                 <div class="rounded-2xl border border-dashed border-slate-300 p-4">
-                    <h3 class="text-sm font-semibold text-slate-800">{{ $forceCreateNewClass ? 'Tao lop cho mo moi' : 'Hoac tao lop moi' }}</h3>
+                    <h3 class="text-sm font-semibold text-slate-800">{{ $forceCreateNewClass ? 'Tạo lớp chờ mở mới' : 'Hoặc tạo lớp mới' }}</h3>
                     <div class="mt-4 space-y-4">
                         <div>
-                            <label class="text-sm font-medium text-slate-700">Ten lop hoc</label>
+                            <label class="text-sm font-medium text-slate-700">Tên lớp học</label>
                             <input id="new-course-title" type="text" name="new_course_title" value="{{ old('new_course_title', $suggestedCourseTitle ?? '') }}" readonly class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:outline-none">
                             @error('new_course_title')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="text-sm font-medium text-slate-700">Mo ta lop hoc</label>
+                            <label class="text-sm font-medium text-slate-700">Mô tả lớp học</label>
                             <textarea name="new_course_description" rows="3" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none">{{ old('new_course_description') }}</textarea>
                             @error('new_course_description')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                         </div>
@@ -107,9 +125,9 @@
                 </div>
 
                 <div>
-                    <label class="text-sm font-medium text-slate-700">Giang vien</label>
+                    <label class="text-sm font-medium text-slate-700">Giảng viên</label>
                     <select id="teacher-select" name="teacher_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
-                        <option value="">Chon giang vien</option>
+                        <option value="">Chọn giảng viên</option>
                         @foreach ($teachers as $teacher)
                             <option value="{{ $teacher->id }}" @selected(old('teacher_id', $enrollment->assigned_teacher_id) == $teacher->id)>{{ $teacher->displayName() }}</option>
                         @endforeach
@@ -119,10 +137,10 @@
 
                 <div>
                     <label class="text-sm font-medium text-slate-700">
-                        {{ $forceCreateNewClass ? 'Phong hoc du kien (tuy chon)' : 'Phong hoc chinh thuc' }}
+                        {{ $forceCreateNewClass ? 'Phòng học dự kiến (tùy chọn)' : 'Phòng học chính thức' }}
                     </label>
                     <select name="room_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
-                        <option value="">{{ $forceCreateNewClass ? 'Se chot khi mo lop' : 'Chon phong hoc' }}</option>
+                            <option value="">{{ $forceCreateNewClass ? 'Sẽ chốt khi mở lớp' : 'Chọn phòng học' }}</option>
                         @foreach ($rooms as $room)
                             <option value="{{ $room->id }}" @selected((string) old('room_id') === (string) $room->id)>
                                 {{ $room->name }}{{ $room->code ? ' (' . $room->code . ')' : '' }} - suc chua {{ $room->capacity }}
@@ -134,7 +152,7 @@
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="text-sm font-medium text-slate-700">Ngay hoc trong tuan</label>
+                        <label class="text-sm font-medium text-slate-700">Ngày học trong tuần</label>
                         <div class="mt-2 grid gap-2 sm:grid-cols-2">
                             @foreach ($dayLabels as $value => $label)
                                 <label class="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50/40">
@@ -155,32 +173,32 @@
                         </div>
                     @else
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-                            Ngay bat dau va ngay ket thuc se duoc chon sau khi lop du toi thieu {{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} hoc vien.
+                            Ngày bắt đầu và ngày kết thúc sẽ được chọn sau khi lớp đủ tối thiểu {{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} học viên.
                         </div>
                     @endif
 
                     <div>
-                        <label class="text-sm font-medium text-slate-700">Gio bat dau</label>
+                        <label class="text-sm font-medium text-slate-700">Giờ bắt đầu</label>
                         <input id="start-time-input" type="time" name="start_time" value="{{ old('start_time', $enrollment->start_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         @error('start_time')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label class="text-sm font-medium text-slate-700">Gio ket thuc</label>
+                        <label class="text-sm font-medium text-slate-700">Giờ kết thúc</label>
                         <input id="end-time-input" type="time" name="end_time" value="{{ old('end_time', $enrollment->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         @error('end_time')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
                     @if (! $forceCreateNewClass)
                         <div>
-                            <label class="text-sm font-medium text-slate-700">Ngay ket thuc</label>
+                            <label class="text-sm font-medium text-slate-700">Ngày kết thúc</label>
                             <input type="date" name="end_date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                             @error('end_date')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                         </div>
                     @endif
 
                     <div>
-                        <label class="text-sm font-medium text-slate-700">Si so toi da</label>
+                        <label class="text-sm font-medium text-slate-700">Sĩ số tối đa</label>
                         <input id="capacity-input" type="number" min="1" max="999" name="capacity" value="{{ old('capacity', 20) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         @error('capacity')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
@@ -193,7 +211,7 @@
                 </div>
 
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700">
-                    {{ $forceCreateNewClass ? 'Luu lop cho mo' : 'Xac nhan xep lich chinh thuc' }}
+                    {{ $forceCreateNewClass ? 'Lưu lớp chờ mở' : 'Xác nhận xếp lịch chính thức' }}
                 </button>
             </form>
         </aside>

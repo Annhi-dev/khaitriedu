@@ -1,0 +1,99 @@
+<?php
+
+namespace App\Http\Controllers\Teacher;
+
+use App\Http\Controllers\Controller;
+use App\Models\Notification;
+use App\Models\User;
+
+class NotificationController extends Controller
+{
+    public function poll()
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+
+        if ($redirect) {
+            return $redirect;
+        }
+
+        return response()->json($this->notificationPayload($current));
+    }
+
+    public function index()
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $notificationQuery = $current->notifications();
+
+        return view('thong_bao.index', [
+            'layout' => 'bo_cuc.giao_vien',
+            'current' => $current,
+            'pageTitle' => 'Hộp thông báo',
+            'pageEyebrow' => 'Thông báo',
+            'backRoute' => route('teacher.dashboard'),
+            'backLabel' => 'Về dashboard',
+            'openRouteName' => 'teacher.notifications.show',
+            'emptyMessage' => 'Chưa có thông báo nào cho giảng viên.',
+            'notifications' => (clone $notificationQuery)
+                ->latest('id')
+                ->paginate(12)
+                ->withQueryString(),
+            'totalNotifications' => $notificationQuery->count(),
+            'unreadNotifications' => (clone $notificationQuery)->where('is_read', false)->count(),
+        ]);
+    }
+
+    public function show(Notification $notification)
+    {
+        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+
+        if ($redirect) {
+            return $redirect;
+        }
+
+        if ((int) $notification->user_id !== (int) $current->id) {
+            abort(404);
+        }
+
+        if (! $notification->is_read) {
+            $notification->forceFill([
+                'is_read' => true,
+                'read_at' => now(),
+            ])->save();
+        }
+
+        return view('thong_bao.show', [
+            'layout' => 'bo_cuc.giao_vien',
+            'current' => $current,
+            'pageTitle' => 'Chi tiết thông báo',
+            'pageEyebrow' => 'Thông báo',
+            'backRoute' => route('teacher.notifications.index'),
+            'backLabel' => 'Về hộp thông báo',
+            'notification' => $notification,
+            'openUrl' => $notification->link,
+        ]);
+    }
+
+    private function notificationPayload(User $user): array
+    {
+        $notifications = $user->notifications()->latest('id')->take(5)->get();
+
+        return [
+            'unread_count' => $user->notifications()->where('is_read', false)->count(),
+            'total_count' => $user->notifications()->count(),
+            'notifications' => $notifications->map(fn (Notification $notification) => [
+                'id' => $notification->id,
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'type' => $notification->type,
+                'is_read' => (bool) $notification->is_read,
+                'created_at' => optional($notification->created_at)->toIso8601String(),
+                'open_url' => route('teacher.notifications.show', $notification),
+            ])->values(),
+        ];
+    }
+}

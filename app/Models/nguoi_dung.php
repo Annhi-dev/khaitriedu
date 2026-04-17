@@ -220,6 +220,16 @@ class User extends Authenticatable
         return $this->hasMany(ScheduleChangeRequest::class, 'teacher_id');
     }
 
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class, 'student_id');
+    }
+
+    public function teachingLeaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class, 'teacher_id');
+    }
+
     public function notifications()
     {
         return $this->hasMany(Notification::class);

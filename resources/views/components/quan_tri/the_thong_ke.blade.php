@@ -1,4 +1,4 @@
-@props(['label', 'value', 'icon', 'color' => 'cyan', 'note' => null])
+@props(['label', 'value', 'icon', 'color' => 'cyan', 'note' => null, 'trend' => null, 'detailsUrl' => null, 'detailsLabel' => 'Xem chi tiết'])
 
 @php
     $colorMap = [
@@ -25,7 +25,18 @@
         </div>
     </div>
 
-    @if ($note)
-        <p class="mt-3 text-xs leading-5 text-slate-500">{{ $note }}</p>
+    @php
+        $description = $note ?? $trend;
+    @endphp
+
+    @if ($description)
+        <p class="mt-3 text-xs leading-5 text-slate-500">{{ $description }}</p>
+    @endif
+
+    @if ($detailsUrl)
+        <a href="{{ $detailsUrl }}" class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800">
+            <span>{{ $detailsLabel }}</span>
+            <i class="fas fa-arrow-right text-xs"></i>
+        </a>
     @endif
 </div>

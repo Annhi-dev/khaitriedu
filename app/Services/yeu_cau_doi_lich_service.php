@@ -12,6 +12,7 @@ use App\Models\ScheduleChangeRequest;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -101,7 +102,7 @@ class AdminScheduleChangeRequestService
                     'reviewed_at' => now(),
                 ]);
 
-                $this->notifyTeacher($scheduleChangeRequest, true);
+                $this->notifyApproval($scheduleChangeRequest);
 
                 return 'Đã duyệt yêu cầu dời buổi và cập nhật lịch mới: ' . $newSchedule;
             }
@@ -481,16 +482,99 @@ class AdminScheduleChangeRequestService
         return $preview->formattedSchedule();
     }
 
+    protected function notifyApproval(ScheduleChangeRequest $scheduleChangeRequest): void
+    {
+        $title = 'Yêu cầu dời lịch đã được duyệt';
+        $teacherMessage = $this->buildTeacherNotificationMessage($scheduleChangeRequest);
+        $studentMessage = $this->buildStudentNotificationMessage($scheduleChangeRequest);
+
+        Notification::create([
+            'user_id' => $scheduleChangeRequest->teacher_id,
+            'title' => $title,
+            'message' => $teacherMessage,
+            'type' => 'success',
+            'link' => route('teacher.schedule-change-requests.index'),
+        ]);
+
+        foreach ($this->affectedStudentIds($scheduleChangeRequest) as $studentId) {
+            Notification::create([
+                'user_id' => $studentId,
+                'title' => 'Lịch học đã thay đổi',
+                'message' => $studentMessage,
+                'type' => 'info',
+                'link' => route('student.schedule'),
+            ]);
+        }
+    }
+
     protected function notifyTeacher(ScheduleChangeRequest $scheduleChangeRequest, bool $approved): void
     {
         Notification::create([
             'user_id' => $scheduleChangeRequest->teacher_id,
-            'title' => $approved ? 'Yêu cầu dạy bù đã được duyệt' : 'Yêu cầu dạy bù bị từ chối',
-            'message' => ($approved ? 'Admin đã duyệt buổi dạy bù cho ' : 'Admin đã từ chối yêu cầu dạy bù của ')
-                . $scheduleChangeRequest->targetTitle()
-                . '.',
+            'title' => $approved ? 'Yêu cầu dời lịch đã được duyệt' : 'Yêu cầu dời lịch bị từ chối',
+            'message' => $approved
+                ? $this->buildTeacherNotificationMessage($scheduleChangeRequest)
+                : 'Admin đã từ chối yêu cầu dời lịch cho ' . $scheduleChangeRequest->targetTitle() . '.',
             'type' => $approved ? 'success' : 'warning',
             'link' => route('teacher.schedule-change-requests.index'),
         ]);
+    }
+
+    protected function affectedStudentIds(ScheduleChangeRequest $scheduleChangeRequest): Collection
+    {
+        $query = $scheduleChangeRequest->classRoom
+            ? $scheduleChangeRequest->classRoom->enrollments()
+            : $scheduleChangeRequest->course?->enrollments();
+
+        if (! $query) {
+            return collect();
+        }
+
+        return $query
+            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->pluck('user_id')
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    protected function buildTeacherNotificationMessage(ScheduleChangeRequest $scheduleChangeRequest): string
+    {
+        return $this->buildScheduleChangeNotificationMessage($scheduleChangeRequest, true);
+    }
+
+    protected function buildStudentNotificationMessage(ScheduleChangeRequest $scheduleChangeRequest): string
+    {
+        return $this->buildScheduleChangeNotificationMessage($scheduleChangeRequest, false);
+    }
+
+    protected function buildScheduleChangeNotificationMessage(ScheduleChangeRequest $scheduleChangeRequest, bool $isTeacher): string
+    {
+        $segments = [];
+
+        $segments[] = ($isTeacher ? 'Yêu cầu dời lịch cho ' : 'Lịch học của bạn tại ')
+            . $scheduleChangeRequest->targetTitle()
+            . ' đã được admin duyệt.';
+        $segments[] = 'Lịch cũ: ' . $scheduleChangeRequest->currentScheduleLabel();
+        $segments[] = 'Lịch mới: ' . $scheduleChangeRequest->requestedScheduleLabel();
+
+        $currentRoom = $scheduleChangeRequest->currentRoomLabel();
+        $requestedRoom = $scheduleChangeRequest->requestedRoomLabel();
+
+        if ($requestedRoom !== $currentRoom) {
+            $segments[] = 'Phòng học: ' . $currentRoom . ' -> ' . $requestedRoom;
+        } elseif ($requestedRoom !== 'Chưa phân phòng') {
+            $segments[] = 'Phòng học: ' . $requestedRoom;
+        }
+
+        if ($scheduleChangeRequest->requested_date) {
+            $segments[] = 'Hiệu lực từ ' . $scheduleChangeRequest->requested_date->format('d/m/Y');
+        }
+
+        if (! $isTeacher) {
+            $segments[] = 'Vui lòng kiểm tra lại thời khóa biểu của bạn.';
+        }
+
+        return implode(' ', $segments);
     }
 }

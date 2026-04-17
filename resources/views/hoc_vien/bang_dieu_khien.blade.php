@@ -113,7 +113,7 @@
             </div>
         </div>
 
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div id="thong-bao" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-900">Thông báo gần đây</h3>
@@ -124,7 +124,7 @@
 
             <div class="mt-4 space-y-3">
                 @forelse ($notificationList as $notification)
-                    <div class="rounded-2xl border {{ $notification->is_read ? 'border-slate-200 bg-slate-50' : 'border-cyan-200 bg-cyan-50/70' }} px-4 py-4">
+                    <a href="{{ route('student.notifications.show', $notification) }}" class="block rounded-2xl border {{ $notification->is_read ? 'border-slate-200 bg-slate-50' : 'border-cyan-200 bg-cyan-50/70' }} px-4 py-4 transition hover:border-cyan-300 hover:bg-cyan-50">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="font-medium text-slate-900">{{ $notification->title }}</p>
@@ -132,7 +132,7 @@
                             </div>
                             <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
                         </div>
-                    </div>
+                    </a>
                 @empty
                     <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">
                         Chưa có thông báo nào gửi đến bạn. Khi có cập nhật mới, hệ thống sẽ hiển thị tại đây.

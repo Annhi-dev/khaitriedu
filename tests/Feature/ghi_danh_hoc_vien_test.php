@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -233,6 +234,133 @@ class ghi_danh_hoc_vien_test extends TestCase
         $this->assertDatabaseCount('dang_ky', 1);
     }
 
+    public function test_student_cannot_enroll_into_a_class_that_has_already_started(): void
+    {
+        Carbon::setTestNow('2026-04-17 10:00:00');
+
+        try {
+            $student = User::factory()->student()->create();
+            $teacher = User::factory()->teacher()->create();
+            [, $subject] = $this->createCatalogSubject('Tin hoc ung dung');
+            $classRoom = $this->createOpenClassRoom($subject, $teacher, 'Monday', '18:00', '20:00', [
+                'start_date' => '2026-04-10',
+            ]);
+
+            $response = $this
+                ->from(route('student.enroll.select', $subject))
+                ->withSession(['user_id' => $student->id])
+                ->post(route('student.enroll.store', $subject), [
+                    'lop_hoc_id' => $classRoom->id,
+                ]);
+
+            $response->assertRedirect(route('student.enroll.select', $subject));
+            $response->assertSessionHas('error', 'Lớp học này đã bắt đầu, không thể đăng ký.');
+            $this->assertDatabaseMissing('dang_ky', [
+                'user_id' => $student->id,
+                'subject_id' => $subject->id,
+                'lop_hoc_id' => $classRoom->id,
+            ]);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_student_cannot_enroll_into_a_class_that_has_already_ended(): void
+    {
+        Carbon::setTestNow('2026-04-17 10:00:00');
+
+        try {
+            $student = User::factory()->student()->create();
+            $teacher = User::factory()->teacher()->create();
+            [, $subject] = $this->createCatalogSubject('Ke toan thuc hanh');
+            $classRoom = $this->createOpenClassRoom($subject, $teacher, 'Tuesday', '18:00', '20:00', [
+                'start_date' => '2026-03-01',
+                'end_date' => '2026-04-01',
+            ]);
+
+            $response = $this
+                ->from(route('student.enroll.select', $subject))
+                ->withSession(['user_id' => $student->id])
+                ->post(route('student.enroll.store', $subject), [
+                    'lop_hoc_id' => $classRoom->id,
+                ]);
+
+            $response->assertRedirect(route('student.enroll.select', $subject));
+            $response->assertSessionHas('error', 'Lớp học này đã kết thúc, vui lòng chờ admin mở lớp mới.');
+            $this->assertDatabaseMissing('dang_ky', [
+                'user_id' => $student->id,
+                'subject_id' => $subject->id,
+                'lop_hoc_id' => $classRoom->id,
+            ]);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_student_can_enroll_into_a_future_open_class(): void
+    {
+        Carbon::setTestNow('2026-04-17 10:00:00');
+
+        try {
+            $student = User::factory()->student()->create();
+            $teacher = User::factory()->teacher()->create();
+            [, $subject] = $this->createCatalogSubject('Marketing digital');
+            $classRoom = $this->createOpenClassRoom($subject, $teacher, 'Thursday', '18:00', '20:00', [
+                'start_date' => '2026-04-25',
+                'end_date' => '2026-06-25',
+            ]);
+
+            $response = $this
+                ->withSession(['user_id' => $student->id])
+                ->post(route('student.enroll.store', $subject), [
+                    'lop_hoc_id' => $classRoom->id,
+                ]);
+
+            $response->assertRedirect(route('student.enroll.my-classes'));
+            $response->assertSessionHas('status');
+            $this->assertDatabaseHas('dang_ky', [
+                'user_id' => $student->id,
+                'subject_id' => $subject->id,
+                'course_id' => $classRoom->course_id,
+                'lop_hoc_id' => $classRoom->id,
+                'assigned_teacher_id' => $teacher->id,
+                'status' => Enrollment::STATUS_ENROLLED,
+            ]);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_student_select_class_screen_marks_started_class_as_unavailable(): void
+    {
+        Carbon::setTestNow('2026-04-17 10:00:00');
+
+        try {
+            $student = User::factory()->student()->create();
+            $teacher = User::factory()->teacher()->create();
+            [, $subject] = $this->createCatalogSubject('Ky nang ban hang');
+            $this->createOpenClassRoom($subject, $teacher, 'Monday', '18:00', '20:00', [
+                'start_date' => '2026-04-01',
+            ]);
+            $futureClass = $this->createOpenClassRoom($subject, $teacher, 'Wednesday', '18:00', '20:00', [
+                'start_date' => '2026-04-25',
+            ]);
+
+            $response = $this
+                ->withSession(['user_id' => $student->id])
+                ->get(route('student.enroll.select', $subject));
+
+            $response->assertOk();
+            $response->assertSee('Đã bắt đầu');
+            $response->assertSee('Lớp học này đã bắt đầu, không thể đăng ký.');
+            $response->assertSee('25/04/2026');
+            $response->assertSee('Đăng ký lớp này');
+            $response->assertSee('aria-disabled="true"', false);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_student_select_class_screen_shows_schedule_conflict_warning(): void
     {
         $student = User::factory()->student()->create();
@@ -399,9 +527,13 @@ class ghi_danh_hoc_vien_test extends TestCase
         User $teacher,
         string $dayOfWeek = 'Monday',
         string $startTime = '18:00',
-        string $endTime = '20:00'
+        string $endTime = '20:00',
+        array $overrides = []
     ): ClassRoom
     {
+        $startDate = $overrides['start_date'] ?? null;
+        $endDate = $overrides['end_date'] ?? null;
+
         $course = Course::create([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop co dinh',
@@ -411,6 +543,8 @@ class ghi_danh_hoc_vien_test extends TestCase
             'meeting_days' => [$dayOfWeek],
             'start_time' => $startTime,
             'end_time' => $endTime,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
             'schedule' => 'T2-T4-T6, ' . $startTime . ' - ' . $endTime,
         ]);
 
@@ -430,7 +564,8 @@ class ghi_danh_hoc_vien_test extends TestCase
             'room_id' => $room->id,
             'teacher_id' => $teacher->id,
             'status' => ClassRoom::STATUS_OPEN,
-            'duration' => 3,
+            'duration' => $overrides['duration'] ?? 3,
+            'start_date' => $startDate,
         ]);
 
         ClassSchedule::create([

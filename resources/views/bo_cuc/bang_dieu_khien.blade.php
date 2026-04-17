@@ -32,6 +32,11 @@
                 @php
                     $user = Auth::user();
                     $profileRoute = '#';
+                    $dashboardNotifications = $user ? $user->notifications()->latest('id')->take(5)->get() : collect();
+                    $dashboardUnreadNotifications = $user ? $user->notifications()->where('is_read', false)->count() : 0;
+                    $dashboardNotificationIndexRoute = $user ? ($user->isAdmin() ? route('admin.notifications.index') : ($user->isTeacher() ? route('teacher.notifications.index') : route('student.notifications.index'))) : '#';
+                    $dashboardNotificationPollRoute = $user ? ($user->isAdmin() ? route('admin.notifications.poll') : ($user->isTeacher() ? route('teacher.notifications.poll') : route('student.notifications.poll'))) : '#';
+                    $dashboardNotificationShowRoute = $user ? ($user->isAdmin() ? 'admin.notifications.show' : ($user->isTeacher() ? 'teacher.notifications.show' : 'student.notifications.show')) : null;
 
                     if ($user) {
                         $profileRoute = $user->isAdmin()
@@ -115,11 +120,50 @@
                     <h2 class="text-xl font-semibold text-gray-800 hidden sm:block">@yield('title', 'Bảng điều khiển')</h2>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    
-                    <button class="text-gray-400 hover:text-blue-600 rounded-full p-2 transition">
-                        <i class="fas fa-bell"></i>
-                    </button>
+                    <div class="flex items-center gap-4">
+                    @if($user)
+                        <div x-data="{ notificationsOpen: false }" class="relative" data-notification-poller data-notification-poller-url="{{ $dashboardNotificationPollRoute }}">
+                            <button @click="notificationsOpen = !notificationsOpen" class="relative rounded-full p-2 text-gray-400 transition hover:text-blue-600 hover:bg-gray-100" title="Thông báo">
+                                <i class="fas fa-bell"></i>
+                                @if ($dashboardUnreadNotifications > 0)
+                                    <span data-notification-badge class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
+                                        {{ $dashboardUnreadNotifications > 99 ? '99+' : $dashboardUnreadNotifications }}
+                                    </span>
+                                @else
+                                    <span data-notification-badge class="absolute -right-1 -top-1 hidden min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white"></span>
+                                @endif
+                            </button>
+
+                            <div x-show="notificationsOpen" x-cloak @click.away="notificationsOpen = false" class="absolute right-0 z-50 mt-3 w-96 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl">
+                                <div class="border-b border-gray-100 px-5 py-4">
+                                    <p class="text-sm font-semibold text-gray-900">Thông báo</p>
+                                    <p class="mt-1 text-xs text-gray-500"><span data-notification-unread-count>{{ $dashboardUnreadNotifications }}</span> chưa đọc</p>
+                                </div>
+
+                                <div class="max-h-96 overflow-y-auto" data-notification-list>
+                                    @forelse ($dashboardNotifications as $notification)
+                                        <a href="{{ route($dashboardNotificationShowRoute, $notification) }}" class="block border-b border-gray-100 px-5 py-4 transition hover:bg-gray-50">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-gray-900">{{ $notification->title }}</p>
+                                                    <p class="mt-1 text-sm leading-6 text-gray-500">{{ $notification->message }}</p>
+                                                </div>
+                                                <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $notification->is_read ? 'bg-gray-300' : 'bg-blue-500' }}"></span>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-5 py-8 text-center text-sm text-gray-500" data-notification-empty>
+                                            Chưa có thông báo nào.
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <a href="{{ $dashboardNotificationIndexRoute }}" class="block border-t border-gray-100 px-5 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50">
+                                    Mở hộp thông báo
+                                </a>
+                            </div>
+                        </div>
+                    @endif
                     
                     
                     @if(Auth::check())

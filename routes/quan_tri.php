@@ -3,11 +3,13 @@
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\GradeController;
 use App\Http\Controllers\Admin\EnrollmentController;
 use App\Http\Controllers\Admin\CourseTimeSlotController;
 use App\Http\Controllers\Admin\ClassRoomController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\ModuleOverviewController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\ScheduleChangeRequestController;
@@ -28,10 +30,16 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/poll', [NotificationController::class, 'poll'])->name('poll');
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
+});
 Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
 Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 Route::get('/reports', [ReportController::class, 'index'])->name('report');
 Route::get('/report', fn () => redirect()->route('admin.report'))->name('report.legacy');
+Route::get('/grades', [GradeController::class, 'index'])->name('grades.index');
 
 Route::prefix('students')->name('students.')->group(function () {
     Route::get('/', [StudentController::class, 'index'])->name('index');

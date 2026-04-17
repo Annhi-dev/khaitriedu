@@ -9,6 +9,7 @@
             'icon' => 'fas fa-user-graduate',
             'tone' => 'cyan',
             'meta' => 'Tăng trong kỳ: ' . number_format($summary['studentsInPeriod'] ?? 0),
+            'detailsUrl' => route('admin.students.index'),
         ],
         [
             'label' => 'Tổng giảng viên',
@@ -16,6 +17,7 @@
             'icon' => 'fas fa-chalkboard-user',
             'tone' => 'emerald',
             'meta' => 'Thêm mới trong kỳ: ' . number_format($summary['teachersInPeriod'] ?? 0),
+            'detailsUrl' => route('admin.teachers.index'),
         ],
         [
             'label' => 'Đăng ký mới',
@@ -23,6 +25,7 @@
             'icon' => 'fas fa-clipboard-check',
             'tone' => 'amber',
             'meta' => 'Đăng ký chờ duyệt: ' . number_format($summary['pendingEnrollments'] ?? 0),
+            'detailsUrl' => route('admin.enrollments'),
         ],
         [
             'label' => 'Lớp đang hoạt động',
@@ -30,6 +33,7 @@
             'icon' => 'fas fa-people-group',
             'tone' => 'violet',
             'meta' => 'Môn public hiện có: ' . number_format($summary['publicSubjects'] ?? 0),
+            'detailsUrl' => route('admin.courses'),
         ],
         [
             'label' => 'Điểm trung bình',
@@ -44,6 +48,7 @@
             'icon' => 'fas fa-calendar-rotate',
             'tone' => 'slate',
             'meta' => 'Ứng tuyển giảng viên trong kỳ: ' . number_format($summary['teacherApplicationsInPeriod'] ?? 0),
+            'detailsUrl' => route('admin.schedule-change-requests.index'),
         ],
     ];
 
@@ -130,7 +135,7 @@
                 @if ($card['label'] === 'Tổng giảng viên')
                     <span class="sr-only">Tong giang vien</span>
                 @endif
-                <x-quan_tri.the_thong_ke :label="$card['label']" :value="$card['value']" :icon="$card['icon']" :color="$card['tone']" :trend="$card['meta']" />
+                <x-quan_tri.the_thong_ke :label="$card['label']" :value="$card['value']" :icon="$card['icon']" :color="$card['tone']" :trend="$card['meta']" :details-url="$card['detailsUrl'] ?? null" />
             </div>
         @endforeach
     </section>

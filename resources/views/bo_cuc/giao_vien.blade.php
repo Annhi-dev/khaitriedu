@@ -16,6 +16,8 @@
     $teacherUser = $current ?? Auth::user();
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Khu vực giảng viên';
     $pageEyebrow = trim($__env->yieldContent('eyebrow'));
+    $teacherNotificationItems = $teacherUser ? $teacherUser->notifications()->latest('id')->take(5)->get() : collect();
+    $teacherUnreadNotifications = $teacherUser ? $teacherUser->notifications()->where('is_read', false)->count() : 0;
     $navSections = [
         [
             'label' => 'Tổng quan',
@@ -29,6 +31,7 @@
             'items' => [
                 ['label' => 'Lớp học của tôi', 'icon' => 'fas fa-users-rectangle', 'route' => 'teacher.classes.index', 'active' => request()->routeIs('teacher.classes.*')],
                 ['label' => 'Yêu cầu dời buổi', 'icon' => 'fas fa-calendar-rotate', 'route' => 'teacher.schedule-change-requests.index', 'active' => request()->routeIs('teacher.schedule-change-requests.*')],
+                ['label' => 'Xin phép nghỉ', 'icon' => 'fas fa-file-circle-exclamation', 'route' => 'teacher.leave-requests.index', 'active' => request()->routeIs('teacher.leave-requests.*')],
                 ['label' => 'Thông tin cá nhân', 'icon' => 'fas fa-user-gear', 'route' => 'teacher.profile.show', 'active' => request()->routeIs('teacher.profile.*')],
             ],
         ],
@@ -114,6 +117,48 @@
                     </div>
 
                     <div class="flex items-center gap-3">
+                        <div x-data="{ notificationsOpen: false }" class="relative" data-notification-poller data-notification-poller-url="{{ route('teacher.notifications.poll') }}">
+                            <button type="button" @click="notificationsOpen = !notificationsOpen" class="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700" title="Thông báo">
+                                <i class="fas fa-bell"></i>
+                                @if ($teacherUnreadNotifications > 0)
+                                    <span data-notification-badge class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
+                                        {{ $teacherUnreadNotifications > 99 ? '99+' : $teacherUnreadNotifications }}
+                                    </span>
+                                @else
+                                    <span data-notification-badge class="absolute -right-1 -top-1 hidden min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white"></span>
+                                @endif
+                            </button>
+
+                            <div x-show="notificationsOpen" x-cloak @click.away="notificationsOpen = false" class="absolute right-0 z-50 mt-3 w-96 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                                <div class="border-b border-slate-100 px-5 py-4">
+                                    <p class="text-sm font-semibold text-slate-900">Thông báo</p>
+                                    <p class="mt-1 text-xs text-slate-500"><span data-notification-unread-count>{{ $teacherUnreadNotifications }}</span> chưa đọc</p>
+                                </div>
+
+                                <div class="max-h-96 overflow-y-auto" data-notification-list>
+                                    @forelse ($teacherNotificationItems as $notification)
+                                        <a href="{{ route('teacher.notifications.show', $notification) }}" class="block border-b border-slate-100 px-5 py-4 transition hover:bg-slate-50">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-slate-900">{{ $notification->title }}</p>
+                                                    <p class="mt-1 text-sm leading-6 text-slate-500">{{ $notification->message }}</p>
+                                                </div>
+                                                <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-5 py-8 text-center text-sm text-slate-500" data-notification-empty>
+                                            Chưa có thông báo nào.
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <a href="{{ route('teacher.notifications.index') }}" class="block border-t border-slate-100 px-5 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50">
+                                    Mở hộp thông báo
+                                </a>
+                            </div>
+                        </div>
+
                         <a href="{{ route('home') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
                             <i class="fas fa-house"></i>
                             <span class="hidden sm:inline">Trang chủ</span>

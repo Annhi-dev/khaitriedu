@@ -77,7 +77,7 @@ class AdminDashboardService
             'recordedSlotRegistrationCount' => $slotRegistrationsReady ? SlotRegistration::where('status', SlotRegistration::STATUS_RECORDED)->count() : 0,
             'slotChoiceCount' => $slotChoicesReady ? SlotRegistrationChoice::count() : 0,
             'maintenanceRoomCount' => $roomsReady ? Room::where('status', Room::STATUS_MAINTENANCE)->count() : 0,
-            'activeClassCount' => Course::where('status', Course::STATUS_ACTIVE)->count(),
+            'activeClassCount' => Course::whereIn('status', Course::schedulingStatuses())->count(),
             'pendingScheduleChangeRequests' => ScheduleChangeRequest::where('status', ScheduleChangeRequest::STATUS_PENDING)->count(),
             'recentEnrollments' => $recentEnrollments,
             'pendingTeacherApplicationsList' => $pendingTeacherApplicationsList,

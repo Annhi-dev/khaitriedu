@@ -30,6 +30,7 @@ class bao_cao_test extends TestCase
         $response->assertOk();
         $response->assertDontSee('Phase 11');
         $response->assertSee('Bao cao tong quan he thong');
+        $response->assertSee('Xem chi tiết');
     }
 
     public function test_report_returns_correct_basic_metrics_for_selected_period(): void
@@ -172,6 +173,7 @@ class bao_cao_test extends TestCase
         $response->assertSee('Tong giang vien');
         $response->assertSee('Top khoa hoc theo dang ky');
         $response->assertSee('Top giang vien theo danh gia');
+        $response->assertSee('Xem chi tiết');
         $response->assertViewHas('filters', function (array $filters) {
             return $filters['start_date'] === '2026-03-01'
                 && $filters['end_date'] === '2026-03-31';

@@ -111,6 +111,8 @@ class bang_dieu_khien_test extends TestCase
         $response->assertOk();
         $response->assertSee('Dashboard Admin');
         $response->assertSee('Khung giờ mở đăng ký');
+        $response->assertSee('Xem chi tiết');
+        $response->assertSee('Xem điểm số');
         $response->assertViewHas('studentCount', 1);
         $response->assertViewHas('teacherCount', 1);
         $response->assertViewHas('pendingTeacherApplications', 1);

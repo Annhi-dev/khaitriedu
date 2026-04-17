@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Helpers\ScheduleHelper;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -247,11 +248,16 @@ class ClassRoom extends Model
 
     public function scheduleRangeStart(): ?CarbonInterface
     {
-        return $this->start_date?->copy()->startOfDay();
+        return $this->start_date?->copy()->startOfDay()
+            ?? $this->course?->start_date?->copy()->startOfDay();
     }
 
     public function scheduleRangeEnd(): ?CarbonInterface
     {
+        if ($this->course?->end_date) {
+            return $this->course->end_date->copy()->endOfDay();
+        }
+
         $startDate = $this->scheduleRangeStart();
 
         if (! $startDate) {
@@ -261,6 +267,79 @@ class ClassRoom extends Model
         $months = max(1, (int) ($this->duration ?? $this->course?->subject?->duration ?? 1));
 
         return $startDate->copy()->addMonths($months)->endOfDay();
+    }
+
+    public function enrollmentAvailabilityState(?CarbonInterface $reference = null): string
+    {
+        if ($this->status !== self::STATUS_OPEN) {
+            return 'closed';
+        }
+
+        $reference = $reference
+            ? CarbonImmutable::instance($reference->toImmutable())
+            : CarbonImmutable::now();
+
+        $startDate = $this->scheduleRangeStart();
+        $endDate = $this->scheduleRangeEnd();
+
+        if ($endDate && $reference->startOfDay()->gt($endDate->endOfDay())) {
+            return 'ended';
+        }
+
+        if ($startDate && $reference->startOfDay()->gte($startDate->startOfDay())) {
+            return 'started';
+        }
+
+        if ($this->isFull()) {
+            return 'full';
+        }
+
+        return 'available';
+    }
+
+    public function enrollmentAvailabilityLabel(?CarbonInterface $reference = null): string
+    {
+        return match ($this->enrollmentAvailabilityState($reference)) {
+            'available' => 'Có thể đăng ký',
+            'started' => 'Đã bắt đầu',
+            'ended' => 'Đã kết thúc',
+            'full' => 'Đã đủ chỗ',
+            'closed' => 'Đã đóng đăng ký',
+            default => 'Không thể đăng ký',
+        };
+    }
+
+    public function enrollmentBlockReason(?CarbonInterface $reference = null): ?string
+    {
+        return match ($this->enrollmentAvailabilityState($reference)) {
+            'started' => 'Lớp học này đã bắt đầu, không thể đăng ký.',
+            'ended' => 'Lớp học này đã kết thúc, vui lòng chờ admin mở lớp mới.',
+            'full' => 'Lớp học này đã đủ chỗ, vui lòng chọn lớp khác.',
+            'closed' => 'Lớp học này hiện không mở đăng ký.',
+            default => null,
+        };
+    }
+
+    public function canAcceptEnrollment(?CarbonInterface $reference = null): bool
+    {
+        return $this->enrollmentAvailabilityState($reference) === 'available';
+    }
+
+    public function enrollmentAvailabilitySortKey(?CarbonInterface $reference = null): string
+    {
+        $state = $this->enrollmentAvailabilityState($reference);
+        $stateWeight = match ($state) {
+            'available' => 0,
+            'full' => 1,
+            'started' => 2,
+            'ended' => 3,
+            'closed' => 4,
+            default => 5,
+        };
+
+        $startTimestamp = $this->scheduleRangeStart()?->timestamp ?? PHP_INT_MAX;
+
+        return sprintf('%02d-%020d-%06d', $stateWeight, $startTimestamp, (int) $this->id);
     }
 
     public function overlapsDateRange(CarbonInterface $candidateStartDate, CarbonInterface $candidateEndDate): bool

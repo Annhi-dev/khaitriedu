@@ -95,17 +95,17 @@ class StudentEnrollmentService
                 ->findOrFail($classRoomId);
 
             if ((int) $classRoom->subject_id !== (int) $subject->id) {
-                throw new EnrollmentOperationException('Lop hoc khong thuoc khoa hoc nay.');
+                throw new EnrollmentOperationException('Lớp học không thuộc khóa học này.');
             }
 
-            if ($classRoom->status !== ClassRoom::STATUS_OPEN) {
-                throw new EnrollmentOperationException('Lop nay hien khong con mo dang ky.');
-            }
+            $blockReason = $classRoom->enrollmentBlockReason();
 
             if ($classRoom->isFull()) {
                 $this->syncClassStatus($classRoom);
+            }
 
-                throw new EnrollmentOperationException('Lớp này đã đủ chỗ. Vui lòng chọn lớp khác hoặc gửi yêu cầu lịch học riêng.');
+            if ($blockReason) {
+                throw new EnrollmentOperationException($blockReason);
             }
 
             $existingEnrollment = $this->findSubjectEnrollment($student->id, $subject->id);
@@ -155,7 +155,7 @@ class StudentEnrollmentService
 
             $this->syncClassStatus($classRoom->fresh(['room'])->loadCount('enrollments'));
 
-            return 'Da ghi danh vao lop co dinh thanh cong.';
+            return 'Đã ghi danh vào lớp cố định thành công.';
         });
     }
 
@@ -237,19 +237,19 @@ class StudentEnrollmentService
     protected function openClassesForSubject(Subject $subject)
     {
         return ClassRoom::query()
-            ->with(['subject', 'room', 'teacher', 'schedules'])
+            ->with(['subject', 'course', 'room', 'teacher', 'schedules'])
             ->withCount('enrollments')
             ->where('subject_id', $subject->id)
             ->where('status', ClassRoom::STATUS_OPEN)
             ->get()
-            ->filter(fn (ClassRoom $classRoom) => ! $classRoom->isFull())
+            ->sortBy(fn (ClassRoom $classRoom) => $classRoom->enrollmentAvailabilitySortKey())
             ->values();
     }
 
     protected function ensureSubjectIsAvailable(Subject $subject): void
     {
         if (! $subject->isOpenForEnrollment()) {
-            throw new EnrollmentOperationException('Khoa hoc nay hien chua mo dang ky.');
+            throw new EnrollmentOperationException('Khóa học này hiện chưa mở đăng ký.');
         }
     }
 

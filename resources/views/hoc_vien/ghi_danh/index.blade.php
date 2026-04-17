@@ -84,10 +84,13 @@
                     <div class="mt-4 rounded-2xl border {{ $openClasses->count() > 0 ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50' }} px-4 py-3 text-sm">
                         <div class="flex items-center justify-between gap-3">
                             <p class="font-medium {{ $openClasses->count() > 0 ? 'text-emerald-800' : 'text-rose-700' }}">
-                                {{ $openClasses->count() > 0 ? $openClasses->count() . ' lớp cố định đang mở' : 'Hiện chưa có lớp cố định phù hợp' }}
+                                {{ $openClasses->count() > 0 ? $openClasses->count() . ' lớp cố định hiện có' : 'Hiện chưa có lớp cố định phù hợp' }}
                             </p>
                             <i class="fas fa-door-open {{ $openClasses->count() > 0 ? 'text-emerald-500' : 'text-rose-500' }}"></i>
                         </div>
+                        @if($openClasses->count() > 0)
+                            <p class="mt-1 text-xs leading-5 text-emerald-700">Một số lớp có thể đã bắt đầu, kết thúc hoặc hết chỗ. Hãy mở trang chọn lớp để xem trạng thái chi tiết.</p>
+                        @endif
                     </div>
 
                     <div class="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5">

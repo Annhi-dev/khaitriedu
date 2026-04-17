@@ -16,7 +16,13 @@ class DashboardController extends Controller
         }
 
         return view('quan_tri.bang_dieu_khien.index', array_merge(
-            ['user' => $user],
+            [
+                'user' => $user,
+                'notifications' => $user->notifications()
+                    ->latest('id')
+                    ->take(6)
+                    ->get(),
+            ],
             $dashboardService->overview()
         ));
     }

@@ -60,9 +60,9 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertOk();
         $response->assertSee($subject->name);
-        $response->assertSee('Luu lop cho mo');
-        $response->assertSee('Luu y kiem tra');
-        $response->assertDontSee('Chon lop hoc co san');
+        $response->assertSee('Lưu lớp chờ mở');
+        $response->assertSee('Lưu ý kiểm tra');
+        $response->assertDontSee('Chọn lớp học có sẵn');
     }
 
     public function test_admin_can_view_and_filter_system_schedule_list(): void

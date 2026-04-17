@@ -91,7 +91,7 @@
         </div>
 
         <div class="space-y-6">
-            <article class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <article id="thong-bao" class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <h2 class="text-xl font-semibold text-slate-900">Thông báo</h2>
@@ -101,15 +101,15 @@
 
                 <div class="mt-5 space-y-3">
                     @forelse ($notifications as $notification)
-                        <div class="rounded-2xl border border-slate-200 p-4">
+                        <a href="{{ route('teacher.notifications.show', $notification) }}" class="block rounded-2xl border border-slate-200 p-4 transition hover:border-cyan-200 hover:bg-cyan-50/40">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="font-medium text-slate-900">{{ $notification->title }}</p>
                                     <p class="mt-2 text-sm leading-6 text-slate-500">{{ $notification->message }}</p>
                                 </div>
-                                    <span class="mt-1 h-2.5 w-2.5 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
-                                </div>
+                                <span class="mt-1 h-2.5 w-2.5 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
                             </div>
+                        </a>
                     @empty
                         @forelse ($requestUpdates as $requestItem)
                             @php

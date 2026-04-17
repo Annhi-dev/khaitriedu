@@ -49,6 +49,28 @@ class hoc_phan_giao_vien_test extends TestCase
         $response->assertSee('Yêu cầu dạy bù đã được duyệt');
     }
 
+    public function test_student_dashboard_displays_notifications(): void
+    {
+        $student = User::factory()->student()->create(['name' => 'Student Dashboard']);
+
+        Notification::create([
+            'user_id' => $student->id,
+            'title' => 'Lịch học đã thay đổi',
+            'message' => 'Lịch học của bạn đã được cập nhật. Vui lòng kiểm tra lại thời khóa biểu của bạn.',
+            'type' => 'info',
+            'link' => route('student.schedule'),
+        ]);
+
+        $response = $this
+            ->actingAs($student)
+            ->get(route('student.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Thông báo gần đây');
+        $response->assertSee('Lịch học đã thay đổi');
+        $response->assertSee('Vui lòng kiểm tra lại thời khóa biểu của bạn.');
+    }
+
     public function test_teacher_can_manage_attendance_grades_and_evaluations_for_assigned_class(): void
     {
         $teacher = User::factory()->teacher()->create();
@@ -297,7 +319,7 @@ class hoc_phan_giao_vien_test extends TestCase
         ]);
     }
 
-    public function test_admin_can_approve_class_schedule_change_request_and_notify_teacher(): void
+    public function test_admin_can_approve_class_schedule_change_request_and_notify_teacher_and_students(): void
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
@@ -369,9 +391,30 @@ class hoc_phan_giao_vien_test extends TestCase
 
         $this->assertDatabaseHas('thong_bao', [
             'user_id' => $teacher->id,
-            'title' => 'Yêu cầu dạy bù đã được duyệt',
+            'title' => 'Yêu cầu dời lịch đã được duyệt',
             'type' => 'success',
+            'link' => route('teacher.schedule-change-requests.index'),
         ]);
+
+        $this->assertDatabaseHas('thong_bao', [
+            'user_id' => $student->id,
+            'title' => 'Lịch học đã thay đổi',
+            'type' => 'info',
+            'link' => route('student.schedule'),
+        ]);
+
+        $teacherNotification = Notification::query()->where('user_id', $teacher->id)->firstOrFail();
+        $studentNotification = Notification::query()->where('user_id', $student->id)->firstOrFail();
+
+        $this->assertStringContainsString($request->targetTitle(), $teacherNotification->message);
+        $this->assertStringContainsString($request->currentScheduleLabel(), $teacherNotification->message);
+        $this->assertStringContainsString($request->requestedScheduleLabel(), $teacherNotification->message);
+        $this->assertStringContainsString('Hiệu lực từ', $teacherNotification->message);
+
+        $this->assertStringContainsString($request->targetTitle(), $studentNotification->message);
+        $this->assertStringContainsString($request->currentScheduleLabel(), $studentNotification->message);
+        $this->assertStringContainsString($request->requestedScheduleLabel(), $studentNotification->message);
+        $this->assertStringContainsString('Vui lòng kiểm tra lại thời khóa biểu của bạn.', $studentNotification->message);
     }
 
     private function createClassroomBundle(User $teacher, array $overrides = []): array

@@ -22,6 +22,40 @@
         </div>
     </section>
 
+    @php
+        $notificationList = collect($notifications ?? []);
+        $unreadNotifications = $notificationList->where('is_read', false)->count();
+    @endphp
+
+    <section id="thong-bao" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Thông báo</p>
+                <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Thông báo gần đây từ hệ thống</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">Xem nhanh các cập nhật mới nhất dành riêng cho tài khoản admin.</p>
+            </div>
+            <span class="inline-flex rounded-full bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700">{{ $unreadNotifications }} chưa đọc</span>
+        </div>
+
+        <div class="mt-5 space-y-3">
+                @forelse ($notificationList as $notification)
+                <a href="{{ route('admin.notifications.show', $notification) }}" class="block rounded-2xl border {{ $notification->is_read ? 'border-slate-200 bg-slate-50' : 'border-cyan-200 bg-cyan-50/70' }} px-4 py-4 transition hover:border-cyan-300 hover:bg-cyan-50">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="font-medium text-slate-900">{{ $notification->title }}</p>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">{{ $notification->message }}</p>
+                        </div>
+                        <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $notification->is_read ? 'bg-slate-300' : 'bg-cyan-500' }}"></span>
+                    </div>
+                </a>
+            @empty
+                <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">
+                    Chưa có thông báo nào cho admin.
+                </div>
+            @endforelse
+        </div>
+    </section>
+
     @if ($infrastructureWarnings)
         <section class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             <p class="font-semibold">Một số hạ tầng chưa sẵn sàng</p>
@@ -59,16 +93,16 @@
     @endif
 
     <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        <x-quan_tri.the_thong_ke label="Học viên" value="{{ $studentCount }}" icon="fas fa-user-graduate" color="cyan" trend="Tổng tài khoản học viên" />
-        <x-quan_tri.the_thong_ke label="Giảng viên" value="{{ $teacherCount }}" icon="fas fa-chalkboard-user" color="emerald" trend="Tổng tài khoản giảng viên" />
-        <x-quan_tri.the_thong_ke label="Đơn ứng tuyển chờ" value="{{ $pendingTeacherApplications }}" icon="fas fa-file-signature" color="amber" trend="Hồ sơ giảng viên đang chờ duyệt" />
-        <x-quan_tri.the_thong_ke label="Khóa học" value="{{ $subjectCount }}" icon="fas fa-book-open" color="violet" trend="Khóa học công khai hiện có" />
-        <x-quan_tri.the_thong_ke label="Nhóm học" value="{{ $groupCount }}" icon="fas fa-layer-group" color="slate" trend="Danh mục đào tạo" />
-        <x-quan_tri.the_thong_ke label="Phòng học" value="{{ $roomCount }}" icon="fas fa-door-open" color="cyan" trend="{{ $maintenanceRoomCount }} phòng bảo trì" />
-        <x-quan_tri.the_thong_ke label="Khung giờ mở đăng ký" value="{{ $openTimeSlotCount }}" icon="fas fa-clock" color="emerald" trend="{{ $configuredTimeSlotCount }} slot đã cấu hình" />
-        <x-quan_tri.the_thong_ke label="Nguyện vọng chờ xử lý" value="{{ $pendingSlotRegistrationCount }}" icon="fas fa-list-check" color="amber" trend="{{ $slotChoiceCount }} lựa chọn đã ghi nhận" />
-        <x-quan_tri.the_thong_ke label="Slot đủ điều kiện mở lớp" value="{{ $readyToOpenClassSlotCount }}" icon="fas fa-chart-simple" color="rose" trend="Có thể chuyển sang mở lớp" />
-        <x-quan_tri.the_thong_ke label="Yêu cầu dời buổi chờ" value="{{ $pendingScheduleChangeRequests }}" icon="fas fa-calendar-rotate" color="slate" trend="{{ $activeClassCount }} lớp đang hoạt động" />
+        <x-quan_tri.the_thong_ke label="Học viên" value="{{ $studentCount }}" icon="fas fa-user-graduate" color="cyan" trend="Tổng tài khoản học viên" :details-url="route('admin.students.index')" />
+        <x-quan_tri.the_thong_ke label="Giảng viên" value="{{ $teacherCount }}" icon="fas fa-chalkboard-user" color="emerald" trend="Tổng tài khoản giảng viên" :details-url="route('admin.teachers.index')" />
+        <x-quan_tri.the_thong_ke label="Đơn ứng tuyển chờ" value="{{ $pendingTeacherApplications }}" icon="fas fa-file-signature" color="amber" trend="Hồ sơ giảng viên đang chờ duyệt" :details-url="route('admin.teacher-applications')" />
+        <x-quan_tri.the_thong_ke label="Khóa học" value="{{ $subjectCount }}" icon="fas fa-book-open" color="violet" trend="Khóa học công khai hiện có" :details-url="route('admin.subjects')" />
+        <x-quan_tri.the_thong_ke label="Nhóm học" value="{{ $groupCount }}" icon="fas fa-layer-group" color="slate" trend="Danh mục đào tạo" :details-url="route('admin.categories')" />
+        <x-quan_tri.the_thong_ke label="Phòng học" value="{{ $roomCount }}" icon="fas fa-door-open" color="cyan" trend="{{ $maintenanceRoomCount }} phòng bảo trì" :details-url="route('admin.rooms.index')" />
+        <x-quan_tri.the_thong_ke label="Khung giờ mở đăng ký" value="{{ $openTimeSlotCount }}" icon="fas fa-clock" color="emerald" trend="{{ $configuredTimeSlotCount }} slot đã cấu hình" :details-url="route('admin.course-time-slots.index')" />
+        <x-quan_tri.the_thong_ke label="Nguyện vọng chờ xử lý" value="{{ $pendingSlotRegistrationCount }}" icon="fas fa-list-check" color="amber" trend="{{ $slotChoiceCount }} lựa chọn đã ghi nhận" :details-url="route('admin.slot-registrations.index')" />
+        <x-quan_tri.the_thong_ke label="Slot đủ điều kiện mở lớp" value="{{ $readyToOpenClassSlotCount }}" icon="fas fa-chart-simple" color="rose" trend="Có thể chuyển sang mở lớp" :details-url="route('admin.course-time-slots.index')" />
+        <x-quan_tri.the_thong_ke label="Yêu cầu dời buổi chờ" value="{{ $pendingScheduleChangeRequests }}" icon="fas fa-calendar-rotate" color="slate" trend="{{ $activeClassCount }} lớp đang hoạt động" :details-url="route('admin.schedule-change-requests.index')" />
     </section>
 
     <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -102,6 +136,14 @@
             </div>
             <div>
                 <p class="font-semibold">Duyệt dời buổi</p>
+            </div>
+        </a>
+        <a href="{{ route('admin.grades.index') }}" class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition">
+            <div class="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                <i class="fas fa-square-poll-horizontal text-xl"></i>
+            </div>
+            <div>
+                <p class="font-semibold">Xem điểm số</p>
             </div>
         </a>
     </section>
