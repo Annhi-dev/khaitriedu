@@ -26,14 +26,17 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
     public function test_student_can_submit_quiz_and_receive_single_certificate(): void
     {
         $fixture = $this->createQuizFixture(questionCount: 2, maxAttempts: 3, passingScore: 100);
+        $quizUrl = route('courses.quiz.show', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
+        $submitUrl = route('courses.quiz.submit', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
 
         $response = $this
             ->withSession(['user_id' => $fixture['student']->id])
-            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+            ->post($submitUrl, [
+                '_token' => csrf_token(),
                 'answers' => $fixture['correctAnswers'],
             ]);
 
-        $response->assertRedirect(route('courses.show', $fixture['course']->id));
+        $response->assertRedirect($quizUrl);
         $response->assertSessionHas('status');
 
         $this->assertSame(2, QuizAnswer::where('quiz_id', $fixture['quiz']->id)->count());
@@ -50,11 +53,12 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $repeatResponse = $this
             ->withSession(['user_id' => $fixture['student']->id])
-            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+            ->post($submitUrl, [
+                '_token' => csrf_token(),
                 'answers' => $fixture['correctAnswers'],
             ]);
 
-        $repeatResponse->assertRedirect(route('courses.show', $fixture['course']->id));
+        $repeatResponse->assertRedirect($quizUrl);
         $repeatResponse->assertSessionHas('status');
 
         $this->assertSame(4, QuizAnswer::where('quiz_id', $fixture['quiz']->id)->count());
@@ -69,27 +73,31 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
     public function test_student_cannot_exceed_quiz_max_attempts(): void
     {
         $fixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 1, passingScore: 100);
+        $quizUrl = route('courses.quiz.show', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
+        $submitUrl = route('courses.quiz.submit', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
 
         $firstResponse = $this
-            ->from(route('courses.quiz.show', [$fixture['course']->id, $fixture['quiz']->id]))
+            ->from($quizUrl)
             ->withSession(['user_id' => $fixture['student']->id])
-            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+            ->post($submitUrl, [
+                '_token' => csrf_token(),
                 'answers' => $fixture['wrongAnswers'],
             ]);
 
-        $firstResponse->assertRedirect(route('courses.show', $fixture['course']->id));
+        $firstResponse->assertRedirect($quizUrl);
         $firstResponse->assertSessionHas('status');
         $this->assertSame(1, QuizAnswer::where('quiz_id', $fixture['quiz']->id)->count());
         $this->assertSame(0, Certificate::count());
 
         $secondResponse = $this
-            ->from(route('courses.quiz.show', [$fixture['course']->id, $fixture['quiz']->id]))
+            ->from($quizUrl)
             ->withSession(['user_id' => $fixture['student']->id])
-            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+            ->post($submitUrl, [
+                '_token' => csrf_token(),
                 'answers' => $fixture['wrongAnswers'],
             ]);
 
-        $secondResponse->assertRedirect(route('courses.quiz.show', [$fixture['course']->id, $fixture['quiz']->id]));
+        $secondResponse->assertRedirect($quizUrl);
         $secondResponse->assertSessionHasErrors('answers');
         $this->assertSame(1, QuizAnswer::where('quiz_id', $fixture['quiz']->id)->count());
         $this->assertSame(0, Certificate::count());
@@ -115,10 +123,13 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
     public function test_teacher_cannot_submit_quiz_even_when_assigned_to_course(): void
     {
         $fixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100);
+        $quizUrl = route('courses.quiz.show', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
+        $submitUrl = route('courses.quiz.submit', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
 
         $response = $this
             ->withSession(['user_id' => $fixture['teacher']->id])
-            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+            ->post($submitUrl, [
+                '_token' => csrf_token(),
                 'answers' => $fixture['correctAnswers'],
             ]);
 
@@ -133,10 +144,11 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
     {
         $firstFixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100, suffix: '-a');
         $secondFixture = $this->createQuizFixture(questionCount: 1, maxAttempts: 3, passingScore: 100, suffix: '-b');
+        $quizUrl = route('courses.quiz.show', ['course' => $firstFixture['course']->id, 'quiz' => $secondFixture['quiz']->id]);
 
         $response = $this
             ->withSession(['user_id' => $firstFixture['student']->id])
-            ->get(route('courses.quiz.show', [$firstFixture['course']->id, $secondFixture['quiz']->id]));
+            ->get($quizUrl);
 
         $response->assertRedirect(route('courses.show', $firstFixture['course']->id));
         $response->assertSessionHas('error', 'Quiz khong ton tai.');
@@ -146,19 +158,22 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
     {
         $response = $this->get(route('certificates.index'));
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect('/login');
     }
 
     public function test_student_can_view_only_their_own_certificate(): void
     {
         $fixture = $this->createQuizFixture(questionCount: 2, maxAttempts: 3, passingScore: 100);
+        $quizUrl = route('courses.quiz.show', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
+        $submitUrl = route('courses.quiz.submit', ['course' => $fixture['course']->id, 'quiz' => $fixture['quiz']->id]);
 
         $this
             ->withSession(['user_id' => $fixture['student']->id])
-            ->post(route('courses.quiz.submit', [$fixture['course']->id, $fixture['quiz']->id]), [
+            ->post($submitUrl, [
+                '_token' => csrf_token(),
                 'answers' => $fixture['correctAnswers'],
             ])
-            ->assertRedirect(route('courses.show', $fixture['course']->id));
+            ->assertRedirect($quizUrl);
 
         $certificate = Certificate::where('user_id', $fixture['student']->id)
             ->where('course_id', $fixture['course']->id)
@@ -178,7 +193,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
             ->withSession(['user_id' => $otherStudent->id])
             ->get(route('certificates.show', $certificate));
 
-        $otherResponse->assertRedirect(route('certificates.index'));
+        $otherResponse->assertRedirect('/certificates');
         $otherResponse->assertSessionHas('error');
     }
 
@@ -198,7 +213,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
 
         $detailResponse = $this->get(route('certificates.show', $certificate));
 
-        $detailResponse->assertRedirect(route('certificates.index'));
+        $detailResponse->assertRedirect('/certificates');
         $detailResponse->assertSessionHas('error', 'Chứng chỉ không tồn tại.');
     }
 
@@ -266,6 +281,7 @@ class bai_kiem_tra_va_chung_chi_test extends TestCase
             'passing_score' => $passingScore,
             'is_required' => true,
             'max_attempts' => $maxAttempts,
+            'status' => Quiz::STATUS_PUBLISHED,
         ]);
 
         $correctAnswers = [];

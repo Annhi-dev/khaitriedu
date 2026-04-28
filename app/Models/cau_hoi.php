@@ -18,6 +18,11 @@ class Question extends Model
         return $this->belongsTo(Quiz::class);
     }
 
+    public function test()
+    {
+        return $this->quiz();
+    }
+
     public function options()
     {
         return $this->hasMany(Option::class)->orderBy('order');

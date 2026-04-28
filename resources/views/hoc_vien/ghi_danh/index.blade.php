@@ -18,9 +18,9 @@
                 </p>
             </div>
 
-            <a href="{{ route('student.enroll.my-classes') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
+            <a href="{{ route('student.classes.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
                 <i class="fas fa-list"></i>
-                Lớp của tôi
+                Lớp học của tôi
             </a>
         </div>
     </section>
@@ -100,9 +100,9 @@
                                 Chọn lớp cố định
                             </a>
                         @elseif($openClasses->count() > 0)
-                            <a href="{{ route('student.enroll.my-classes') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                            <a href="{{ route('student.classes.index') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
                                 <i class="fas fa-users"></i>
-                                Xem lớp đã ghi danh
+                                Xem lớp học của tôi
                             </a>
                         @else
                             <span class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-400">

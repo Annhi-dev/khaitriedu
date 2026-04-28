@@ -509,8 +509,11 @@ class CourseCurriculumService
 
         foreach ($templates as $template) {
             $templateKey = $this->moduleKey($template['title']);
+            $existingModule = $modules->first(fn (Module $module) => $this->moduleKey($module->title) === $templateKey);
 
-            if ($modules->contains(fn (Module $module) => $this->moduleKey($module->title) === $templateKey)) {
+            if ($existingModule) {
+                $report['lessons_created'] += $this->applyTemplateToModule($existingModule, $template, (int) ($existingModule->position ?: $nextPosition));
+                $report['modules_updated']++;
                 continue;
             }
 

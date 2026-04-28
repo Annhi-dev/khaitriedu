@@ -16,8 +16,8 @@
             <div class="mt-4 p-4 bg-yellow-50 text-yellow-700 rounded-xl">Khu vực học viên: khóa học, đăng ký lớp và lịch học cá nhân.</div>
             <div class="mt-4 grid gap-3 md:grid-cols-2">
                 <a href="{{ route('courses.index') }}" class="btn block px-4 py-3 bg-primary text-white rounded-xl shadow hover:bg-primary-dark transition text-center">Khám phá khóa học</a>
-                <a href="{{ route('student.enroll.index') }}" class="btn block px-4 py-3 bg-indigo-500 text-white rounded-xl shadow hover:bg-indigo-600 transition text-center">Đăng ký lớp học</a>
-                <a href="{{ route('student.enroll.my-classes') }}" class="btn block px-4 py-3 bg-cyan-500 text-white rounded-xl shadow hover:bg-cyan-600 transition text-center">Lớp của tôi</a>
+                <a href="{{ route('student.enroll.index') }}" class="btn block px-4 py-3 bg-indigo-500 text-white rounded-xl shadow hover:bg-indigo-600 transition text-center">Đăng ký học</a>
+                <a href="{{ route('student.classes.index') }}" class="btn block px-4 py-3 bg-cyan-500 text-white rounded-xl shadow hover:bg-cyan-600 transition text-center">Lớp học của tôi</a>
                 <a href="{{ route('student.schedule') }}" class="btn block px-4 py-3 bg-green-500 text-white rounded-xl shadow hover:bg-green-600 transition text-center">Lịch học</a>
                 <a href="{{ route('student.grades') }}" class="btn block px-4 py-3 bg-blue-500 text-white rounded-xl shadow hover:bg-blue-600 transition text-center">Xem điểm số</a>
             </div>

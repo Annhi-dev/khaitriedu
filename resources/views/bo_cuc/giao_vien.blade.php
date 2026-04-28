@@ -30,6 +30,7 @@
             'label' => 'Giảng dạy',
             'items' => [
                 ['label' => 'Lớp học của tôi', 'icon' => 'fas fa-users-rectangle', 'route' => 'teacher.classes.index', 'active' => request()->routeIs('teacher.classes.*')],
+                ['label' => 'Bài kiểm tra', 'icon' => 'fas fa-file-pen', 'route' => 'teacher.tests.index', 'active' => request()->routeIs('teacher.tests.*')],
                 ['label' => 'Yêu cầu dời buổi', 'icon' => 'fas fa-calendar-rotate', 'route' => 'teacher.schedule-change-requests.index', 'active' => request()->routeIs('teacher.schedule-change-requests.*')],
                 ['label' => 'Xin phép nghỉ', 'icon' => 'fas fa-file-circle-exclamation', 'route' => 'teacher.leave-requests.index', 'active' => request()->routeIs('teacher.leave-requests.*')],
                 ['label' => 'Thông tin cá nhân', 'icon' => 'fas fa-user-gear', 'route' => 'teacher.profile.show', 'active' => request()->routeIs('teacher.profile.*')],

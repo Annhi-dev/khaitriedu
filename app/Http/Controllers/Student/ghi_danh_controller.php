@@ -110,8 +110,6 @@ class ClassEnrollController extends Controller
             return $redirect;
         }
 
-        $enrollments = $enrollmentService->paginateStudentEnrollments($current);
-
-        return view('hoc_vien.ghi_danh.lop_cua_toi', compact('current', 'enrollments'));
+        return redirect()->route('student.classes.index');
     }
 }

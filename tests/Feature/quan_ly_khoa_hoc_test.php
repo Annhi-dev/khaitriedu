@@ -6,11 +6,15 @@ use App\Models\Category;
 use App\Models\ClassRoom;
 use App\Models\ClassSchedule;
 use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
 use App\Helpers\ScheduleHelper;
+use App\Services\AdminScheduleService;
+use App\Services\CourseCurriculumService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -538,6 +542,98 @@ class quan_ly_khoa_hoc_test extends TestCase
         $this->assertSame('18:00', $course->start_time);
         $this->assertSame('Monday', $course->day_of_week);
         $this->assertSame(['Monday'], $course->meeting_days);
+    }
+
+    public function test_curriculum_sync_refreshes_existing_module_lessons(): void
+    {
+        $category = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
+        $subject = $this->createSubject($category, [
+            'name' => 'Tieng Anh giao tiep',
+            'duration' => 12,
+        ]);
+        $course = $this->createInternalCourse($subject, null, [
+            'title' => 'KhaiTriEdu 2026 - Tieng Anh giao tiep',
+            'description' => 'Mo ta khoa hoc',
+            'price' => 0,
+            'status' => Course::STATUS_ACTIVE,
+        ]);
+
+        $module = Module::create([
+            'course_id' => $course->id,
+            'title' => 'Tong quan khoa hoc',
+            'content' => 'Noi dung bi sai ?',
+            'session_count' => 4,
+            'duration' => 60,
+            'status' => Module::STATUS_PUBLISHED,
+            'position' => 1,
+        ]);
+
+        Lesson::create([
+            'module_id' => $module->id,
+            'title' => 'Bu?i 1: T?ng quan khoa h?c - Nh?p m?n',
+            'description' => 'Mo ta bi sai ?',
+            'content' => 'Noi dung buoi hoc bi sai ?',
+            'order' => 1,
+            'duration' => 45,
+        ]);
+
+        app(CourseCurriculumService::class)->syncCourse($course);
+
+        $module->refresh()->load('lessons');
+
+        $this->assertSame('Tổng quan khóa học', $module->title);
+        $this->assertSame('Giới thiệu mục tiêu, cấu trúc và yêu cầu đầu ra của khóa học.', $module->content);
+        $this->assertCount(4, $module->lessons);
+        $this->assertSame('Buổi 1: Tổng quan khóa học - Nhập môn', $module->lessons->first()->title);
+        $this->assertSame('Buổi 1 thuộc module Tổng quan khóa học.', $module->lessons->first()->description);
+    }
+
+    public function test_schedule_sync_refreshes_current_classroom_name(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $category = $this->createCategory('Boi duong giao vien', 'boi-duong-giao-vien');
+        $subject = $this->createSubject($category, [
+            'name' => 'Boi duong giao vien pho thong',
+            'duration' => 12,
+        ]);
+        $room = $this->createRoom(['name' => 'Phong 401', 'code' => 'PH401']);
+        $course = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'KhaiTriEdu 2026 - Boi duong giao vien pho thong',
+            'description' => 'Mo ta khoa hoc',
+            'price' => 0,
+            'status' => Course::STATUS_SCHEDULED,
+            'meeting_days' => ['Sunday'],
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-05-01',
+            'start_time' => '08:00',
+            'end_time' => '10:15',
+        ]);
+
+        $classRoom = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'name' => 'Kh?a n?i b? - TH?C S? QU?N TR? KINH DOANH',
+            'start_date' => '2026-04-01',
+            'duration' => 12,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $classRoom->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $room->id,
+            'day_of_week' => 'Sunday',
+            'start_time' => '08:00',
+            'end_time' => '10:15',
+        ]);
+
+        app(AdminScheduleService::class)->syncCourseSchedule($course);
+
+        $classRoom->refresh();
+
+        $this->assertSame($course->title, $classRoom->name);
     }
 
     private function createCategory(string $name, string $slug): Category

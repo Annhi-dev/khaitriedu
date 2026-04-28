@@ -91,6 +91,11 @@ class ClassRoom extends Model
         return $this->hasMany(Enrollment::class, 'lop_hoc_id');
     }
 
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'lop_hoc_id');
+    }
+
     public function students()
     {
         return $this->hasManyThrough(

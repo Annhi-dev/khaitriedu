@@ -271,6 +271,11 @@ class Enrollment extends Model
         return $this->belongsTo(User::class, 'assigned_teacher_id');
     }
 
+    public function teacher()
+    {
+        return $this->assignedTeacher();
+    }
+
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
@@ -284,6 +289,11 @@ class Enrollment extends Model
     public function classRoom()
     {
         return $this->belongsTo(ClassRoom::class, 'lop_hoc_id');
+    }
+
+    public function lopHoc()
+    {
+        return $this->classRoom();
     }
 
     public function currentClassRoom(): ?ClassRoom
@@ -423,5 +433,16 @@ class Enrollment extends Model
     public function attendanceRecords()
     {
         return $this->hasMany(AttendanceRecord::class);
+    }
+
+    public function evaluations()
+    {
+        $query = $this->hasMany(TeacherEvaluation::class, 'student_id', 'user_id');
+
+        if ($this->lop_hoc_id !== null) {
+            $query->where('class_room_id', $this->lop_hoc_id);
+        }
+
+        return $query;
     }
 }

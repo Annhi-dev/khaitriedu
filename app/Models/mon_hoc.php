@@ -117,6 +117,11 @@ class Subject extends Model
         return $this->hasMany(ClassRoom::class, 'subject_id');
     }
 
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'subject_id');
+    }
+
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);

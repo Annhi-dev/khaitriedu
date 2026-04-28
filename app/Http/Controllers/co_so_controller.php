@@ -28,6 +28,15 @@ abstract class Controller extends BaseController
             }
         }
 
+        if ($user && ! $user->relationLoaded('role')) {
+            $reloadedUser = User::with('role')->find($user->id);
+
+            if ($reloadedUser) {
+                $user = $reloadedUser;
+                Auth::setUser($user);
+            }
+        }
+
         return $user;
     }
 

@@ -70,8 +70,9 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
             $categories->put(
                 $fixture['key'],
                 Category::updateOrCreate(
-                    ['name' => $fixture['name']],
+                    ['slug' => $fixture['slug']],
                     [
+                        'name' => $fixture['name'],
                         'slug' => $fixture['slug'],
                         'description' => sprintf('Nhóm đào tạo %s của KhaiTriEdu.', $fixture['name']),
                         'program' => $fixture['program'],
@@ -389,9 +390,11 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 ->where('email', $fixture['teacher_email'])
                 ->firstOrFail();
 
+            $subjectId = $index + 1;
             $subject = Subject::updateOrCreate(
-                ['name' => $fixture['subject_name']],
+                ['id' => $subjectId],
                 [
+                    'name' => $fixture['subject_name'],
                     'description' => sprintf('Chương trình đào tạo %s tại KhaiTriEdu.', $fixture['subject_name']),
                     'price' => $fixture['price'],
                     'duration' => $fixture['duration'],
@@ -404,11 +407,10 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
             );
 
             $course = Course::updateOrCreate(
+                ['title' => $fixture['course_title']],
                 [
                     'subject_id' => $subject->id,
                     'title' => $fixture['course_title'],
-                ],
-                [
                     'description' => sprintf('Khóa học %s dành cho học viên KhaiTriEdu.', $fixture['subject_name']),
                     'price' => $fixture['price'],
                     'schedule' => $fixture['status'] === Course::STATUS_PENDING_OPEN ? 'Chờ xếp lớp' : null,

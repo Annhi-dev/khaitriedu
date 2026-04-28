@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Student\ClassEnrollController;
+use App\Http\Controllers\Student\StudentClassController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\LeaveRequestController;
 use App\Http\Controllers\Student\NotificationController;
@@ -34,4 +35,11 @@ Route::prefix('enroll')->name('enroll.')->group(function () {
     Route::get('/{subject}/request', [ClassEnrollController::class, 'requestForm'])->name('request-form');
     Route::post('/{subject}/store', [ClassEnrollController::class, 'store'])->name('store');
     Route::post('/{subject}/request', [ClassEnrollController::class, 'storeCustomRequest'])->name('request-store');
+});
+
+Route::prefix('classes')->name('classes.')->group(function () {
+    Route::get('/', [StudentClassController::class, 'index'])->name('index');
+    Route::get('/{enrollment}', [StudentClassController::class, 'show'])->name('show');
+    Route::get('/{enrollment}/evaluation', [StudentClassController::class, 'evaluation'])->name('evaluation');
+    Route::post('/{enrollment}/evaluation', [StudentClassController::class, 'storeEvaluation'])->name('evaluation.store');
 });

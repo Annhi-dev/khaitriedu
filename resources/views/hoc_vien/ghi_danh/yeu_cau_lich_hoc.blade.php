@@ -79,9 +79,9 @@
                     Bạn đã được ghi danh hoặc xếp lớp cho khóa học này. Nếu muốn thay đổi, vui lòng liên hệ admin.
                 </div>
                 <div class="mt-4">
-                    <a href="{{ route('student.enroll.my-classes') }}" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                    <a href="{{ route('student.classes.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
                         <i class="fas fa-users"></i>
-                        Xem lớp của tôi
+                        Xem lớp học của tôi
                     </a>
                 </div>
             @else

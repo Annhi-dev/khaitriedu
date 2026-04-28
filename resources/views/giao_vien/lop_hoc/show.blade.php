@@ -27,6 +27,10 @@
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
+                <a href="{{ route('teacher.tests.create', ['lop_hoc_id' => $classRoom->id]) }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 sm:col-span-2">
+                    <i class="fas fa-plus"></i>
+                    Tạo bài kiểm tra cho lớp này
+                </a>
                 <div class="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
                     <p><strong>Môn học:</strong> {{ $classRoom->subject?->name ?? 'Chưa xác định' }}</p>
                     <p class="mt-1"><strong>Nhóm học:</strong> {{ $classRoom->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>

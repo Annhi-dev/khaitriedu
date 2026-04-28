@@ -178,7 +178,15 @@ class CourseController extends Controller
             return redirect()->route('courses.show', $course->id)->with('error', 'Quiz khong ton tai.');
         }
 
-        return view('khoa_hoc.quiz', compact('course', 'quiz', 'user'));
+        $quizProgress = $user && $user->isStudent()
+            ? app(CourseQuizService::class)->getStudentQuizProgress($user, $quiz)
+            : null;
+
+        $quizReport = $user && ($user->isTeacher() || $user->isAdmin())
+            ? app(CourseQuizService::class)->getTeacherQuizReport($quiz)
+            : null;
+
+        return view('khoa_hoc.quiz', compact('course', 'quiz', 'user', 'quizProgress', 'quizReport'));
     }
 
     public function submitQuiz(Request $request, $course, $quiz, CourseQuizService $quizService)
@@ -207,7 +215,7 @@ class CourseController extends Controller
 
         $result = $quizService->submit($user, $course, $quiz, $answers);
 
-        return redirect()->route('courses.show', $course->id)->with('status', 'Quiz hoan thanh: ' . $result['score'] . '%. ' . ($result['passed'] ? 'Dat chung chi.' : 'Khong dat.'));
+        return redirect()->route('courses.quiz.show', [$course->id, $quiz->id])->with('status', 'Bạn đã nộp bài lần ' . $result['attempt'] . ' với điểm ' . $result['score'] . '%. ' . ($result['passed'] ? 'Đạt.' : 'Chưa đạt.'));
     }
 
     public function redirectEnroll($id)
@@ -302,11 +310,26 @@ class CourseController extends Controller
 
     private function findQuizForCourse(Course $course, int $quizId): ?Quiz
     {
-        return Quiz::with('questions.options')
-            ->whereHas('lesson.module', function ($query) use ($course) {
-                $query->where('course_id', $course->id)
-                    ->where('status', Module::STATUS_PUBLISHED);
-            })
+        $quiz = Quiz::with(['questions.options', 'lesson.module.course', 'classRoom'])
+            ->published()
             ->find($quizId);
+
+        if (! $quiz) {
+            return null;
+        }
+
+        if ((int) ($quiz->course_id ?? 0) === (int) $course->id) {
+            return $quiz;
+        }
+
+        if ((int) ($quiz->classRoom?->course_id ?? 0) === (int) $course->id) {
+            return $quiz;
+        }
+
+        if ((int) ($quiz->lesson?->module?->course_id ?? 0) === (int) $course->id) {
+            return $quiz;
+        }
+
+        return null;
     }
 }

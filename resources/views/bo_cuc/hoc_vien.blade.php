@@ -29,8 +29,8 @@
         [
             'label' => 'Học tập',
             'items' => [
-                ['route' => 'student.enroll.index', 'label' => 'Đăng ký khóa học', 'icon' => 'fa-book-open', 'active' => request()->routeIs('student.enroll.*')],
-                ['route' => 'student.enroll.my-classes', 'label' => 'Lớp của tôi', 'icon' => 'fa-users-rectangle', 'active' => request()->routeIs('student.enroll.my-classes')],
+                ['route' => 'student.enroll.index', 'label' => 'Đăng ký học', 'icon' => 'fa-book-open', 'active' => request()->routeIs('student.enroll.*')],
+                ['route' => 'student.classes.index', 'label' => 'Lớp học của tôi', 'icon' => 'fa-users-rectangle', 'active' => request()->routeIs('student.classes.*')],
                 ['route' => 'student.leave-requests.index', 'label' => 'Xin phép nghỉ', 'icon' => 'fa-file-circle-exclamation', 'active' => request()->routeIs('student.leave-requests.*')],
                 ['route' => 'student.grades', 'label' => 'Kết quả học tập', 'icon' => 'fa-square-poll-horizontal', 'active' => request()->routeIs('student.grades')],
             ],

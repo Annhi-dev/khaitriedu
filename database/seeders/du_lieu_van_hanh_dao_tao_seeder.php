@@ -1078,6 +1078,10 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
+            $classRoom->update([
+                'name' => $course->title,
+            ]);
+
             $classRoom->schedules()->delete();
 
             foreach ($schedules as $schedule) {

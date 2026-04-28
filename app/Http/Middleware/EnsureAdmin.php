@@ -32,6 +32,15 @@ class EnsureAdmin
             }
         }
 
+        if ($user && ! $user->relationLoaded('role')) {
+            $reloadedUser = User::with('role')->find($user->id);
+
+            if ($reloadedUser) {
+                $user = $reloadedUser;
+                Auth::setUser($user);
+            }
+        }
+
         if (! $user) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập khu vực quản trị.');
         }

@@ -6,7 +6,7 @@
 @section('header_actions')
     <a href="{{ route('student.enroll.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100">
         <i class="fas fa-book-open"></i>
-        <span>Đăng ký khóa học</span>
+        <span>Đăng ký học</span>
     </a>
 @endsection
 
@@ -54,16 +54,16 @@
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
                 <i class="fas fa-book-open"></i>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-slate-900">Đăng ký khóa học</h3>
+            <h3 class="mt-4 text-lg font-semibold text-slate-900">Đăng ký học</h3>
             <p class="mt-2 text-sm leading-6 text-slate-600">Khám phá các khóa học đang mở và gửi yêu cầu ngay.</p>
         </a>
 
-        <a href="{{ route('student.enroll.my-classes') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
+        <a href="{{ route('student.classes.index') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
                 <i class="fas fa-users"></i>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-slate-900">Lớp của tôi</h3>
-            <p class="mt-2 text-sm leading-6 text-slate-600">Theo dõi lớp đang chờ mở hoặc lớp đã ghi danh.</p>
+            <h3 class="mt-4 text-lg font-semibold text-slate-900">Lớp học của tôi</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Theo dõi lớp đã đăng ký, đang học và đã hoàn thành.</p>
         </a>
 
         <a href="{{ route('student.schedule') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md">
@@ -98,9 +98,9 @@
                     <i class="fas fa-compass mr-2 text-slate-400"></i>
                     Mở danh sách khóa học
                 </a>
-                <a href="{{ route('student.enroll.my-classes') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
+                <a href="{{ route('student.classes.index') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
                     <i class="fas fa-layer-group mr-2 text-slate-400"></i>
-                    Theo dõi lớp đang chờ mở
+                    Xem lớp học của tôi
                 </a>
                 <a href="{{ route('student.schedule') }}" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700">
                     <i class="fas fa-calendar-check mr-2 text-slate-400"></i>

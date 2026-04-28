@@ -23,9 +23,19 @@ class QuizAnswer extends Model
         return $this->belongsTo(Quiz::class);
     }
 
+    public function test()
+    {
+        return $this->quiz();
+    }
+
     public function question()
     {
         return $this->belongsTo(Question::class);
+    }
+
+    public function student()
+    {
+        return $this->user();
     }
 
     public function option()
