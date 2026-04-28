@@ -65,6 +65,50 @@ class quan_ly_lich_hoc_test extends TestCase
         $response->assertDontSee('Chọn lớp học có sẵn');
     }
 
+    public function test_admin_open_course_screen_only_shows_non_conflicting_rooms(): void
+    {
+        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Room']);
+        [, $subject] = $this->createCatalogSubject('Thiết kế Web', 'thiet-ke-web');
+        $course = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'KhaiTriEdu 2026 - Thiết kế Web',
+            'day_of_week' => 'Monday',
+            'meeting_days' => ['Monday', 'Wednesday'],
+            'start_time' => '18:00',
+            'end_time' => '20:15',
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-06-01',
+            'status' => Course::STATUS_PENDING_OPEN,
+        ]);
+
+        $conflictRoom = $this->createRoom(['name' => 'Phong trung lich', 'code' => 'CL001']);
+        $freeRoom = $this->createRoom(['name' => 'Phong trong', 'code' => 'FR001']);
+
+        $conflictClass = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'name' => 'Lop trung lich',
+            'room_id' => $conflictRoom->id,
+            'teacher_id' => $teacher->id,
+            'start_date' => '2026-04-02',
+            'duration' => 3,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        ClassSchedule::create([
+            'lop_hoc_id' => $conflictClass->id,
+            'teacher_id' => $teacher->id,
+            'room_id' => $conflictRoom->id,
+            'day_of_week' => 'Monday',
+            'start_time' => '18:00',
+            'end_time' => '20:15',
+        ]);
+
+        $availableRooms = app(\App\Services\AdminScheduleService::class)->availableRoomsForCourse($course->fresh());
+
+        $this->assertTrue($availableRooms->contains('id', $freeRoom->id));
+        $this->assertFalse($availableRooms->contains('id', $conflictRoom->id));
+    }
+
     public function test_admin_can_view_and_filter_system_schedule_list(): void
     {
         $admin = User::factory()->admin()->create();
@@ -862,6 +906,41 @@ class quan_ly_lich_hoc_test extends TestCase
         $newTeacherResponse->assertSee('Lop Teacher Alpha');
         $newTeacherResponse->assertSee('Khung giờ');
         $newTeacherResponse->assertSee('Xem chi tiết');
+    }
+
+    public function test_admin_can_delete_empty_class_from_delete_route(): void
+    {
+        config(['session.driver' => 'array']);
+
+        $admin = User::factory()->admin()->create()->load('role');
+        $teacher = User::factory()->teacher()->create();
+        [, $subject] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
+
+        $course = $this->createInternalCourse($subject, $teacher, [
+            'title' => 'Lop co the xoa',
+            'status' => Course::STATUS_SCHEDULED,
+        ]);
+
+        $classRoom = ClassRoom::create([
+            'subject_id' => $subject->id,
+            'course_id' => $course->id,
+            'name' => 'Lop co the xoa',
+            'teacher_id' => $teacher->id,
+            'status' => ClassRoom::STATUS_OPEN,
+        ]);
+
+        $matchedRoute = app('router')->getRoutes()->match(
+            \Illuminate\Http\Request::create('/admin/classes/' . $classRoom->id . '/delete', 'POST')
+        );
+        $this->assertSame('admin.classes.delete', $matchedRoute->getName());
+        $this->assertSame(['POST'], $matchedRoute->methods());
+
+        $this->withSession(['user_id' => $admin->id]);
+        $response = app(\App\Http\Controllers\Admin\ClassRoomController::class)->destroy($classRoom);
+
+        $this->assertSame(route('admin.classes.index'), $response->getTargetUrl());
+        $this->assertSame('Da xoa lop hoc.', $response->getSession()->get('status'));
+        $this->assertModelMissing($classRoom);
     }
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array

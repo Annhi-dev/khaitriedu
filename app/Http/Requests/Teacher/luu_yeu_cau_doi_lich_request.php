@@ -19,8 +19,8 @@ class StoreTeacherScheduleChangeRequest extends FormRequest
             'requested_day_of_week' => $this->input('requested_day_of_week') ?: null,
             'requested_date' => $this->input('requested_date') ?: null,
             'requested_end_date' => $this->input('requested_end_date') ?: null,
-            'requested_start_time' => $this->input('requested_start_time') ?: null,
-            'requested_end_time' => $this->input('requested_start_time') ? ScheduleHelper::normalizeEndTime((string) $this->input('requested_start_time')) : ($this->input('requested_end_time') ?: null),
+            'requested_start_time' => ScheduleHelper::normalizeTimeValue($this->input('requested_start_time')) ?: null,
+            'requested_end_time' => $this->input('requested_start_time') ? ScheduleHelper::normalizeEndTime((string) $this->input('requested_start_time')) : (ScheduleHelper::normalizeTimeValue($this->input('requested_end_time')) ?: null),
             'reason' => $this->filled('reason') ? trim((string) $this->input('reason')) : null,
         ]);
     }

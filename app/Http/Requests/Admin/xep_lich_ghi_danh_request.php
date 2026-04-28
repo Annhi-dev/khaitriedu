@@ -3,6 +3,9 @@
 namespace App\Http\Requests\Admin;
 
 use App\Helpers\ScheduleHelper;
+use App\Models\Enrollment;
+use App\Models\User;
+use App\Services\AdminScheduleService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,10 +38,10 @@ class ScheduleEnrollmentRequest extends FormRequest
             )))),
             'start_date' => $this->input('start_date') ?: null,
             'end_date' => $this->input('end_date') ?: null,
-            'start_time' => $this->input('start_time') ?: null,
+            'start_time' => ScheduleHelper::normalizeTimeValue($this->input('start_time')) ?: null,
             'end_time' => $this->filled('start_time')
                 ? ScheduleHelper::normalizeEndTime((string) $this->input('start_time'))
-                : ($this->input('end_time') ?: null),
+                : (ScheduleHelper::normalizeTimeValue($this->input('end_time')) ?: null),
             'capacity' => $this->filled('capacity') ? (int) $this->input('capacity') : null,
             'note' => $this->filled('note') ? trim((string) $this->input('note')) : null,
         ]);
@@ -69,5 +72,33 @@ class ScheduleEnrollmentRequest extends FormRequest
             'capacity' => ['nullable', 'integer', 'min:1', 'max:999'],
             'note' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            if (! $this->filled('teacher_id')) {
+                return;
+            }
+
+            $enrollment = $this->route('enrollment');
+            if (! $enrollment instanceof Enrollment) {
+                return;
+            }
+
+            $teacher = User::query()
+                ->teachers()
+                ->where('status', User::STATUS_ACTIVE)
+                ->with('department')
+                ->find((int) $this->input('teacher_id'));
+
+            if (! $teacher) {
+                return;
+            }
+
+            if (! app(AdminScheduleService::class)->teacherMatchesSubject($teacher, $enrollment->subject)) {
+                $validator->errors()->add('teacher_id', 'Giảng viên được chọn không thuộc chuyên môn của môn học này.');
+            }
+        });
     }
 }

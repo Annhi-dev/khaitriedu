@@ -91,18 +91,18 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
     protected function seedRooms(): Collection
     {
         $fixtures = [
-            ['code' => 'PH101', 'name' => 'Phòng Lý thuyết 101', 'type' => 'theory', 'location' => 'Tầng 1 - Khu A', 'capacity' => 12, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng nhỏ dành cho lớp chuyên đề tối.'],
-            ['code' => 'PH102', 'name' => 'Phòng Lý thuyết 102', 'type' => 'theory', 'location' => 'Tầng 1 - Khu A', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học tiêu chuẩn, có máy chiếu.'],
-            ['code' => 'PH103', 'name' => 'Phòng Lý thuyết 103', 'type' => 'theory', 'location' => 'Tầng 2 - Khu A', 'capacity' => 30, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học dành cho lớp đông học viên.'],
-            ['code' => 'TH201', 'name' => 'Phòng Thực hành 201', 'type' => 'practice', 'location' => 'Tầng 2 - Khu B', 'capacity' => 18, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành thiết bị đầy đủ.'],
-            ['code' => 'TH202', 'name' => 'Phòng Thực hành 202', 'type' => 'practice', 'location' => 'Tầng 2 - Khu B', 'capacity' => 20, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành phục vụ lớp nghề.'],
-            ['code' => 'MT301', 'name' => 'Phòng Máy tính 301', 'type' => 'practice', 'location' => 'Tầng 3 - Khu C', 'capacity' => 22, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng máy tính cấu hình đồng bộ.'],
-            ['code' => 'MT302', 'name' => 'Phòng Máy tính 302', 'type' => 'practice', 'location' => 'Tầng 3 - Khu C', 'capacity' => 20, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học tin học và thiết kế.'],
-            ['code' => 'HT401', 'name' => 'Phòng Hội thảo 401', 'type' => 'theory', 'location' => 'Tầng 4 - Khu D', 'capacity' => 35, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng hội thảo, bồi dưỡng và seminar.'],
-            ['code' => 'DA501', 'name' => 'Phòng Đa năng 501', 'type' => 'theory', 'location' => 'Tầng 5 - Khu D', 'capacity' => 28, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng sử dụng cho lớp linh hoạt.'],
-            ['code' => 'DA502', 'name' => 'Phòng Đa năng 502', 'type' => 'practice', 'location' => 'Tầng 5 - Khu D', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng dùng cho lớp thực hành ngắn hạn.'],
-            ['code' => 'BT601', 'name' => 'Phòng Bảo trì 601', 'type' => 'practice', 'location' => 'Tầng 6 - Khu E', 'capacity' => 16, 'status' => Room::STATUS_MAINTENANCE, 'note' => 'Đang bảo trì máy chiếu và điều hòa.'],
-            ['code' => 'KT701', 'name' => 'Phòng Kho 701', 'type' => 'theory', 'location' => 'Tầng 7 - Khu E', 'capacity' => 18, 'status' => Room::STATUS_INACTIVE, 'note' => 'Tạm ngưng sử dụng để cải tạo.'],
+            ['code' => 'PH101', 'name' => 'Phòng Lý thuyết A1', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 12, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết nhỏ cho lớp tối.'],
+            ['code' => 'PH102', 'name' => 'Phòng Lý thuyết A2', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết tiêu chuẩn, có máy chiếu.'],
+            ['code' => 'PH103', 'name' => 'Phòng Lý thuyết B1', 'type' => 'theory', 'location' => 'Tầng hầm', 'capacity' => 30, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết cho lớp đông học viên.'],
+            ['code' => 'TH201', 'name' => 'Phòng Nghề may', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 18, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành may mặc và cắt may cơ bản.'],
+            ['code' => 'TH202', 'name' => 'Phòng Nghề nấu', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 20, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành nấu ăn và bếp bánh.'],
+            ['code' => 'MT301', 'name' => 'Phòng Máy tính 1', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 22, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng máy tính cho tin học văn phòng và lập trình.'],
+            ['code' => 'MT302', 'name' => 'Phòng Máy tính 2', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 20, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng máy tính cho thực hành thiết kế và tin học.'],
+            ['code' => 'HT401', 'name' => 'Phòng Đa năng 401', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 35, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng hội thảo và bồi dưỡng lớp đông.'],
+            ['code' => 'DA501', 'name' => 'Phòng Chăm sóc da', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành chăm sóc da và spa cơ bản.'],
+            ['code' => 'DA502', 'name' => 'Phòng Đa năng thực hành', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng dùng cho lớp thực hành ngắn hạn.'],
+            ['code' => 'BT601', 'name' => 'Phòng Kỹ thuật - Kho thiết bị', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 16, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng phụ trợ cho thiết bị và đồ nghề.'],
+            ['code' => 'KT701', 'name' => 'Phòng Kho vật tư', 'type' => 'theory', 'location' => 'Tầng hầm', 'capacity' => 18, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng phụ trợ cho lưu trữ vật tư học tập.'],
         ];
 
         $rooms = collect();

@@ -10,46 +10,24 @@
     </div>
 
     <div class="bg-gradient-to-r from-white to-blue-50 p-8 rounded-2xl shadow-lg mb-12 border border-blue-100">
-        <div class="grid md:grid-cols-3 gap-6">
-            <div>
-                <label class="block text-sm font-bold mb-3 text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-search text-primary"></i> Tìm kiếm
-                </label>
-                <input type="text" id="searchInput" placeholder="Nhập tên khóa học..." class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-primary focus:outline-none transition">
-            </div>
-            <div>
-                <label class="block text-sm font-bold mb-3 text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-layer-group text-primary"></i> Nhóm ngành
-                </label>
-                <select id="categoryFilter" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-primary focus:outline-none transition" onchange="window.location.href = '{{ route('courses.index') }}?category=' + (this.value ? this.value : '')">
-                    <option value="">Tất cả nhóm ngành</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'selected' : '' }}>
-                            {{ $cat->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-bold mb-3 text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-sort text-primary"></i> Sắp xếp
-                </label>
-                <select id="sortFilter" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-primary focus:outline-none transition">
-                    <option value="newest">Mới nhất</option>
-                    <option value="oldest">Cũ nhất</option>
-                    <option value="popular">Nhiều đăng ký nhất</option>
-                </select>
-            </div>
+        <div class="max-w-xl">
+            <label class="block text-sm font-bold mb-3 text-gray-700 flex items-center gap-2">
+                <i class="fas fa-layer-group text-primary"></i> Nhóm ngành
+            </label>
+            <select id="categoryFilter" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-primary focus:outline-none transition" onchange="window.location.href = '{{ route('courses.index') }}?category=' + (this.value ? this.value : '')">
+                <option value="">Tất cả nhóm ngành</option>
+                @foreach($categories as $cat)
+                    <option value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
         </div>
     </div>
 
-    <div id="coursesGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         @forelse($courses as $course)
-            <div class="relative group course-card"
-                 data-title="{{ strtolower($course->name) }}"
-                 data-category="{{ strtolower($course->category->slug ?? '') }}"
-                 data-enrollments="{{ $course->enrollments_count ?? 0 }}"
-                 data-created="{{ $course->created_at ?? now() }}">
+            <div class="relative group">
                 <div class="absolute -inset-0.5 bg-gradient-to-r from-primary via-blue-500 to-primary rounded-3xl opacity-0 group-hover:opacity-100 transition duration-500 blur-lg"></div>
 
                 <div class="relative card bg-white rounded-3xl shadow-xl group-hover:shadow-2xl transition-all duration-300 overflow-hidden h-full flex flex-col">
@@ -113,58 +91,10 @@
     </div>
 
     <div class="mt-16 flex justify-center">
-        <div class="pagination">
+        <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             {{ $courses->links() }}
         </div>
     </div>
 </div>
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.getElementById('searchInput');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const sortFilter = document.getElementById('sortFilter');
-        const grid = document.getElementById('coursesGrid');
-        const cards = Array.from(document.querySelectorAll('.course-card'));
-
-        function render(filtered) {
-            grid.innerHTML = '';
-            filtered.forEach(card => grid.appendChild(card));
-        }
-
-        function applyFilters() {
-            const q = searchInput.value.trim().toLowerCase();
-            const cat = categoryFilter.value;
-            let filtered = cards.filter(card => {
-                const title = card.dataset.title || '';
-                const category = card.dataset.category || '';
-                const matchesSearch = title.includes(q);
-                const matchesCategory = !cat || category === cat;
-                return matchesSearch && matchesCategory;
-            });
-
-            const sortBy = sortFilter.value;
-            if (sortBy === 'newest' || sortBy === 'oldest') {
-                filtered.sort((a, b) => {
-                    const da = new Date(a.dataset.created).getTime();
-                    const db = new Date(b.dataset.created).getTime();
-                    return sortBy === 'newest' ? db - da : da - db;
-                });
-            } else if (sortBy === 'popular') {
-                filtered.sort((a, b) => Number(b.dataset.enrollments) - Number(a.dataset.enrollments));
-            }
-
-            render(filtered);
-        }
-
-        searchInput.addEventListener('input', applyFilters);
-        categoryFilter.addEventListener('change', applyFilters);
-        sortFilter.addEventListener('change', applyFilters);
-
-        applyFilters();
-    });
-</script>
-@endpush
 
 @endsection

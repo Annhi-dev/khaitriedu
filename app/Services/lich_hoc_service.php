@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Notification;
 use App\Models\Room;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AdminScheduleService
 {
@@ -85,7 +87,7 @@ class AdminScheduleService
 
     public function getSchedulingContext(Enrollment $enrollment): array
     {
-        $enrollment->load(['user', 'subject.category', 'course.teacher']);
+        $enrollment->load(['user', 'subject.category', 'course.teacher', 'assignedTeacher.department']);
 
         $courses = Course::query()
             ->with(['teacher', 'subject'])
@@ -103,11 +105,20 @@ class AdminScheduleService
             ->orderBy('title')
             ->get();
 
+        $teachers = $this->teacherOptionsForSubject($enrollment->subject);
+
+        $selectedTeacher = $enrollment->assignedTeacher
+            ?? $enrollment->course?->teacher;
+
+        if ($selectedTeacher && ! $teachers->contains('id', $selectedTeacher->id)) {
+            $teachers = $teachers->prepend($selectedTeacher)->unique('id')->values();
+        }
+
         return [
             'enrollment' => $enrollment,
             'courses' => $courses,
             'waitingCourses' => $waitingCourses,
-            'teachers' => $this->teacherOptions(),
+            'teachers' => $teachers,
             'rooms' => $this->roomOptions(),
             'suggestedCourseTitle' => $this->suggestedCourseTitle($enrollment),
             'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
@@ -124,11 +135,14 @@ class AdminScheduleService
             'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
         ]);
 
+        $rooms = $this->availableRoomsForCourse($course);
+
         return [
             'course' => $course,
             'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
             'studentsNeeded' => max(0, Course::minimumStudentsToOpen() - (int) $course->scheduled_students_count),
-            'rooms' => $this->roomOptions(),
+            'rooms' => $rooms,
+            'availableRoomsCount' => $rooms->count(),
         ];
     }
 
@@ -442,9 +456,70 @@ class AdminScheduleService
     {
         return User::query()
             ->teachers()
+            ->with('department')
             ->where('status', User::STATUS_ACTIVE)
             ->orderBy('name')
             ->get();
+    }
+
+    public function teacherOptionsForSubject(?Subject $subject): Collection
+    {
+        $teachers = $this->teacherOptions();
+
+        if (! $subject) {
+            return $teachers;
+        }
+
+        $subject->loadMissing('category');
+
+        $filteredTeachers = $teachers->filter(fn (User $teacher) => $this->teacherMatchesSubject($teacher, $subject));
+
+        return $filteredTeachers->values();
+    }
+
+    public function teacherMatchesSubject(User $teacher, ?Subject $subject): bool
+    {
+        if (! $subject) {
+            return true;
+        }
+
+        $subject->loadMissing('category');
+
+        $subjectTexts = collect([
+            $subject->name,
+            $subject->category?->name,
+            $subject->category?->slug,
+            $subject->category?->program,
+            $subject->category?->level,
+        ])
+            ->filter()
+            ->map(fn (string $value) => $this->normalizeTeacherSubjectText($value))
+            ->filter()
+            ->values();
+
+        $teacherTexts = collect([
+            $teacher->specialtyLabel(),
+            $teacher->department?->name,
+            $teacher->department?->code,
+        ])
+            ->filter()
+            ->map(fn (string $value) => $this->normalizeTeacherSubjectText($value))
+            ->filter()
+            ->values();
+
+        foreach ($teacherTexts as $teacherText) {
+            foreach ($subjectTexts as $subjectText) {
+                if ($teacherText === '' || $subjectText === '') {
+                    continue;
+                }
+
+                if (str_contains($subjectText, $teacherText) || str_contains($teacherText, $subjectText)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function studentOptions(): Collection
@@ -480,6 +555,37 @@ class AdminScheduleService
             ->get();
     }
 
+    public function availableRoomsForCourse(Course $course): Collection
+    {
+        $meetingDays = $course->meetingDayValues();
+        $startTime = (string) ($course->start_time ?? '');
+        $endTime = (string) ($course->end_time ?? '');
+        $startDate = $course->start_date?->format('Y-m-d');
+        $endDate = $course->end_date?->format('Y-m-d');
+
+        if ($meetingDays === [] || $startTime === '' || $endTime === '') {
+            return $this->roomOptions();
+        }
+
+        return $this->roomOptions()
+            ->filter(function (Room $room) use ($meetingDays, $startTime, $endTime, $startDate, $endDate): bool {
+                return ! ClassRoom::roomHasConflict(
+                    $room->id,
+                    $meetingDays,
+                    $startTime,
+                    $endTime,
+                    $startDate,
+                    $endDate
+                );
+            })
+            ->values();
+    }
+
+    protected function normalizeTeacherSubjectText(string $value): string
+    {
+        return trim(Str::lower(Str::ascii($value)));
+    }
+
     protected function savePendingOpenEnrollment(Enrollment $enrollment, Course $course, array $data, User $admin): string
     {
         $teacherId = $data['teacher_id'] ?? $course->teacher_id;
@@ -503,6 +609,13 @@ class AdminScheduleService
 
         $this->ensureTeacherIsValid((int) $teacherId);
         $this->ensureCapacity($course, (int) $capacity, $enrollment);
+        $this->ensureStudentHasNoRequestedScheduleConflict(
+            (int) $enrollment->user_id,
+            $meetingDays,
+            (string) $startTime,
+            (string) $endTime,
+            $enrollment->id
+        );
 
         $course->fill([
             'teacher_id' => (int) $teacherId,
@@ -787,6 +900,56 @@ class AdminScheduleService
     protected function meetingDaysOverlap(array $sourceDays, array $targetDays): bool
     {
         return array_intersect($sourceDays, $targetDays) !== [];
+    }
+
+    protected function ensureStudentHasNoRequestedScheduleConflict(
+        int $studentId,
+        array $meetingDays,
+        string $startTime,
+        string $endTime,
+        ?int $ignoreEnrollmentId = null
+    ): void {
+        $startTime = substr($startTime, 0, 5);
+        $endTime = substr($endTime, 0, 5);
+
+        $conflict = Enrollment::query()
+            ->with([
+                'classRoom.course',
+                'classRoom.schedules',
+                'course.classRooms.schedules',
+            ])
+            ->where('user_id', $studentId)
+            ->when($ignoreEnrollmentId, fn (Builder $query) => $query->whereKeyNot($ignoreEnrollmentId))
+            ->whereIn('status', Enrollment::scheduleBlockingStatuses())
+            ->get()
+            ->first(function (Enrollment $enrollment) use ($meetingDays, $startTime, $endTime): bool {
+                $existingClassRoom = $enrollment->conflictReferenceClassRoom();
+
+                if (! $existingClassRoom) {
+                    return false;
+                }
+
+                foreach ($existingClassRoom->scheduleRows() as $schedule) {
+                    if (! in_array((string) ($schedule['day_of_week'] ?? ''), $meetingDays, true)) {
+                        continue;
+                    }
+
+                    $existingStart = substr((string) ($schedule['start_time'] ?? ''), 0, 5);
+                    $existingEnd = substr((string) ($schedule['end_time'] ?? ''), 0, 5);
+
+                    if ($existingStart !== '' && $existingEnd !== '' && $existingStart < $endTime && $existingEnd > $startTime) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+        if ($conflict) {
+            throw ValidationException::withMessages([
+                'start_time' => 'Học viên đã có lớp khác trùng lịch trong cùng khung giờ.',
+            ]);
+        }
     }
 
     protected function queuedStudentCount(Course $course): int

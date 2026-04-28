@@ -18,6 +18,7 @@ class AdminScheduleConflictService
     {
         $candidate = $this->resolveCandidate($filters);
         $studentConflicts = $this->studentConflicts();
+        [$studentConflictStudentCount, $studentConflictPairCount] = $this->summarizeStudentConflicts($studentConflicts);
 
         if (! $candidate['ready']) {
             return [
@@ -25,7 +26,9 @@ class AdminScheduleConflictService
                 'teacherConflicts' => collect(),
                 'roomConflicts' => collect(),
                 'studentConflicts' => $studentConflicts,
-                'studentConflictCount' => $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
+                'studentConflictStudentCount' => $studentConflictStudentCount,
+                'studentConflictPairCount' => $studentConflictPairCount,
+                'studentConflictCount' => $studentConflictPairCount,
                 'hasConflicts' => false,
             ];
         }
@@ -42,7 +45,9 @@ class AdminScheduleConflictService
             'teacherConflicts' => $teacherConflicts,
             'roomConflicts' => $roomConflicts,
             'studentConflicts' => $studentConflicts,
-            'studentConflictCount' => $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
+            'studentConflictStudentCount' => $studentConflictStudentCount,
+            'studentConflictPairCount' => $studentConflictPairCount,
+            'studentConflictCount' => $studentConflictPairCount,
             'hasConflicts' => $teacherConflicts->isNotEmpty() || $roomConflicts->isNotEmpty(),
         ];
     }
@@ -50,13 +55,16 @@ class AdminScheduleConflictService
     public function previewCourse(array $filters): array
     {
         $candidate = $this->resolveCandidate($filters);
+        $studentConflicts = collect();
 
         if (! $candidate['ready']) {
             return [
                 'candidate' => $candidate,
                 'teacherConflicts' => collect(),
                 'roomConflicts' => collect(),
-                'studentConflicts' => collect(),
+                'studentConflicts' => $studentConflicts,
+                'studentConflictStudentCount' => 0,
+                'studentConflictPairCount' => 0,
                 'studentConflictCount' => 0,
                 'hasConflicts' => false,
             ];
@@ -69,13 +77,16 @@ class AdminScheduleConflictService
             ? $this->roomConflicts($candidate)
             : collect();
         $studentConflicts = $this->candidateStudentConflicts($candidate);
+        [$studentConflictStudentCount, $studentConflictPairCount] = $this->summarizeStudentConflicts($studentConflicts);
 
         return [
             'candidate' => $candidate,
             'teacherConflicts' => $teacherConflicts,
             'roomConflicts' => $roomConflicts,
             'studentConflicts' => $studentConflicts,
-            'studentConflictCount' => $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
+            'studentConflictStudentCount' => $studentConflictStudentCount,
+            'studentConflictPairCount' => $studentConflictPairCount,
+            'studentConflictCount' => $studentConflictPairCount,
             'hasConflicts' => $teacherConflicts->isNotEmpty() || $roomConflicts->isNotEmpty() || $studentConflicts->isNotEmpty(),
         ];
     }
@@ -407,91 +418,13 @@ class AdminScheduleConflictService
 
         Enrollment::syncDisplayStatusesByClass($enrollments);
 
-        return $enrollments
+        $rows = $enrollments
             ->groupBy('user_id')
-            ->map(function (Collection $studentEnrollments) {
-                $student = $studentEnrollments->first()?->user;
-                $pairs = collect();
-                $classRoomIds = collect();
-                $items = $studentEnrollments->values();
+            ->flatMap(function (Collection $studentEnrollments) {
+                return $this->buildStudentConflictRows($studentEnrollments);
+            });
 
-                for ($i = 0; $i < $items->count(); $i++) {
-                    $firstEnrollment = $items[$i];
-                    $firstClassRoom = $firstEnrollment->currentClassRoom();
-
-                    if (! $firstClassRoom) {
-                        continue;
-                    }
-
-                    $classRoomIds->push($firstClassRoom->id);
-
-                    for ($j = $i + 1; $j < $items->count(); $j++) {
-                        $secondEnrollment = $items[$j];
-                        $secondClassRoom = $secondEnrollment->currentClassRoom();
-
-                        if (! $secondClassRoom || (int) $firstClassRoom->id === (int) $secondClassRoom->id) {
-                            continue;
-                        }
-
-                        $conflict = $firstClassRoom->firstScheduleConflictWith($secondClassRoom);
-
-                        if (! $conflict) {
-                            continue;
-                        }
-
-                        $pairs->push([
-                            'first' => [
-                                'enrollment_id' => $firstEnrollment->id,
-                                'class_room_id' => $firstClassRoom->id,
-                                'title' => $firstClassRoom->displayName(),
-                                'schedule' => $firstClassRoom->scheduleSummary(),
-                                'status' => $firstEnrollment->displayStatusLabel(),
-                                'url' => route('admin.classes.show', $firstClassRoom),
-                                'edit_url' => $firstClassRoom->course
-                                    ? route('admin.course.show', $firstClassRoom->course)
-                                    : route('admin.classes.show', $firstClassRoom),
-                            ],
-                            'second' => [
-                                'enrollment_id' => $secondEnrollment->id,
-                                'class_room_id' => $secondClassRoom->id,
-                                'title' => $secondClassRoom->displayName(),
-                                'schedule' => $secondClassRoom->scheduleSummary(),
-                                'status' => $secondEnrollment->displayStatusLabel(),
-                                'url' => route('admin.classes.show', $secondClassRoom),
-                                'edit_url' => $secondClassRoom->course
-                                    ? route('admin.course.show', $secondClassRoom->course)
-                                    : route('admin.classes.show', $secondClassRoom),
-                            ],
-                            'day_label' => $conflict['day_label'] ?? 'Chưa rõ ngày',
-                            'existing_time_label' => $conflict['existing_time_label'] ?? '',
-                            'candidate_time_label' => $conflict['candidate_time_label'] ?? '',
-                            'note' => sprintf(
-                                'Trùng vào %s, %s - %s.',
-                                $conflict['day_label'] ?? 'chưa rõ ngày',
-                                $conflict['existing_time_label'] ?? '',
-                                $conflict['candidate_time_label'] ?? ''
-                            ),
-                        ]);
-                    }
-                }
-
-                if ($pairs->isEmpty()) {
-                    return null;
-                }
-
-                return [
-                    'student' => $student,
-                    'student_name' => $student?->name ?? 'Chưa rõ',
-                    'student_email' => $student?->email ?? '',
-                    'student_url' => $student ? route('admin.students.show', $student) : null,
-                    'class_count' => $classRoomIds->unique()->count(),
-                    'conflict_count' => $pairs->count(),
-                    'conflicts' => $pairs->values(),
-                ];
-            })
-            ->filter()
-            ->sortByDesc(fn (array $item) => $item['conflict_count'])
-            ->values();
+        return $this->aggregateStudentConflictRows($rows);
     }
 
     protected function candidateStudentConflicts(array $candidate): Collection
@@ -563,6 +496,9 @@ class AdminScheduleConflictService
                             'edit_url' => $conflictingCourse
                                 ? route('admin.course.show', $conflictingCourse)
                                 : null,
+                            'delete_url' => $conflictingClassRoom && $conflictingClassRoom->enrolledCount() === 0
+                                ? route('admin.classes.delete', $conflictingClassRoom)
+                                : null,
                         ];
                     })
                     ->filter()
@@ -573,6 +509,7 @@ class AdminScheduleConflictService
                 }
 
                 return [
+                    'student_id' => $student?->id,
                     'student_name' => $student?->name ?? 'Chưa rõ',
                     'student_email' => $student?->email ?? '',
                     'student_url' => $student ? route('admin.students.show', $student) : null,
@@ -586,50 +523,184 @@ class AdminScheduleConflictService
 
     public function studentConflictPairCount(): int
     {
-        $enrollments = Enrollment::query()
-            ->with([
-                'user',
-                'subject.category',
-                'course.subject.category',
-                'course.classRooms.schedules',
-                'classRoom.course.subject.category',
-                'classRoom.room',
-                'classRoom.teacher',
-                'classRoom.schedules',
-            ])
-            ->whereIn('status', Enrollment::courseAccessStatuses())
-            ->whereNotNull('lop_hoc_id')
-            ->get();
+        return $this->studentConflicts()->count();
+    }
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+    protected function buildStudentConflictRows(Collection $studentEnrollments): Collection
+    {
+        $student = $studentEnrollments->first()?->user;
+        $pairs = collect();
+        $classRoomIds = collect();
+        $items = $studentEnrollments->values();
 
-        $count = 0;
+        for ($i = 0; $i < $items->count(); $i++) {
+            $firstEnrollment = $items[$i];
+            $firstClassRoom = $firstEnrollment->conflictReferenceClassRoom();
 
-        foreach ($enrollments->groupBy('user_id') as $studentEnrollments) {
-            $items = $studentEnrollments->values();
+            if (! $firstClassRoom) {
+                continue;
+            }
 
-            for ($i = 0; $i < $items->count(); $i++) {
-                $firstClassRoom = $items[$i]->currentClassRoom();
+            $classRoomIds->push($firstClassRoom->id);
 
-                if (! $firstClassRoom) {
+            for ($j = $i + 1; $j < $items->count(); $j++) {
+                $secondEnrollment = $items[$j];
+                $secondClassRoom = $secondEnrollment->conflictReferenceClassRoom();
+
+                if (! $secondClassRoom || (int) $firstClassRoom->id === (int) $secondClassRoom->id) {
                     continue;
                 }
 
-                for ($j = $i + 1; $j < $items->count(); $j++) {
-                    $secondClassRoom = $items[$j]->currentClassRoom();
+                $conflict = $firstClassRoom->firstScheduleConflictWith($secondClassRoom);
 
-                    if (! $secondClassRoom || (int) $firstClassRoom->id === (int) $secondClassRoom->id) {
-                        continue;
-                    }
-
-                    if ($firstClassRoom->firstScheduleConflictWith($secondClassRoom)) {
-                        $count++;
-                    }
+                if (! $conflict) {
+                    continue;
                 }
+
+                $pairs->push([
+                    'pair_key' => $this->buildStudentConflictPairKey($firstClassRoom, $secondClassRoom, $conflict),
+                    'student_id' => $student?->id,
+                    'student_name' => $student?->name ?? 'Chưa rõ',
+                    'student_email' => $student?->email ?? '',
+                    'student_url' => $student ? route('admin.students.show', $student) : null,
+                    'first' => [
+                        'enrollment_id' => $firstEnrollment->id,
+                        'class_room_id' => $firstClassRoom->id,
+                        'title' => $firstClassRoom->displayName(),
+                        'schedule' => $firstClassRoom->scheduleSummary(),
+                        'status' => $firstEnrollment->displayStatusLabel(),
+                        'url' => route('admin.classes.show', $firstClassRoom),
+                        'edit_url' => $firstClassRoom->course
+                            ? route('admin.course.show', $firstClassRoom->course)
+                            : route('admin.classes.show', $firstClassRoom),
+                        'delete_url' => $firstClassRoom->enrolledCount() === 0
+                            ? route('admin.classes.delete', $firstClassRoom)
+                            : null,
+                    ],
+                    'second' => [
+                        'enrollment_id' => $secondEnrollment->id,
+                        'class_room_id' => $secondClassRoom->id,
+                        'title' => $secondClassRoom->displayName(),
+                        'schedule' => $secondClassRoom->scheduleSummary(),
+                        'status' => $secondEnrollment->displayStatusLabel(),
+                        'url' => route('admin.classes.show', $secondClassRoom),
+                        'edit_url' => $secondClassRoom->course
+                            ? route('admin.course.show', $secondClassRoom->course)
+                            : route('admin.classes.show', $secondClassRoom),
+                        'delete_url' => $secondClassRoom->enrolledCount() === 0
+                            ? route('admin.classes.delete', $secondClassRoom)
+                            : null,
+                    ],
+                    'day_label' => $conflict['day_label'] ?? 'Chưa rõ ngày',
+                    'existing_time_label' => $conflict['existing_time_label'] ?? '',
+                    'candidate_time_label' => $conflict['candidate_time_label'] ?? '',
+                    'note' => sprintf(
+                        'Trùng vào %s, %s - %s.',
+                        $conflict['day_label'] ?? 'chưa rõ ngày',
+                        $conflict['existing_time_label'] ?? '',
+                        $conflict['candidate_time_label'] ?? ''
+                    ),
+                ]);
             }
         }
 
-        return $count;
+        if ($pairs->isEmpty()) {
+            return collect();
+        }
+
+        return $pairs->values();
+    }
+
+    protected function aggregateStudentConflictRows(Collection $rows): Collection
+    {
+        if ($rows->isEmpty()) {
+            return collect();
+        }
+
+        return $rows
+            ->groupBy('pair_key')
+            ->map(function (Collection $group) {
+                $first = $group->first();
+                $students = $group
+                    ->map(fn (array $row) => [
+                        'student_id' => $row['student_id'] ?? null,
+                        'student_name' => $row['student_name'] ?? 'Chưa rõ',
+                        'student_email' => $row['student_email'] ?? '',
+                        'student_url' => $row['student_url'] ?? null,
+                    ])
+                    ->filter(fn (array $student) => $student['student_id'] !== null)
+                    ->unique('student_id')
+                    ->values();
+
+                if ($students->isEmpty()) {
+                    return null;
+                }
+
+                $studentNames = $students->pluck('student_name')->filter()->values();
+
+                return [
+                    'student_name' => $studentNames->first() ?? 'Chưa rõ',
+                    'student_summary' => $this->buildStudentSummary($studentNames),
+                    'student_email' => $students->first()['student_email'] ?? '',
+                    'student_url' => $students->first()['student_url'] ?? null,
+                    'student_count' => $students->count(),
+                    'class_count' => 2,
+                    'conflict_count' => $students->count(),
+                    'students' => $students->all(),
+                    'conflicts' => collect([[
+                        'first' => $first['first'],
+                        'second' => $first['second'],
+                        'day_label' => $first['day_label'],
+                        'existing_time_label' => $first['existing_time_label'],
+                        'candidate_time_label' => $first['candidate_time_label'],
+                        'note' => $first['note'],
+                    ]]),
+                ];
+            })
+            ->filter()
+            ->sortByDesc(fn (array $item) => $item['student_count'])
+            ->values();
+    }
+
+    protected function summarizeStudentConflicts(Collection $studentConflicts): array
+    {
+        $studentCount = $studentConflicts
+            ->flatMap(function (array $group) {
+                if (is_array($group['students'] ?? null)) {
+                    return collect($group['students'])->pluck('student_id');
+                }
+
+                return isset($group['student_id']) ? [$group['student_id']] : [];
+            })
+            ->filter()
+            ->unique()
+            ->count();
+
+        return [
+            $studentCount,
+            $studentConflicts->count(),
+        ];
+    }
+
+    protected function buildStudentConflictPairKey(ClassRoom $firstClassRoom, ClassRoom $secondClassRoom, array $conflict): string
+    {
+        $ids = [(int) $firstClassRoom->id, (int) $secondClassRoom->id];
+        sort($ids);
+
+        return implode(':', $ids) . '|' . ($conflict['day_label'] ?? '') . '|' . ($conflict['existing_time_label'] ?? '') . '|' . ($conflict['candidate_time_label'] ?? '');
+    }
+
+    protected function buildStudentSummary(Collection $studentNames): string
+    {
+        if ($studentNames->isEmpty()) {
+            return 'Chưa rõ';
+        }
+
+        if ($studentNames->count() <= 3) {
+            return $studentNames->implode(' • ');
+        }
+
+        return $studentNames->take(3)->implode(' • ') . ' + ' . ($studentNames->count() - 3) . ' học viên khác';
     }
 
     protected function normalizeDays(mixed $days): array

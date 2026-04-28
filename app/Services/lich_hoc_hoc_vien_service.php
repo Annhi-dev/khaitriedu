@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AttendanceRecord;
+use App\Models\ClassRoom;
 use App\Models\ClassSchedule;
 use App\Models\Enrollment;
 use App\Models\User;
@@ -100,8 +101,16 @@ class StudentScheduleService
         return $enrollments
             ->flatMap(function (Enrollment $enrollment) {
                 if ($enrollment->classRoom && $enrollment->classRoom->schedules->isNotEmpty()) {
-                    return $enrollment->classRoom->schedules->map(function (ClassSchedule $schedule) use ($enrollment) {
-                        $classRoom = $enrollment->classRoom;
+                    $classRoom = $enrollment->classRoom;
+                    $classStatus = (string) ($classRoom->status ?? '');
+                    $classFinished = in_array($classStatus, [ClassRoom::STATUS_COMPLETED, ClassRoom::STATUS_CLOSED], true)
+                        || $this->isClassRoomFinished($classRoom);
+
+                    if ($classFinished) {
+                        return collect();
+                    }
+
+                    return $classRoom->schedules->map(function (ClassSchedule $schedule) use ($enrollment, $classRoom, $classStatus, $classFinished) {
                         $roomName = $schedule->room?->name ?? $classRoom->room?->name ?? 'Chua phan phong';
                         $teacherName = $classRoom->teacher?->displayName() ?? $enrollment->assignedTeacher?->displayName() ?? 'Chua phan cong';
                         $status = $enrollment->displayStatus();
@@ -111,6 +120,9 @@ class StudentScheduleService
                             'day_of_week' => $schedule->day_of_week,
                             'start_time' => substr((string) $schedule->start_time, 0, 5),
                             'end_time' => substr((string) $schedule->end_time, 0, 5),
+                            'status' => $enrollment->displayStatus(),
+                            'class_status' => $classStatus,
+                            'class_finished' => $classFinished,
                             'title' => $classRoom->displayName(),
                             'subtitle' => $enrollment->course?->subject?->name ?? 'Lop da xep',
                             'meta' => implode(' • ', array_filter([$teacherName, $roomName])),
@@ -137,6 +149,7 @@ class StudentScheduleService
                             'day_of_week' => $dayOfWeek,
                             'start_time' => substr((string) $enrollment->course->start_time, 0, 5),
                             'end_time' => substr((string) $enrollment->course->end_time, 0, 5),
+                            'status' => $enrollment->displayStatus(),
                             'title' => $enrollment->course->title ?? $enrollment->subject?->name ?? 'Lop cho mo',
                             'subtitle' => $enrollment->course->subject?->name ?? 'Yeu cau lich hoc',
                             'meta' => implode(' • ', array_filter([$teacherName, $roomName])),
@@ -152,6 +165,13 @@ class StudentScheduleService
                 return collect();
             })
             ->values();
+    }
+
+    protected function isClassRoomFinished(ClassRoom $classRoom): bool
+    {
+        $endDate = $classRoom->scheduleRangeEnd();
+
+        return $endDate !== null && now()->startOfDay()->gt($endDate->copy()->startOfDay());
     }
 
     public function weeklyTimetable(User $student, ?CarbonInterface $reference = null): array

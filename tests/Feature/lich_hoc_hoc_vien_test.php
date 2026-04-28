@@ -136,6 +136,50 @@ class lich_hoc_hoc_vien_test extends TestCase
         $response->assertSee($classRoomB->displayName());
     }
 
+    public function test_student_schedule_ignores_completed_classes_when_marking_weekly_conflicts(): void
+    {
+        $student = User::factory()->student()->create(['name' => 'Hoc vien da hoan thanh']);
+        $teacherA = User::factory()->teacher()->create(['name' => 'Giang vien A']);
+        $teacherB = User::factory()->teacher()->create(['name' => 'Giang vien B']);
+
+        ['subject' => $subjectA, 'course' => $courseA, 'classRoom' => $classRoomA] = $this->createClassBundle($teacherA, 'Wednesday', '18:00', '20:15');
+        ['subject' => $subjectB, 'course' => $courseB, 'classRoom' => $classRoomB] = $this->createClassBundle($teacherB, 'Wednesday', '18:30', '20:45');
+
+        $classRoomA->update(['status' => ClassRoom::STATUS_COMPLETED]);
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectA->id,
+            'course_id' => $courseA->id,
+            'lop_hoc_id' => $classRoomA->id,
+            'assigned_teacher_id' => $teacherA->id,
+            'status' => Enrollment::STATUS_COMPLETED,
+            'schedule' => $courseA->formattedSchedule(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        Enrollment::create([
+            'user_id' => $student->id,
+            'subject_id' => $subjectB->id,
+            'course_id' => $courseB->id,
+            'lop_hoc_id' => $classRoomB->id,
+            'assigned_teacher_id' => $teacherB->id,
+            'status' => Enrollment::STATUS_ACTIVE,
+            'schedule' => $courseB->formattedSchedule(),
+            'is_submitted' => true,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this
+            ->withSession(['user_id' => $student->id])
+            ->get(route('student.schedule'));
+
+        $response->assertOk();
+        $response->assertDontSee('Phát hiện 1 buổi học bị trùng lịch trong dữ liệu hiện tại.');
+        $response->assertDontSee('Trùng lịch');
+    }
+
     private function createClassBundle(
         User $teacher,
         string $dayOfWeek = 'Thursday',

@@ -45,4 +45,21 @@ unset($__defined_vars, $__key, $__value); ?>
         <i class="fas fa-triangle-exclamation mt-0.5"></i>
         <span><?php echo e($session->get('warning')); ?></span>
     </div>
-<?php endif; ?><?php /**PATH D:\XXamp\htdocs\khaitriedu-main\resources\views/components/admin/alert.blade.php ENDPATH**/ ?>
+<?php endif; ?>
+<?php if($errors->any()): ?>
+    <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 animate-fade-in-down shadow-sm">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-circle-exclamation mt-0.5"></i>
+            <div class="min-w-0">
+                <p class="font-semibold">Dữ liệu chưa hợp lệ</p>
+                <p class="mt-1 text-sm text-rose-600">Một hoặc nhiều trường chưa đúng định dạng. Các lỗi chi tiết nằm bên dưới.</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li><?php echo e($error); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </ul>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+<?php /**PATH D:\XXamp\htdocs\khaitriedu-main\resources\views/components/quan_tri/thong_bao.blade.php ENDPATH**/ ?>

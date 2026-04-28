@@ -16,10 +16,10 @@ class StoreStudentScheduleRequest extends FormRequest
     public static function sanitize(array $input): array
     {
         return [
-            'start_time' => filled($input['start_time'] ?? null) ? trim((string) $input['start_time']) : null,
-            'end_time' => filled($input['start_time'] ?? null)
-                ? ScheduleHelper::normalizeEndTime(trim((string) $input['start_time']))
-                : (filled($input['end_time'] ?? null) ? trim((string) $input['end_time']) : null),
+            'start_time' => filled($input['start_time'] ?? null) ? ScheduleHelper::normalizeTimeValue((string) $input['start_time']) : null,
+            'end_time' => filled($input['end_time'] ?? null)
+                ? ScheduleHelper::normalizeTimeValue((string) $input['end_time'])
+                : (filled($input['start_time'] ?? null) ? ScheduleHelper::normalizeEndTime((string) $input['start_time']) : null),
             'preferred_days' => $input['preferred_days'] ?? [],
             'preferred_schedule' => filled($input['preferred_schedule'] ?? null) ? trim((string) $input['preferred_schedule']) : null,
         ];

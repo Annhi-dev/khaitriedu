@@ -4,6 +4,7 @@
 @php
     $dayLabels = \App\Models\Course::dayOptions();
     $preferredDays = $enrollment->preferred_days;
+    $normalizeTime = fn (?string $time) => \App\Helpers\ScheduleHelper::normalizeTimeValue($time);
     $selectedDays = is_array($preferredDays)
         ? $preferredDays
         : ((is_string($preferredDays) && $preferredDays !== '') ? (json_decode($preferredDays, true) ?: []) : []);
@@ -132,6 +133,9 @@
                             <option value="{{ $teacher->id }}" @selected(old('teacher_id', $enrollment->assigned_teacher_id) == $teacher->id)>{{ $teacher->displayName() }}</option>
                         @endforeach
                     </select>
+                    @if ($teachers->isEmpty())
+                        <p class="mt-1 text-sm text-amber-600">Chưa có giảng viên phù hợp với chuyên môn của môn học này.</p>
+                    @endif
                     @error('teacher_id')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 
@@ -179,13 +183,13 @@
 
                     <div>
                         <label class="text-sm font-medium text-slate-700">Giờ bắt đầu</label>
-                        <input id="start-time-input" type="time" name="start_time" value="{{ old('start_time', $enrollment->start_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                        <input id="start-time-input" type="time" name="start_time" value="{{ old('start_time') !== null ? $normalizeTime(old('start_time')) : $normalizeTime($enrollment->start_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         @error('start_time')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="text-sm font-medium text-slate-700">Giờ kết thúc</label>
-                        <input id="end-time-input" type="time" name="end_time" value="{{ old('end_time', $enrollment->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
+                        <input id="end-time-input" type="time" name="end_time" value="{{ old('end_time') !== null ? $normalizeTime(old('end_time')) : $normalizeTime($enrollment->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         @error('end_time')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 

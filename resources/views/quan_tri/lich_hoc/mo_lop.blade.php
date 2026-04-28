@@ -59,12 +59,17 @@
                     <label class="text-sm font-medium text-slate-700">Phòng học chính thức</label>
                     <select name="room_id" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none">
                         <option value="">Chọn phòng học</option>
-                        @foreach ($rooms as $room)
+                        @forelse ($rooms as $room)
                             <option value="{{ $room->id }}" @selected((string) old('room_id') === (string) $room->id)>
-                                {{ $room->name }}{{ $room->code ? ' (' . $room->code . ')' : '' }} - suc chua {{ $room->capacity }}
+                                {{ $room->name }}{{ $room->code ? ' (' . $room->code . ')' : '' }} - sức chứa {{ $room->capacity }}
                             </option>
-                        @endforeach
+                        @empty
+                            <option value="" disabled>Không có phòng trống phù hợp lịch này</option>
+                        @endforelse
                     </select>
+                    @if (($availableRoomsCount ?? 0) === 0)
+                        <p class="mt-2 text-sm text-amber-700">Không có phòng nào trống cho lịch học hiện tại. Hãy đổi ngày hoặc giờ học.</p>
+                    @endif
                     @error('room_id')<p class="mt-1 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>
 

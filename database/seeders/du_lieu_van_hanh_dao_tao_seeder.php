@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\AttendanceRecord;
 use App\Models\Certificate;
 use App\Models\ClassRoom;
+use App\Models\ClassSchedule;
 use App\Models\Course;
 use App\Models\CourseTimeSlot;
 use App\Models\CustomScheduleRequest;
@@ -105,6 +106,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 'Khóa nội bộ - THẠC SĨ QUẢN TRỊ KINH DOANH',
             ]);
 
+            $this->normalizeCurrentClassRoomSchedules($courses);
             $timeSlots = $this->seedCourseTimeSlots($courses, $teachers);
             $enrollments = $this->seedFixedEnrollments($courses, $students, $admin);
             $this->seedPendingEnrollments($courses, $students);
@@ -120,6 +122,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             $this->seedLessonProgress($courses, $students);
             $this->seedNotifications($courses, $students, $teachers);
             $this->seedReviews($courses, $students);
+            $this->seedClassRoomStatusSamples($courses);
         });
     }
 
@@ -128,10 +131,10 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         $fixtures = [
             ['key' => 'english_evening', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'teacher' => 'anhdung@khaitriedu.vn', 'room' => 'PH101', 'day_of_week' => 'Monday', 'slot_date' => Carbon::now()->addDays(9), 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Đợt học tối dành cho học viên đi làm.'],
             ['key' => 'it_office_evening', 'course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'teacher' => 'baochau@khaitriedu.vn', 'room' => 'MT301', 'day_of_week' => 'Tuesday', 'slot_date' => Carbon::now()->addDays(10), 'start_time' => '18:00:00', 'end_time' => '20:00:00', 'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Khung giờ phù hợp cho lớp thực hành máy tính.'],
-            ['key' => 'accounting_ready', 'course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'teacher' => 'minhtu@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Wednesday', 'slot_date' => Carbon::now()->addDays(11), 'start_time' => '18:30:00', 'end_time' => '20:30:00', 'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Đã đủ nguyện vọng chờ phê duyệt mở lớp.'],
-            ['key' => 'web_ready', 'course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'teacher' => 'thuylinh@khaitriedu.vn', 'room' => 'MT302', 'day_of_week' => 'Thursday', 'slot_date' => Carbon::now()->addDays(12), 'start_time' => '18:30:00', 'end_time' => '20:45:00', 'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Khung giờ thực hành thiết kế và bố cục web.'],
+            ['key' => 'accounting_ready', 'course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'teacher' => 'minhtu@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Wednesday', 'slot_date' => Carbon::now()->addDays(11), 'start_time' => '19:00:00', 'end_time' => '21:00:00', 'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Đã đủ nguyện vọng chờ phê duyệt mở lớp.'],
+            ['key' => 'web_ready', 'course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'teacher' => 'thuylinh@khaitriedu.vn', 'room' => 'MT302', 'day_of_week' => 'Thursday', 'slot_date' => Carbon::now()->addDays(12), 'start_time' => '19:00:00', 'end_time' => '21:15:00', 'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Khung giờ thực hành thiết kế và bố cục web.'],
             ['key' => 'electric_class_opened', 'course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'teacher' => 'hoangnam@khaitriedu.vn', 'room' => 'TH201', 'day_of_week' => 'Saturday', 'slot_date' => Carbon::now()->addDays(13), 'start_time' => '13:30:00', 'end_time' => '16:30:00', 'status' => CourseTimeSlot::STATUS_CLASS_OPENED, 'note' => 'Đợt thực hành cuối tuần đã chuyển sang lớp cố định.'],
-            ['key' => 'marketing_pending', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'room' => 'DA501', 'day_of_week' => 'Friday', 'slot_date' => Carbon::now()->addDays(14), 'start_time' => '18:30:00', 'end_time' => '20:30:00', 'status' => CourseTimeSlot::STATUS_PENDING_OPEN, 'note' => 'Chờ đủ học viên để kích hoạt mở đăng ký.'],
+            ['key' => 'marketing_pending', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'room' => 'DA501', 'day_of_week' => 'Friday', 'slot_date' => Carbon::now()->addDays(14), 'start_time' => '19:00:00', 'end_time' => '21:00:00', 'status' => CourseTimeSlot::STATUS_PENDING_OPEN, 'note' => 'Chờ đủ học viên để kích hoạt mở đăng ký.'],
             ['key' => 'teacher_boost_open', 'course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'teacher' => 'thanhtung@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Sunday', 'slot_date' => Carbon::now()->addDays(15), 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Khung giờ bồi dưỡng cuối tuần cho giáo viên đang công tác.'],
         ];
 
@@ -145,6 +148,10 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             if (! $course || ! $teacher || ! $room) {
                 continue;
             }
+
+            CourseTimeSlot::query()
+                ->where('subject_id', $course->subject_id)
+                ->delete();
 
             $timeSlot = CourseTimeSlot::updateOrCreate(
                 [
@@ -253,8 +260,8 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
     protected function seedPendingEnrollments(Collection $courses, Collection $students): void
     {
         $fixtures = [
-            ['course' => 'KhaiTriEdu 2026 - Ứng dụng công nghệ thông tin', 'student' => 'do.tuan.kiet@khaitriedu.vn', 'preferred_days' => ['Tuesday', 'Thursday'], 'preferred_schedule' => '18:30 - 20:30', 'note' => 'Ưu tiên lớp tối để học viên đi làm theo kịp tiến độ.'],
-            ['course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'student' => 'vuong.gia.bao@khaitriedu.vn', 'preferred_days' => ['Monday', 'Wednesday', 'Friday'], 'preferred_schedule' => '18:30 - 20:30', 'note' => 'Chờ ghép lớp buổi tối theo lịch làm việc.'],
+            ['course' => 'KhaiTriEdu 2026 - Ứng dụng công nghệ thông tin', 'student' => 'do.tuan.kiet@khaitriedu.vn', 'preferred_days' => ['Tuesday', 'Thursday'], 'preferred_schedule' => '19:00 - 21:00', 'note' => 'Ưu tiên lớp tối để học viên đi làm theo kịp tiến độ.'],
+            ['course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'student' => 'vuong.gia.bao@khaitriedu.vn', 'preferred_days' => ['Monday', 'Wednesday', 'Friday'], 'preferred_schedule' => '19:00 - 21:00', 'note' => 'Chờ ghép lớp buổi tối theo lịch làm việc.'],
             ['course' => 'KhaiTriEdu 2026 - Kỹ năng bán hàng chuyên nghiệp', 'student' => 'le.dieu.linh@khaitriedu.vn', 'preferred_days' => ['Saturday', 'Sunday'], 'preferred_schedule' => '08:00 - 10:15', 'note' => 'Muốn học cuối tuần để không ảnh hưởng ca làm.'],
         ];
 
@@ -334,6 +341,10 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 ]
             );
 
+            SlotRegistrationChoice::query()
+                ->where('slot_registration_id', $registration->id)
+                ->delete();
+
             foreach ($fixture['choices'] as $priority => $timeSlotKey) {
                 $timeSlot = $timeSlots->get($timeSlotKey);
 
@@ -357,8 +368,8 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
     protected function seedCustomScheduleRequests(Collection $courses, Collection $students, Collection $teachers, User $admin): void
     {
         $fixtures = [
-            ['student' => 'do.tuan.kiet@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'days' => ['Monday', 'Wednesday', 'Friday'], 'time' => '18:30 - 20:30', 'status' => 'pending', 'notes' => 'Muốn học sau 18:30 vì đang làm hành chính.', 'reviewed' => false],
-            ['student' => 'vuong.gia.bao@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh thiếu nhi', 'teacher' => 'hongloan@khaitriedu.vn', 'days' => ['Tuesday', 'Thursday'], 'time' => '19:00 - 20:30', 'status' => 'approved', 'notes' => 'Phù hợp nhóm học sinh tiểu học học buổi tối.', 'reviewed' => true],
+            ['student' => 'do.tuan.kiet@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'days' => ['Monday', 'Wednesday', 'Friday'], 'time' => '20:30 - 22:30', 'status' => 'pending', 'notes' => 'Muốn học sau 20:30 để tránh trùng với lớp buổi tối hiện tại.', 'reviewed' => false],
+            ['student' => 'vuong.gia.bao@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh thiếu nhi', 'teacher' => 'hongloan@khaitriedu.vn', 'days' => ['Saturday', 'Sunday'], 'time' => '08:00 - 10:15', 'status' => 'approved', 'notes' => 'Phù hợp nhóm học sinh tiểu học học cuối tuần.', 'reviewed' => true],
             ['student' => 'le.dieu.linh@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Kỹ năng bán hàng chuyên nghiệp', 'teacher' => 'thaison@khaitriedu.vn', 'days' => ['Saturday', 'Sunday'], 'time' => '08:00 - 10:15', 'status' => 'rejected', 'notes' => 'Tạm hoãn vì chưa ghép được nhóm học cuối tuần.', 'reviewed' => true],
         ];
 
@@ -371,16 +382,21 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
+            CustomScheduleRequest::query()
+                ->where('student_id', $student->id)
+                ->where('subject_id', $course->subject_id)
+                ->delete();
+
             CustomScheduleRequest::updateOrCreate(
                 [
                     'student_id' => $student->id,
                     'subject_id' => $course->subject_id,
-                    'requested_time' => $fixture['time'],
+                    'course_id' => $course->id,
                 ],
                 [
-                    'course_id' => $course->id,
                     'preferred_teacher_id' => $teacher->id,
                     'requested_days' => $fixture['days'],
+                    'requested_time' => $fixture['time'],
                     'status' => $fixture['status'],
                     'notes' => $fixture['notes'],
                     'reviewed_by' => $fixture['reviewed'] ? $admin->id : null,
@@ -393,10 +409,10 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
     protected function seedScheduleChangeRequests(Collection $courses, User $admin): void
     {
         $fixtures = [
-            ['course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'room' => 'PH102', 'day_of_week' => 'Tuesday', 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => ScheduleChangeRequest::STATUS_PENDING, 'reason' => 'Cần đổi sang phòng có màn hình lớn hơn để tiện luyện nghe.'],
-            ['course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'room' => 'MT302', 'day_of_week' => 'Thursday', 'start_time' => '18:30:00', 'end_time' => '20:30:00', 'status' => ScheduleChangeRequest::STATUS_APPROVED, 'reason' => 'Đổi ca sang phòng máy dự phòng để tăng trải nghiệm thực hành.', 'admin_note' => 'Đã duyệt theo đề xuất của giảng viên.'],
-            ['course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'room' => 'MT301', 'day_of_week' => 'Saturday', 'start_time' => '13:30:00', 'end_time' => '16:00:00', 'status' => ScheduleChangeRequest::STATUS_REJECTED, 'reason' => 'Đề xuất chuyển sang ca cuối tuần nhưng phòng máy đã kín lịch.', 'admin_note' => 'Giữ nguyên lịch cũ để không ảnh hưởng lớp khác.'],
-            ['course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'room' => 'HT401', 'day_of_week' => 'Sunday', 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => ScheduleChangeRequest::STATUS_PENDING, 'reason' => 'Muốn tách buổi thảo luận sang phòng hội thảo yên tĩnh hơn.'],
+            ['course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'room' => 'PH102', 'day_of_week' => 'Monday', 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => ScheduleChangeRequest::STATUS_PENDING, 'reason' => 'Cần đổi sang phòng có màn hình lớn hơn để tiện luyện nghe.'],
+            ['course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'room' => 'MT302', 'day_of_week' => 'Tuesday', 'start_time' => '18:00:00', 'end_time' => '20:00:00', 'status' => ScheduleChangeRequest::STATUS_APPROVED, 'reason' => 'Đổi sang phòng máy dự phòng để tăng trải nghiệm thực hành.', 'admin_note' => 'Đã duyệt theo đề xuất của giảng viên.'],
+            ['course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'room' => 'MT301', 'day_of_week' => 'Sunday', 'start_time' => '19:00:00', 'end_time' => '21:15:00', 'status' => ScheduleChangeRequest::STATUS_REJECTED, 'reason' => 'Đề xuất chuyển sang phòng máy khác nhưng lịch phòng đã kín.', 'admin_note' => 'Giữ nguyên lịch cũ để không ảnh hưởng lớp khác.'],
+            ['course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'room' => 'PH102', 'day_of_week' => 'Sunday', 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => ScheduleChangeRequest::STATUS_PENDING, 'reason' => 'Muốn tách buổi thảo luận sang phòng hội thảo yên tĩnh hơn.'],
         ];
 
         foreach ($fixtures as $index => $fixture) {
@@ -907,12 +923,12 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
     protected function seedNotifications(Collection $courses, Collection $students, Collection $teachers): void
     {
         $fixtures = [
-            ['user' => 'anhdung@khaitriedu.vn', 'title' => 'Lớp Tiếng Anh giao tiếp đã đủ 12 học viên', 'message' => 'Lớp hiện đã đạt sĩ số tối đa tại phòng PH101. Hệ thống sẵn sàng chuyển sang trạng thái mở lớp.', 'type' => 'success', 'link' => route('teacher.classes.show', $courses->get('KhaiTriEdu 2026 - Tiếng Anh giao tiếp')?->currentClassRoom())],
+            ['user' => 'anhdung@khaitriedu.vn', 'title' => 'Lớp Tiếng Anh giao tiếp đã đủ 12 học viên', 'message' => 'Lớp hiện đã đạt sĩ số tối đa tại phòng lý thuyết A1. Hệ thống sẵn sàng chuyển sang trạng thái mở lớp.', 'type' => 'success', 'link' => route('teacher.classes.show', $courses->get('KhaiTriEdu 2026 - Tiếng Anh giao tiếp')?->currentClassRoom())],
             ['user' => 'baochau@khaitriedu.vn', 'title' => 'Tin học văn phòng có lịch mới cần kiểm tra', 'message' => 'Một số học viên vừa chọn lại khung giờ phù hợp hơn cho lớp Tin học văn phòng.', 'type' => 'info', 'link' => route('teacher.schedule-change-requests.index')],
             ['user' => 'thuylinh@khaitriedu.vn', 'title' => 'Thiết kế Web có yêu cầu đổi phòng', 'message' => 'Phòng máy của lớp Thiết kế Web đã có đề xuất đổi ca để tăng thời gian thực hành.', 'type' => 'warning', 'link' => route('teacher.schedule-change-requests.index')],
             ['user' => 'minhtu@khaitriedu.vn', 'title' => 'Bảng điểm Kế toán thực hành đã cập nhật', 'message' => 'Điểm giữa khóa của nhóm Kế toán thực hành đã được nhập đầy đủ.', 'type' => 'success', 'link' => route('teacher.classes.show', $courses->get('KhaiTriEdu 2026 - Kế toán thực hành')?->currentClassRoom())],
             ['user' => 'nguyen.thi.an@khaitriedu.vn', 'title' => 'Bạn đã được xếp vào lớp Tiếng Anh giao tiếp', 'message' => 'Lớp học của bạn đã có lịch cố định, có thể xem ngay trong trang khóa học.', 'type' => 'success', 'link' => route('courses.show', $courses->get('KhaiTriEdu 2026 - Tiếng Anh giao tiếp'))],
-            ['user' => 'ta.phuong.nhi@khaitriedu.vn', 'title' => 'Tin học văn phòng đã có lịch học mới', 'message' => 'Khung giờ học của lớp Tin học văn phòng đã được chốt trên phòng MT301.', 'type' => 'info', 'link' => route('courses.show', $courses->get('KhaiTriEdu 2026 - Tin học văn phòng'))],
+            ['user' => 'ta.phuong.nhi@khaitriedu.vn', 'title' => 'Tin học văn phòng đã có lịch học mới', 'message' => 'Khung giờ học của lớp Tin học văn phòng đã được chốt trên phòng máy tính 1.', 'type' => 'info', 'link' => route('courses.show', $courses->get('KhaiTriEdu 2026 - Tin học văn phòng'))],
             ['user' => 'nguyen.hoang.long@khaitriedu.vn', 'title' => 'Chứng chỉ Báo cáo thuế sẵn sàng cấp', 'message' => 'Bạn đã hoàn tất khóa Báo cáo thuế và đủ điều kiện nhận chứng chỉ.', 'type' => 'success', 'link' => route('courses.show', $courses->get('KhaiTriEdu 2026 - Báo cáo thuế'))],
             ['user' => 'le.dieu.linh@khaitriedu.vn', 'title' => 'Đang chờ ghép lớp cuối tuần', 'message' => 'Hệ thống đã ghi nhận mong muốn học cuối tuần của bạn, vui lòng chờ admin sắp xếp.', 'type' => 'warning', 'link' => route('student.schedule')],
         ];
@@ -992,6 +1008,90 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             if ($classRoom->room && $enrolledCount >= $classRoom->room->capacity) {
                 $classRoom->update(['status' => ClassRoom::STATUS_FULL]);
             }
+        }
+    }
+
+    protected function seedClassRoomStatusSamples(Collection $courses): void
+    {
+        $fixtures = [
+            [
+                'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp',
+                'status' => ClassRoom::STATUS_FULL,
+            ],
+            [
+                'course' => 'KhaiTriEdu 2026 - Tin học văn phòng',
+                'status' => ClassRoom::STATUS_CLOSED,
+            ],
+        ];
+
+        foreach ($fixtures as $fixture) {
+            $course = $courses->get($fixture['course']);
+            $classRoom = $course?->classRooms()->latest('id')->first();
+
+            if (! $classRoom) {
+                continue;
+            }
+
+            $classRoom->update([
+                'status' => $fixture['status'],
+            ]);
+        }
+    }
+
+    protected function normalizeCurrentClassRoomSchedules(Collection $courses): void
+    {
+        $fixtures = [
+            'KhaiTriEdu 2026 - Tiếng Anh giao tiếp' => [
+                ['day_of_week' => 'Monday', 'start_time' => '18:00:00', 'end_time' => '20:15:00'],
+                ['day_of_week' => 'Wednesday', 'start_time' => '18:00:00', 'end_time' => '20:15:00'],
+                ['day_of_week' => 'Friday', 'start_time' => '18:00:00', 'end_time' => '20:15:00'],
+            ],
+            'KhaiTriEdu 2026 - Tin học văn phòng' => [
+                ['day_of_week' => 'Tuesday', 'start_time' => '18:00:00', 'end_time' => '20:00:00'],
+                ['day_of_week' => 'Thursday', 'start_time' => '18:00:00', 'end_time' => '20:00:00'],
+                ['day_of_week' => 'Saturday', 'start_time' => '18:00:00', 'end_time' => '20:00:00'],
+            ],
+            'KhaiTriEdu 2026 - Lập trình Python cơ bản' => [
+                ['day_of_week' => 'Tuesday', 'start_time' => '19:00:00', 'end_time' => '21:15:00'],
+                ['day_of_week' => 'Thursday', 'start_time' => '19:00:00', 'end_time' => '21:15:00'],
+            ],
+            'KhaiTriEdu 2026 - Thiết kế Web' => [
+                ['day_of_week' => 'Sunday', 'start_time' => '19:00:00', 'end_time' => '21:15:00'],
+            ],
+            'KhaiTriEdu 2026 - Điện dân dụng' => [
+                ['day_of_week' => 'Sunday', 'start_time' => '13:30:00', 'end_time' => '16:30:00'],
+            ],
+            'KhaiTriEdu 2026 - Kỹ thuật chăm sóc da' => [
+                ['day_of_week' => 'Sunday', 'start_time' => '08:00:00', 'end_time' => '10:15:00'],
+            ],
+            'KhaiTriEdu 2026 - Liên thông Đại học - Văn bằng 2 Quản trị kinh doanh' => [
+                ['day_of_week' => 'Monday', 'start_time' => '19:00:00', 'end_time' => '21:15:00'],
+                ['day_of_week' => 'Wednesday', 'start_time' => '19:00:00', 'end_time' => '21:15:00'],
+            ],
+        ];
+
+        foreach ($fixtures as $courseTitle => $schedules) {
+            $course = $courses->get($courseTitle);
+            $classRoom = $course?->currentClassRoom();
+
+            if (! $course || ! $classRoom) {
+                continue;
+            }
+
+            $classRoom->schedules()->delete();
+
+            foreach ($schedules as $schedule) {
+                ClassSchedule::create([
+                    'lop_hoc_id' => $classRoom->id,
+                    'teacher_id' => $classRoom->teacher_id,
+                    'room_id' => $classRoom->room_id,
+                    'day_of_week' => $schedule['day_of_week'],
+                    'start_time' => $schedule['start_time'],
+                    'end_time' => $schedule['end_time'],
+                ]);
+            }
+
+            $courses->put($courseTitle, $course->fresh(['classRooms.room', 'classRooms.teacher', 'classRooms.schedules']));
         }
     }
 

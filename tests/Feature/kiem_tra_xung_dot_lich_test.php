@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\AdminScheduleConflictService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -128,6 +129,55 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         $response->assertSee('Trùng vào');
         $response->assertSee(route('admin.course.show', $classRoomA->course), false);
         $response->assertSee(route('admin.course.show', $classRoomB->course), false);
+    }
+
+    public function test_admin_student_conflicts_are_grouped_by_class_pair(): void
+    {
+        $teacherA = User::factory()->teacher()->create(['name' => 'Giang vien A']);
+        $teacherB = User::factory()->teacher()->create(['name' => 'Giang vien B']);
+        $roomA = $this->createRoom('PH200');
+        $roomB = $this->createRoom('PH201');
+        [, $subjectA] = $this->createSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep', 'Ngoai ngu');
+        [, $subjectB] = $this->createSubject('Lap trinh Python co ban', 'lap-trinh-python', 'Tin hoc');
+
+        $classRoomA = $this->createClassRoom($subjectA, $teacherA, $roomA, 'Lop trung lich A');
+        $classRoomB = $this->createClassRoom($subjectB, $teacherB, $roomB, 'Lop trung lich B');
+
+        $studentOne = User::factory()->student()->create(['name' => 'Hoc vien 1']);
+        $studentTwo = User::factory()->student()->create(['name' => 'Hoc vien 2']);
+
+        foreach ([$studentOne, $studentTwo] as $student) {
+            Enrollment::create([
+                'user_id' => $student->id,
+                'subject_id' => $subjectA->id,
+                'course_id' => $classRoomA->course_id,
+                'lop_hoc_id' => $classRoomA->id,
+                'assigned_teacher_id' => $teacherA->id,
+                'status' => Enrollment::STATUS_ACTIVE,
+                'schedule' => $classRoomA->scheduleSummary(),
+                'is_submitted' => true,
+                'submitted_at' => now(),
+            ]);
+
+            Enrollment::create([
+                'user_id' => $student->id,
+                'subject_id' => $subjectB->id,
+                'course_id' => $classRoomB->course_id,
+                'lop_hoc_id' => $classRoomB->id,
+                'assigned_teacher_id' => $teacherB->id,
+                'status' => Enrollment::STATUS_ACTIVE,
+                'schedule' => $classRoomB->scheduleSummary(),
+                'is_submitted' => true,
+                'submitted_at' => now(),
+            ]);
+        }
+
+        $conflicts = app(AdminScheduleConflictService::class)->studentConflicts();
+
+        $this->assertCount(1, $conflicts);
+        $this->assertSame(2, $conflicts->first()['student_count']);
+        $this->assertSame(2, collect($conflicts->first()['students'] ?? [])->pluck('student_name')->unique()->count());
+        $this->assertSame(1, app(AdminScheduleConflictService::class)->studentConflictPairCount());
     }
 
     private function createSubject(

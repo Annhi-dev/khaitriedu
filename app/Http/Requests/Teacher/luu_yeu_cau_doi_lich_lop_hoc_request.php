@@ -57,8 +57,8 @@ class StoreTeacherClassScheduleChangeRequest extends FormRequest
 
         $this->merge([
             'requested_date' => $requestedDate !== '' ? $requestedDate : null,
-            'requested_start_time' => $requestedStartTime !== '' ? $requestedStartTime : null,
-            'requested_end_time' => $requestedEndTime !== '' ? $requestedEndTime : null,
+            'requested_start_time' => $requestedStartTime !== '' ? ScheduleHelper::normalizeTimeValue($requestedStartTime) : null,
+            'requested_end_time' => $requestedEndTime !== '' ? ScheduleHelper::normalizeTimeValue($requestedEndTime) : null,
             'requested_start_at' => $requestedStartAt !== '' ? $requestedStartAt : null,
             'requested_end_at' => $requestedEndAt !== '' ? $requestedEndAt : null,
             'requested_room_id' => $this->filled('requested_room_id') ? (int) $this->input('requested_room_id') : null,

@@ -100,8 +100,14 @@ class AdminStudentService
             ->latest('id')
             ->get();
 
+        Enrollment::syncDisplayStatusesByClass($enrollments);
+
         $currentSchedules = $enrollments
-            ->filter(fn (Enrollment $enrollment) => in_array($enrollment->status, Enrollment::courseAccessStatuses(), true) && $enrollment->course_id)
+            ->filter(fn (Enrollment $enrollment) => in_array($enrollment->displayStatus(), [
+                Enrollment::STATUS_ENROLLED,
+                Enrollment::STATUS_SCHEDULED,
+                Enrollment::STATUS_ACTIVE,
+            ], true) && $enrollment->course_id)
             ->values();
 
         $grades = collect();

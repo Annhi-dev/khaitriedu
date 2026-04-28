@@ -98,7 +98,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700">Giờ kết thúc</label>
-                            <input type="time" name="end_time" value="{{ old('end_time', $existingEnrollment?->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" readonly>
+                            <input type="time" name="end_time" value="{{ old('end_time', $existingEnrollment?->end_time) }}" class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
                             @error('end_time')
                                 <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                             @enderror

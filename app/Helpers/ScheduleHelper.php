@@ -6,6 +6,32 @@ use Carbon\Carbon;
 
 class ScheduleHelper
 {
+    public static function normalizeTimeValue(?string $time): ?string
+    {
+        if ($time === null) {
+            return null;
+        }
+
+        $time = trim($time);
+
+        if ($time === '') {
+            return null;
+        }
+
+        foreach (['H:i', 'H:i:s', 'g:i A', 'g:i a', 'h:i A', 'h:i a'] as $format) {
+            try {
+                return Carbon::createFromFormat($format, $time)->format('H:i');
+            } catch (\Throwable $exception) {
+            }
+        }
+
+        try {
+            return Carbon::parse($time)->format('H:i');
+        } catch (\Throwable $exception) {
+            return $time;
+        }
+    }
+
     public static function periodMinutes(): int
     {
         return (int) config('schedule.period_minutes', 45);
@@ -33,7 +59,7 @@ class ScheduleHelper
 
     public static function defaultTimetableSlots(): array
     {
-        $slotStarts = ['08:00', '13:30', '18:00', '18:30', '19:00'];
+        $slotStarts = ['08:00', '13:30', '18:00', '19:00'];
         $slots = [];
 
         foreach ($slotStarts as $startTime) {
@@ -51,12 +77,18 @@ class ScheduleHelper
 
     public static function normalizeEndTime(string $startTime): string
     {
+        $normalizedStartTime = self::normalizeTimeValue($startTime);
+
+        if (! $normalizedStartTime) {
+            return $startTime;
+        }
+
         try {
-            return Carbon::createFromFormat('H:i', $startTime)
+            return Carbon::createFromFormat('H:i', $normalizedStartTime)
                 ->addMinutes(self::sessionMinutes())
                 ->format('H:i');
         } catch (\Throwable $exception) {
-            return $startTime;
+            return $normalizedStartTime;
         }
     }
 

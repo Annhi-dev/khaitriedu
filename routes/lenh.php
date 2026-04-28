@@ -23,6 +23,7 @@ use App\Models\Subject;
 use App\Models\TeacherApplication;
 use App\Models\User;
 use App\Services\CourseCurriculumService;
+use App\Services\AdminScheduleConflictService;
 use App\Services\CourseScheduleSyncService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\DB;
@@ -333,3 +334,316 @@ Artisan::command('demo:seed-report', function () {
         return self::FAILURE;
     }
 })->purpose('Hien thi tong quan du lieu demo da seed');
+
+Artisan::command('enrollment:audit-class-links {--repair}', function () {
+    $repair = (bool) $this->option('repair');
+
+    $enrollments = Enrollment::query()
+        ->with([
+            'user',
+            'course.classRooms.room',
+            'course.classRooms.teacher',
+            'course.classRooms.schedules',
+            'classRoom.room',
+            'classRoom.teacher',
+            'classRoom.schedules',
+        ])
+        ->where(function ($query): void {
+            $query->where(function ($builder): void {
+                $builder->whereNull('lop_hoc_id')
+                    ->whereNotNull('course_id');
+            })->orWhere(function ($builder): void {
+                $builder->whereNotNull('lop_hoc_id')
+                    ->whereNull('course_id');
+            });
+        })
+        ->orderBy('id')
+        ->get();
+
+    if ($enrollments->isEmpty()) {
+        $this->info('Không tìm thấy enrollment nào cần kiểm tra.');
+
+        return self::SUCCESS;
+    }
+
+    $fixed = 0;
+    $ambiguous = [];
+
+    DB::transaction(function () use ($enrollments, $repair, &$fixed, &$ambiguous): void {
+        foreach ($enrollments as $enrollment) {
+            $updates = [];
+
+            if ($enrollment->lop_hoc_id !== null && $enrollment->course_id === null && $enrollment->classRoom) {
+                $updates['course_id'] = $enrollment->classRoom->course_id;
+
+                if ($enrollment->subject_id === null) {
+                    $updates['subject_id'] = $enrollment->classRoom->subject_id;
+                }
+
+                if ($enrollment->assigned_teacher_id === null) {
+                    $updates['assigned_teacher_id'] = $enrollment->classRoom->teacher_id;
+                }
+
+                if (! filled($enrollment->schedule)) {
+                    $updates['schedule'] = $enrollment->classRoom->scheduleSummary();
+                }
+            }
+
+            if ($enrollment->lop_hoc_id === null && $enrollment->course_id !== null) {
+                $resolvedClassRoom = $enrollment->historicalClassRoom();
+
+                if ($resolvedClassRoom) {
+                    $updates['lop_hoc_id'] = $resolvedClassRoom->id;
+                    $updates['course_id'] = $resolvedClassRoom->course_id;
+                    $updates['subject_id'] = $resolvedClassRoom->subject_id;
+                    $updates['assigned_teacher_id'] = $resolvedClassRoom->teacher_id;
+
+                    if (! filled($enrollment->schedule)) {
+                        $updates['schedule'] = $resolvedClassRoom->scheduleSummary();
+                    }
+                } else {
+                    $ambiguous[] = sprintf(
+                        '#%d %s | %s | %s',
+                        $enrollment->id,
+                        $enrollment->user?->name ?? 'Chưa rõ',
+                        $enrollment->course?->title ?? 'Chưa rõ khóa',
+                        $enrollment->schedule ?? 'Chưa có lịch lưu'
+                    );
+                }
+            }
+
+            if ($updates === []) {
+                continue;
+            }
+
+            $fixed++;
+
+            if ($repair) {
+                $enrollment->forceFill($updates)->save();
+            }
+        }
+    });
+
+    $this->info(sprintf(
+        'Đã kiểm tra %d enrollment, có thể xử lý %d bản ghi%s.',
+        $enrollments->count(),
+        $fixed,
+        $repair ? ' và đã cập nhật DB' : ''
+    ));
+
+    if ($ambiguous !== []) {
+        $this->warn('Một số bản ghi chưa thể suy ra lớp an toàn:');
+
+        foreach ($ambiguous as $line) {
+            $this->line('  - ' . $line);
+        }
+    }
+
+    return self::SUCCESS;
+})->purpose('Rà và vá liên kết course/lớp của enrollment cũ');
+
+Artisan::command('enrollment:dedupe-class-enrollments', function () {
+    $duplicates = DB::table('dang_ky')
+        ->select('user_id', 'lop_hoc_id', DB::raw('MAX(id) as keep_id'), DB::raw('COUNT(*) as total'))
+        ->whereNotNull('lop_hoc_id')
+        ->groupBy('user_id', 'lop_hoc_id')
+        ->having('total', '>', 1)
+        ->get();
+
+    if ($duplicates->isEmpty()) {
+        $this->info('Không có enrollment trùng lớp để xóa.');
+
+        return self::SUCCESS;
+    }
+
+    $deleted = 0;
+
+    DB::transaction(function () use ($duplicates, &$deleted): void {
+        foreach ($duplicates as $duplicate) {
+            $deleted += DB::table('dang_ky')
+                ->where('user_id', $duplicate->user_id)
+                ->where('lop_hoc_id', $duplicate->lop_hoc_id)
+                ->where('id', '!=', $duplicate->keep_id)
+                ->delete();
+        }
+    });
+
+    $this->info(sprintf(
+        'Đã xóa %d bản ghi enrollment trùng lớp trong %d nhóm trùng.',
+        $deleted,
+        $duplicates->count()
+    ));
+
+    return self::SUCCESS;
+})->purpose('Xoa enrollment bi trung theo hoc vien va lop hoc');
+
+Artisan::command('enrollment:prune-schedule-conflicts {--dry-run}', function () {
+    $dryRun = (bool) $this->option('dry-run');
+    $conflicts = app(AdminScheduleConflictService::class)->studentConflicts();
+
+    if ($conflicts->isEmpty()) {
+        $this->info('Không có xung đột lịch học nào để xử lý.');
+
+        return self::SUCCESS;
+    }
+
+    $enrollmentIdsToDelete = collect();
+    $groupsProcessed = 0;
+
+    foreach ($conflicts as $group) {
+        $groupsProcessed++;
+        $nodes = collect();
+
+        foreach ($group['conflicts'] ?? [] as $pair) {
+            $firstId = (int) ($pair['first']['enrollment_id'] ?? 0);
+            $secondId = (int) ($pair['second']['enrollment_id'] ?? 0);
+
+            if ($firstId > 0 && $secondId > 0) {
+                $nodes = $nodes->merge([$firstId, $secondId]);
+            }
+        }
+
+        $nodes = $nodes->filter()->unique()->sort()->values();
+
+        if ($nodes->count() <= 1) {
+            continue;
+        }
+
+        $adjacency = [];
+        foreach ($nodes as $id) {
+            $adjacency[$id] = [];
+        }
+
+        foreach ($group['conflicts'] ?? [] as $pair) {
+            $firstId = (int) ($pair['first']['enrollment_id'] ?? 0);
+            $secondId = (int) ($pair['second']['enrollment_id'] ?? 0);
+
+            if ($firstId <= 0 || $secondId <= 0) {
+                continue;
+            }
+
+            $adjacency[$firstId][] = $secondId;
+            $adjacency[$secondId][] = $firstId;
+        }
+
+        $visited = [];
+
+        foreach ($nodes as $startId) {
+            if (isset($visited[$startId])) {
+                continue;
+            }
+
+            $queue = [$startId];
+            $component = [];
+
+            while ($queue !== []) {
+                $currentId = array_pop($queue);
+
+                if (isset($visited[$currentId])) {
+                    continue;
+                }
+
+                $visited[$currentId] = true;
+                $component[] = $currentId;
+
+                foreach ($adjacency[$currentId] ?? [] as $neighborId) {
+                    if (! isset($visited[$neighborId])) {
+                        $queue[] = $neighborId;
+                    }
+                }
+            }
+
+            if ($component === []) {
+                continue;
+            }
+
+            $keepId = max($component);
+            $componentDeletes = collect($component)->reject(fn (int $id) => $id === $keepId)->values();
+            $enrollmentIdsToDelete = $enrollmentIdsToDelete->merge($componentDeletes);
+        }
+    }
+
+    $enrollmentIdsToDelete = $enrollmentIdsToDelete->unique()->values();
+
+    if ($enrollmentIdsToDelete->isEmpty()) {
+        $this->info('Không có enrollment nào cần xóa sau khi xét xung đột lịch.');
+
+        return self::SUCCESS;
+    }
+
+    $count = $enrollmentIdsToDelete->count();
+
+    if ($dryRun) {
+        $this->warn(sprintf(
+            'Dry run: sẽ xóa %d enrollment gây trùng lịch từ %d nhóm xung đột.',
+            $count,
+            $groupsProcessed
+        ));
+
+        $this->line('Danh sách id: ' . $enrollmentIdsToDelete->implode(', '));
+
+        return self::SUCCESS;
+    }
+
+    $deleted = DB::table('dang_ky')
+        ->whereIn('id', $enrollmentIdsToDelete->all())
+        ->delete();
+
+    $this->info(sprintf(
+        'Đã xóa %d enrollment gây trùng lịch từ %d nhóm xung đột.',
+        $deleted,
+        $groupsProcessed
+    ));
+
+    return self::SUCCESS;
+})->purpose('Xoa enrollment gay trung lich hoc, giu lai ban moi nhat trong moi cum');
+
+Artisan::command('enrollment:report-weekly-conflicts {studentId?}', function (?string $studentId = null) {
+    $students = User::query()
+        ->students()
+        ->when($studentId !== null, fn ($query) => $query->whereKey((int) $studentId))
+        ->orderBy('id')
+        ->get();
+
+    if ($students->isEmpty()) {
+        $this->info('Không tìm thấy học viên phù hợp.');
+
+        return self::SUCCESS;
+    }
+
+    $reportService = app(\App\Services\StudentScheduleService::class);
+    $found = false;
+
+    foreach ($students as $student) {
+        $weeklyTimetable = $reportService->weeklyTimetable($student);
+
+        if (empty($weeklyTimetable['hasConflicts'])) {
+            continue;
+        }
+
+        $found = true;
+        $this->info(sprintf(
+            '#%d %s: %d buổi trùng',
+            $student->id,
+            $student->displayName(),
+            (int) ($weeklyTimetable['conflictCount'] ?? 0)
+        ));
+
+        foreach ($weeklyTimetable['conflicts'] ?? [] as $conflict) {
+            $this->line(sprintf(
+                '  - %s | %s (%s) | %s (%s)',
+                $conflict['day_label'] ?? ($conflict['day_of_week'] ?? 'Chưa rõ ngày'),
+                $conflict['first_title'] ?? 'Buổi học 1',
+                $conflict['first_status'] ?? 'unknown',
+                $conflict['second_title'] ?? 'Buổi học 2',
+                $conflict['second_status'] ?? 'unknown'
+            ));
+        }
+    }
+
+    if (! $found) {
+        $this->info('Không có học viên nào còn lịch bị trùng trong tuần hiện tại.');
+    }
+
+    return self::SUCCESS;
+})->purpose('Bao cao hoc vien con trung lich trong thoi khoa bieu tuan');

@@ -275,14 +275,14 @@ class CourseScheduleSyncService
             [
                 'prefix' => 'Tối',
                 'days' => ['Monday', 'Thursday', 'Saturday'],
-                'start_time' => '18:30',
-                'end_time' => ScheduleHelper::normalizeEndTime('18:30'),
+                'start_time' => '19:00',
+                'end_time' => ScheduleHelper::normalizeEndTime('19:00'),
             ],
             [
                 'prefix' => 'Tối',
                 'days' => ['Tuesday', 'Friday', 'Sunday'],
-                'start_time' => '18:30',
-                'end_time' => ScheduleHelper::normalizeEndTime('18:30'),
+                'start_time' => '19:00',
+                'end_time' => ScheduleHelper::normalizeEndTime('19:00'),
             ],
             [
                 'prefix' => 'Tối',
@@ -460,16 +460,16 @@ class CourseScheduleSyncService
             return [
                 'prefix' => 'Tối',
                 'days' => ['Wednesday', 'Friday', 'Sunday'],
-                'start_time' => '18:30',
-                'end_time' => ScheduleHelper::normalizeEndTime('18:30'),
+                'start_time' => '19:00',
+                'end_time' => ScheduleHelper::normalizeEndTime('19:00'),
             ];
         }
 
         return [
             'prefix' => 'Tối',
             'days' => ['Tuesday', 'Thursday', 'Saturday'],
-            'start_time' => '18:30',
-            'end_time' => ScheduleHelper::normalizeEndTime('18:30'),
+            'start_time' => '19:00',
+            'end_time' => ScheduleHelper::normalizeEndTime('19:00'),
         ];
     }
 }

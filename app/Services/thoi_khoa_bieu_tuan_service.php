@@ -10,6 +10,11 @@ use Illuminate\Support\Collection;
 
 class WeeklyTimetableService
 {
+    protected const NON_CONFLICTING_STATUSES = [
+        'completed',
+        'closed',
+    ];
+
     public function build(Collection|array $entries, ?CarbonInterface $reference = null): array
     {
         $entries = collect($entries)
@@ -102,6 +107,9 @@ class WeeklyTimetableService
             'day_label' => (string) ($entry['day_label'] ?? (ClassSchedule::$dayOptions[$entry['day_of_week']] ?? $entry['day_of_week'])),
             'start_time' => $startTime,
             'end_time' => $endTime,
+            'status' => (string) ($entry['status'] ?? ''),
+            'class_status' => (string) ($entry['class_status'] ?? ''),
+            'class_finished' => (bool) ($entry['class_finished'] ?? false),
             'title' => (string) ($entry['title'] ?? 'Buổi học'),
             'subtitle' => (string) ($entry['subtitle'] ?? ''),
             'meta' => (string) ($entry['meta'] ?? ''),
@@ -191,6 +199,10 @@ class WeeklyTimetableService
                     continue;
                 }
 
+                if (! $this->canConflicts($first, $second)) {
+                    continue;
+                }
+
                 $firstNote = $this->buildConflictNote($first, $second);
                 $secondNote = $this->buildConflictNote($second, $first);
 
@@ -206,7 +218,9 @@ class WeeklyTimetableService
 
                 $conflicts->push([
                     'first_id' => $first['id'],
+                    'first_status' => $first['status'] ?? null,
                     'second_id' => $second['id'],
+                    'second_status' => $second['status'] ?? null,
                     'day_of_week' => $first['day_of_week'],
                     'day_label' => $first['day_label'] ?? $first['day_of_week'],
                     'first_title' => $first['title'] ?? 'Buổi học',
@@ -234,6 +248,22 @@ class WeeklyTimetableService
         $otherTimeLabel = $other['time_label'] ?? (($other['start_time'] ?? '') . ' - ' . ($other['end_time'] ?? ''));
 
         return sprintf('Trùng với %s, %s, %s', $otherTitle, $otherDayLabel, $otherTimeLabel);
+    }
+
+    protected function canConflicts(array $first, array $second): bool
+    {
+        return ! $this->isNonConflictingEntry($first)
+            && ! $this->isNonConflictingEntry($second);
+    }
+
+    protected function isNonConflictingEntry(array $entry): bool
+    {
+        $status = (string) ($entry['status'] ?? '');
+        $classStatus = (string) ($entry['class_status'] ?? '');
+
+        return (bool) ($entry['class_finished'] ?? false)
+            || in_array($status, self::NON_CONFLICTING_STATUSES, true)
+            || in_array($classStatus, self::NON_CONFLICTING_STATUSES, true);
     }
 
     protected function rangesOverlap(string $startA, string $endA, string $startB, string $endB): bool

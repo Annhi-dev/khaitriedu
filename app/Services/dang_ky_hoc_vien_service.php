@@ -6,6 +6,7 @@ use App\Exceptions\EnrollmentOperationException;
 use App\Models\ClassRoom;
 use App\Models\ClassSchedule;
 use App\Models\Enrollment;
+use App\Models\Notification;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -153,7 +154,22 @@ class StudentEnrollmentService
                 ]));
             }
 
+            $savedEnrollment = $targetEnrollment?->fresh() ?? Enrollment::query()
+                ->where('user_id', $student->id)
+                ->where('subject_id', $subject->id)
+                ->latest('id')
+                ->first();
+
             $this->syncClassStatus($classRoom->fresh(['room'])->loadCount('enrollments'));
+            $this->notifyAdmins(
+                'Học viên đăng ký lớp cố định',
+                sprintf(
+                    '%s vừa đăng ký lớp cố định %s.',
+                    $student->displayName(),
+                    $classRoom->displayName()
+                ),
+                route('admin.enrollments.fixed.show', $savedEnrollment)
+            );
 
             return 'Đã ghi danh vào lớp cố định thành công.';
         });
@@ -169,6 +185,14 @@ class StudentEnrollmentService
             if ($existingEnrollment && $existingEnrollment->hasCourseAccess()) {
                 throw new EnrollmentOperationException('Bạn đã được ghi danh hoặc xếp lớp cho khóa học này. Nếu cần dời buổi, vui lòng liên hệ admin.');
             }
+
+            $this->ensureStudentHasNoRequestedScheduleConflict(
+                $student->id,
+                $data['preferred_days'],
+                (string) $data['start_time'],
+                (string) $data['end_time'],
+                $existingEnrollment?->id
+            );
 
             $payload = [
                 'subject_id' => $subject->id,
@@ -197,16 +221,36 @@ class StudentEnrollmentService
                 }
 
                 $existingEnrollment->update($payload);
+                $savedEnrollment = $existingEnrollment->fresh();
+                $this->notifyAdmins(
+                    'Học viên gửi yêu cầu lịch học',
+                    sprintf(
+                        '%s vừa cập nhật yêu cầu lịch học riêng cho môn %s.',
+                        $student->displayName(),
+                        $subject->name
+                    ),
+                    route('admin.enrollments.custom.show', $savedEnrollment)
+                );
 
                 return 'Yêu cầu đăng ký của bạn đã được cập nhật. Admin sẽ xem lại và xếp lớp phù hợp.';
             }
 
-            Enrollment::create(array_merge($payload, [
+            $savedEnrollment = Enrollment::create(array_merge($payload, [
                 'user_id' => $student->id,
                 'status' => Enrollment::STATUS_PENDING,
                 'reviewed_by' => null,
                 'reviewed_at' => null,
             ]));
+
+            $this->notifyAdmins(
+                'Học viên gửi yêu cầu lịch học',
+                sprintf(
+                    '%s vừa gửi yêu cầu lịch học riêng cho môn %s.',
+                    $student->displayName(),
+                    $subject->name
+                ),
+                route('admin.enrollments.custom.show', $savedEnrollment)
+            );
 
             return 'Đã gửi yêu cầu đăng ký khóa học. Admin sẽ xem lịch mong muốn và xếp lớp phù hợp.';
         });
@@ -273,6 +317,23 @@ class StudentEnrollmentService
         ]);
     }
 
+    protected function notifyAdmins(string $title, string $message, string $link): void
+    {
+        User::query()
+            ->whereHas('role', fn ($query) => $query->where('name', User::ROLE_ADMIN))
+            ->where('status', User::STATUS_ACTIVE)
+            ->get()
+            ->each(function (User $admin) use ($title, $message, $link): void {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title' => $title,
+                    'message' => $message,
+                    'type' => 'enrollment',
+                    'link' => $link,
+                ]);
+            });
+    }
+
     protected function ensureStudentHasNoScheduleConflict(User $student, ClassRoom $targetClassRoom, ?int $ignoreEnrollmentId = null): void
     {
         $conflict = Enrollment::query()
@@ -288,10 +349,11 @@ class StudentEnrollmentService
                 Enrollment::STATUS_ENROLLED,
                 Enrollment::STATUS_SCHEDULED,
                 Enrollment::STATUS_ACTIVE,
+                Enrollment::STATUS_COMPLETED,
             ])
             ->get()
             ->first(function (Enrollment $enrollment) use ($targetClassRoom): bool {
-                $existingClassRoom = $enrollment->currentClassRoom();
+                $existingClassRoom = $enrollment->conflictReferenceClassRoom();
 
                 return $existingClassRoom !== null
                     && (int) $existingClassRoom->id !== (int) $targetClassRoom->id
@@ -301,6 +363,67 @@ class StudentEnrollmentService
         if ($conflict) {
             throw new EnrollmentOperationException('Học viên đã có lớp khác trùng lịch trong cùng khung giờ. Vui lòng chọn lớp khác.');
         }
+    }
+
+    protected function ensureStudentHasNoRequestedScheduleConflict(
+        int $studentId,
+        array $meetingDays,
+        string $startTime,
+        string $endTime,
+        ?int $ignoreEnrollmentId = null
+    ): void {
+        $conflict = Enrollment::query()
+            ->with([
+                'classRoom.course',
+                'classRoom.schedules',
+                'course.classRooms.schedules',
+            ])
+            ->where('user_id', $studentId)
+            ->when($ignoreEnrollmentId, fn ($query) => $query->whereKeyNot($ignoreEnrollmentId))
+            ->whereIn('status', Enrollment::scheduleBlockingStatuses())
+            ->get()
+            ->first(function (Enrollment $enrollment) use ($meetingDays, $startTime, $endTime): bool {
+                $existingClassRoom = $enrollment->conflictReferenceClassRoom();
+
+                if (! $existingClassRoom) {
+                    return false;
+                }
+
+                foreach ($existingClassRoom->scheduleRows() as $schedule) {
+                    if (! in_array((string) ($schedule['day_of_week'] ?? ''), $meetingDays, true)) {
+                        continue;
+                    }
+
+                    if ($this->timeRangesOverlap(
+                        (string) ($schedule['start_time'] ?? ''),
+                        (string) ($schedule['end_time'] ?? ''),
+                        $startTime,
+                        $endTime
+                    )) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+        if ($conflict) {
+            throw new EnrollmentOperationException('Học viên đã có lớp khác trùng lịch trong cùng khung giờ. Vui lòng chọn lịch khác.');
+        }
+    }
+
+    protected function timeRangesOverlap(string $startA, string $endA, string $startB, string $endB): bool
+    {
+        $startA = substr($startA, 0, 5);
+        $endA = substr($endA, 0, 5);
+        $startB = substr($startB, 0, 5);
+        $endB = substr($endB, 0, 5);
+
+        if ($startA === '' || $endA === '' || $startB === '' || $endB === '') {
+            return false;
+        }
+
+        return $startA < $endB && $endA > $startB;
     }
 
     protected function buildScheduleConflictMap(User $student, Collection $classes): array
@@ -319,7 +442,7 @@ class StudentEnrollmentService
 
         foreach ($classes as $classRoom) {
             foreach ($activeEnrollments as $enrollment) {
-                $existingClassRoom = $enrollment->currentClassRoom();
+                $existingClassRoom = $enrollment->conflictReferenceClassRoom();
 
                 if (! $existingClassRoom || (int) $existingClassRoom->id === (int) $classRoom->id) {
                     continue;

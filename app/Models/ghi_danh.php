@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class Enrollment extends Model
 {
@@ -76,6 +77,16 @@ class Enrollment extends Model
             self::STATUS_SCHEDULED,
             self::STATUS_ACTIVE,
             self::STATUS_COMPLETED,
+        ];
+    }
+
+    public static function scheduleBlockingStatuses(): array
+    {
+        return [
+            self::LEGACY_STATUS_CONFIRMED,
+            self::STATUS_ENROLLED,
+            self::STATUS_SCHEDULED,
+            self::STATUS_ACTIVE,
         ];
     }
 
@@ -281,7 +292,120 @@ class Enrollment extends Model
             return $this->classRoom;
         }
 
+        $historicalClassRoom = $this->historicalClassRoom();
+
+        if ($historicalClassRoom) {
+            return $historicalClassRoom;
+        }
+
         return $this->course?->currentClassRoom();
+    }
+
+    public function conflictReferenceClassRoom(): ?ClassRoom
+    {
+        if ($this->classRoom) {
+            return $this->classRoom;
+        }
+
+        $historicalClassRoom = $this->historicalClassRoom();
+
+        if ($historicalClassRoom) {
+            return $historicalClassRoom;
+        }
+
+        $course = $this->course;
+
+        if (! $course) {
+            return null;
+        }
+
+        $referenceClassRoom = new ClassRoom([
+            'subject_id' => $this->subject_id ?? $course->subject_id,
+            'course_id' => $course->id,
+            'name' => $course->title,
+            'teacher_id' => $this->assigned_teacher_id ?? $course->teacher_id,
+            'start_date' => $course->start_date,
+            'duration' => $course->subject?->duration,
+            'status' => $this->normalizedStatus() === self::STATUS_COMPLETED
+                ? ClassRoom::STATUS_COMPLETED
+                : ClassRoom::STATUS_OPEN,
+        ]);
+
+        $referenceClassRoom->setRelation('course', $course);
+
+        return $referenceClassRoom;
+    }
+
+    public function historicalClassRoom(): ?ClassRoom
+    {
+        $course = $this->course;
+
+        if (! $course) {
+            return null;
+        }
+
+        $course->loadMissing(['classRooms.room', 'classRooms.teacher', 'classRooms.schedules']);
+
+        $classRooms = $course->classRooms;
+
+        if ($classRooms->isEmpty()) {
+            return null;
+        }
+
+        if ($classRooms->count() === 1) {
+            return $classRooms->first();
+        }
+
+        $storedSchedule = $this->normalizedScheduleSignature($this->schedule);
+
+        if ($storedSchedule !== null) {
+            $matchedClassRoom = $classRooms->first(function (ClassRoom $classRoom) use ($storedSchedule): bool {
+                return $this->normalizedScheduleSignature($classRoom->scheduleSummary()) === $storedSchedule;
+            });
+
+            if ($matchedClassRoom) {
+                return $matchedClassRoom;
+            }
+        }
+
+        if ($this->assigned_teacher_id !== null) {
+            $teacherMatches = $classRooms
+                ->filter(fn (ClassRoom $classRoom) => (int) $classRoom->teacher_id === (int) $this->assigned_teacher_id)
+                ->values();
+
+            if ($teacherMatches->count() === 1) {
+                return $teacherMatches->first();
+            }
+
+            if ($storedSchedule !== null) {
+                $matchedClassRoom = $teacherMatches->first(function (ClassRoom $classRoom) use ($storedSchedule): bool {
+                    return $this->normalizedScheduleSignature($classRoom->scheduleSummary()) === $storedSchedule;
+                });
+
+                if ($matchedClassRoom) {
+                    return $matchedClassRoom;
+                }
+            }
+        }
+
+        if ($this->normalizedStatus() === self::STATUS_COMPLETED) {
+            $completedClassRooms = $classRooms
+                ->filter(fn (ClassRoom $classRoom) => in_array($classRoom->status, [ClassRoom::STATUS_COMPLETED, ClassRoom::STATUS_CLOSED], true))
+                ->values();
+
+            if ($completedClassRooms->count() === 1) {
+                return $completedClassRooms->first();
+            }
+        }
+
+        return null;
+    }
+
+    protected function normalizedScheduleSignature(?string $value): ?string
+    {
+        $normalized = Str::squish((string) $value);
+
+        return $normalized !== '' ? $normalized : null;
     }
 
     public function currentClassRoomLabel(): string

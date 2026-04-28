@@ -6,21 +6,6 @@
     transition: all 0.2s ease-in-out;
 }
 
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-fade-in-down {
-    animation: fadeInDown 0.3s ease-out;
-}
-
 @media (min-width: 1024px) {
     #app-wrapper.sidebar-collapsed {
         grid-template-columns: 80px minmax(0, 1fr) !important;

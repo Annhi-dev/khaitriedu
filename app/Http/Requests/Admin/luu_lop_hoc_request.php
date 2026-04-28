@@ -30,10 +30,10 @@ class StoreClassRoomRequest extends FormRequest
 
             $normalizedSchedules[] = [
                 'day' => isset($row['day']) ? trim((string) $row['day']) : null,
-                'start' => isset($row['start']) ? trim((string) $row['start']) : null,
+                'start' => isset($row['start']) ? ScheduleHelper::normalizeTimeValue((string) $row['start']) : null,
                 'end' => isset($row['start']) && trim((string) $row['start']) !== ''
                     ? ScheduleHelper::normalizeEndTime(trim((string) $row['start']))
-                    : (isset($row['end']) ? trim((string) $row['end']) : null),
+                    : (isset($row['end']) ? ScheduleHelper::normalizeTimeValue((string) $row['end']) : null),
             ];
         }
 

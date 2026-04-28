@@ -36,7 +36,7 @@
             <h2 class="text-lg font-semibold mb-4">Thống kê</h2>
             <div class="space-y-3">
                 <div class="flex justify-between border-b pb-2"><span class="text-slate-500">Đăng ký học</span><span class="font-semibold">{{ $student->enrollments_count }}</span></div>
-                <div class="flex justify-between border-b pb-2"><span class="text-slate-500">Đã hoàn thành</span><span class="font-semibold">{{ $enrollments->where('status', \App\Models\Enrollment::STATUS_COMPLETED)->count() }}</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-slate-500">Đã hoàn thành</span><span class="font-semibold">{{ $enrollments->filter(fn ($enrollment) => $enrollment->displayStatus() === \App\Models\Enrollment::STATUS_COMPLETED)->count() }}</span></div>
                 <div class="flex justify-between border-b pb-2"><span class="text-slate-500">Lớp đang theo học</span><span class="font-semibold">{{ $currentSchedules->count() }}</span></div>
                 <div class="flex justify-between"><span class="text-slate-500">Đánh giá gần đây</span><span class="font-semibold">{{ $reviews->count() }}</span></div>
             </div>
@@ -61,7 +61,7 @@
                             <tr>
                                 <td class="px-4 py-3">{{ $enrollment->subject?->name ?? 'Chưa xác định' }}</td>
                                 <td class="px-4 py-3">{{ $enrollment->course?->title ?? 'Chưa xếp lớp' }}</td>
-                                <td class="px-4 py-3"><x-quan_tri.huy_hieu :type="match($enrollment->status) {'approved'=>'info','scheduled'=>'success','active'=>'success','completed'=>'default','rejected'=>'danger', default=>'warning'}" :text="$enrollment->statusLabel()" /></td>
+                                <td class="px-4 py-3"><x-quan_tri.huy_hieu :type="match($enrollment->displayStatus()) {'approved'=>'info','scheduled'=>'success','active'=>'success','completed'=>'default','rejected'=>'danger', default=>'warning'}" :text="$enrollment->displayStatusLabel()" /></td>
                                 <td class="px-4 py-3">{{ $enrollment->schedule ?: 'Chưa có' }}</td>
                             </tr>
                         @endforeach

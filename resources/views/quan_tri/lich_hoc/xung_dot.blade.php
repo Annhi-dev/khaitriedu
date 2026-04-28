@@ -181,6 +181,14 @@
                                     <a href="{{ route('admin.schedules.courses.show', $conflictCourse) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                         Mở chi tiết
                                     </a>
+                                    @if($conflictClassRoom && $conflictClassRoom->enrolledCount() === 0)
+                                        <form method="POST" action="{{ route('admin.classes.delete', $conflictClassRoom) }}" onsubmit="return confirm('Xóa lớp này?')">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">
+                                                Xóa lớp
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </div>
                         @empty
@@ -206,6 +214,14 @@
                                     <a href="{{ route('admin.classes.show', $classRoom) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                         Mở lớp
                                     </a>
+                                    @if($classRoom->enrolledCount() === 0)
+                                        <form method="POST" action="{{ route('admin.classes.delete', $classRoom) }}" onsubmit="return confirm('Xóa lớp này?')">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">
+                                                Xóa lớp
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </div>
                         @empty
@@ -214,8 +230,29 @@
                         @forelse($studentConflicts->take(2) as $studentConflict)
                             @foreach(collect($studentConflict['conflicts'] ?? [])->take(1) as $pair)
                                 <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-amber-100">
-                                    <p class="text-sm font-semibold text-slate-900">{{ $studentConflict['student_name'] }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">{{ $pair['note'] }}</p>
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-900">
+                                                {{ $pair['first']['title'] }} ↔ {{ $pair['second']['title'] }}
+                                            </p>
+                                            <p class="mt-1 text-xs text-slate-500">{{ $pair['note'] }}</p>
+                                        </div>
+                                        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                                            {{ $studentConflict['student_count'] ?? 0 }} học viên
+                                        </span>
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        @foreach(collect($studentConflict['students'] ?? [])->take(3) as $student)
+                                            <span class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                                                {{ $student['student_name'] }}
+                                            </span>
+                                        @endforeach
+                                        @if(($studentConflict['student_count'] ?? 0) > 3)
+                                            <span class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                                                +{{ ($studentConflict['student_count'] ?? 0) - 3 }}
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div class="mt-3 flex flex-wrap gap-2">
                                         <a href="{{ $pair['first']['edit_url'] ?? $pair['first']['url'] }}" class="inline-flex items-center justify-center rounded-xl bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">
                                             Sửa nhanh
@@ -223,6 +260,14 @@
                                         <a href="{{ $pair['first']['url'] }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                             Mở lớp
                                         </a>
+                                        @if(!empty($pair['first']['delete_url']))
+                                            <form method="POST" action="{{ $pair['first']['delete_url'] }}" onsubmit="return confirm('Xóa lớp này?')">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">
+                                                    Xóa lớp
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </div>
                             @endforeach
@@ -277,8 +322,14 @@
                                     <a href="{{ route('admin.schedules.courses.show', $conflictCourse) }}" class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100">Xem chi tiết</a>
                                     <a href="{{ route('admin.course.show', $conflictCourse) }}" class="inline-flex items-center justify-center rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">Sửa nhanh</a>
                                     @if($conflictClassRoom)
-                                        <a href="{{ route('admin.classes.show', $conflictClassRoom) }}" class="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Mở lớp</a>
+                                    <a href="{{ route('admin.classes.show', $conflictClassRoom) }}" class="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Mở lớp</a>
+                                    @if($conflictClassRoom && $conflictClassRoom->enrolledCount() === 0)
+                                        <form method="POST" action="{{ route('admin.classes.delete', $conflictClassRoom) }}" onsubmit="return confirm('Xóa lớp này?')">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100">Xóa lớp</button>
+                                        </form>
                                     @endif
+                                @endif
                                 </div>
                             </div>
                         @endforeach
@@ -329,6 +380,12 @@
                                 <div class="mt-4 flex flex-wrap gap-2">
                                     <a href="{{ $classRoom->course ? route('admin.course.show', $classRoom->course) : route('admin.classes.show', $classRoom) }}" class="inline-flex items-center justify-center rounded-full bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Sửa nhanh</a>
                                     <a href="{{ route('admin.classes.show', $classRoom) }}" class="inline-flex items-center justify-center rounded-full border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100">Mở lớp</a>
+                                    @if($classRoom->enrolledCount() === 0)
+                                        <form method="POST" action="{{ route('admin.classes.delete', $classRoom) }}" onsubmit="return confirm('Xóa lớp này?')">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100">Xóa lớp</button>
+                                        </form>
+                                    @endif
                                     @if($classRoom->course)
                                         <a href="{{ route('admin.schedules.courses.show', $classRoom->course) }}" class="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Xem lịch khóa</a>
                                     @endif
@@ -360,7 +417,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <div class="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                    {{ $studentConflicts->count() }} học viên • {{ $studentConflictCount ?? 0 }} cặp cần rà soát
+                    {{ number_format($studentConflictStudentCount ?? 0) }} học viên • {{ number_format($studentConflictPairCount ?? 0) }} cặp cần rà soát
                 </div>
                 <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">Bấm để mở</span>
             </div>
@@ -373,19 +430,12 @@
                         <article class="rounded-3xl border border-rose-100 bg-rose-50/60 p-5">
                             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                 <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <h3 class="text-lg font-semibold text-slate-900">{{ $studentConflict['student_name'] }}</h3>
-                                        @if(!empty($studentConflict['student_url']))
-                                            <a href="{{ $studentConflict['student_url'] }}" class="rounded-full border border-rose-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-rose-700 hover:bg-rose-100">
-                                                Mở hồ sơ
-                                            </a>
-                                        @endif
-                                    </div>
-                                    <p class="mt-1 text-sm text-slate-600">{{ $studentConflict['student_email'] ?? '' }}</p>
+                                    <h3 class="text-lg font-semibold text-slate-900">{{ $studentConflict['student_summary'] ?? $studentConflict['student_name'] }}</h3>
+                                    <p class="mt-1 text-sm text-slate-600">{{ $studentConflict['student_count'] ?? 0 }} học viên đang bị ảnh hưởng</p>
                                 </div>
                                 <div class="rounded-2xl bg-white px-4 py-3 text-sm text-slate-700">
                                     <p><span class="text-slate-400">Số lớp liên quan:</span> {{ $studentConflict['class_count'] ?? 0 }}</p>
-                                    <p><span class="text-slate-400">Số cặp trùng:</span> {{ $studentConflict['conflict_count'] ?? 0 }}</p>
+                                    <p><span class="text-slate-400">Số học viên:</span> {{ $studentConflict['student_count'] ?? 0 }}</p>
                                 </div>
                             </div>
 
@@ -429,6 +479,18 @@
                                                     @endif
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="mt-4 flex flex-wrap gap-2">
+                                            @foreach(collect($studentConflict['students'] ?? [])->take(4) as $student)
+                                                <span class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                                                    {{ $student['student_name'] }}
+                                                </span>
+                                            @endforeach
+                                            @if(($studentConflict['student_count'] ?? 0) > 4)
+                                                <span class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                                                    +{{ ($studentConflict['student_count'] ?? 0) - 4 }}
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach

@@ -93,6 +93,7 @@
     @endif
 
     <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <x-quan_tri.the_thong_ke label="Đăng ký học chờ duyệt" value="{{ $pendingEnrollmentCount }}" icon="fas fa-clipboard-list" color="amber" trend="Hồ sơ từ học viên gửi lên" :details-url="route('admin.enrollments')" />
         <x-quan_tri.the_thong_ke label="Học viên" value="{{ $studentCount }}" icon="fas fa-user-graduate" color="cyan" trend="Tổng tài khoản học viên" :details-url="route('admin.students.index')" />
         <x-quan_tri.the_thong_ke label="Giảng viên" value="{{ $teacherCount }}" icon="fas fa-chalkboard-user" color="emerald" trend="Tổng tài khoản giảng viên" :details-url="route('admin.teachers.index')" />
         <x-quan_tri.the_thong_ke label="Đơn ứng tuyển chờ" value="{{ $pendingTeacherApplications }}" icon="fas fa-file-signature" color="amber" trend="Hồ sơ giảng viên đang chờ duyệt" :details-url="route('admin.teacher-applications')" />

@@ -71,6 +71,11 @@ class AdminDashboardService
             'groupCount' => Category::count(),
             'roomCount' => $roomsReady ? Room::count() : 0,
             'openTimeSlotCount' => $timeSlotsReady ? CourseTimeSlot::where('status', CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION)->count() : 0,
+            'pendingEnrollmentCount' => Enrollment::query()
+                ->where('status', Enrollment::STATUS_PENDING)
+                ->where('is_submitted', true)
+                ->whereNull('lop_hoc_id')
+                ->count(),
             'pendingSlotRegistrationCount' => $slotRegistrationsReady ? SlotRegistration::where('status', SlotRegistration::STATUS_PENDING)->count() : 0,
             'configuredTimeSlotCount' => $timeSlotsReady ? CourseTimeSlot::count() : 0,
             'readyToOpenClassSlotCount' => $timeSlotsReady ? CourseTimeSlot::where('status', CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS)->count() : 0,
@@ -129,10 +134,15 @@ class AdminDashboardService
     {
         try {
             $studentConflicts = $this->scheduleConflictService->studentConflicts();
+            $studentCount = $studentConflicts
+                ->flatMap(fn (array $item) => collect($item['students'] ?? [])->pluck('student_id'))
+                ->filter()
+                ->unique()
+                ->count();
 
             return [
+                $studentCount,
                 $studentConflicts->count(),
-                $studentConflicts->sum(fn (array $item) => count($item['conflicts'] ?? [])),
             ];
         } catch (Throwable) {
             return [0, 0];

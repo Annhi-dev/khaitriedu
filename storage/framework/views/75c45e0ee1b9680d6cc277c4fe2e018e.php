@@ -16,7 +16,8 @@
     $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
     $sidebarBadges = $adminSidebarBadges ?? [];
-    $totalPendingItems = (int) ($sidebarBadges['teacher_applications_pending'] ?? 0) + (int) ($sidebarBadges['enrollments_pending'] ?? 0) + (int) ($sidebarBadges['schedule_change_requests_pending'] ?? 0);
+    $adminNotificationItems = $adminUser ? $adminUser->notifications()->latest('id')->take(5)->get() : collect();
+    $adminUnreadNotifications = $adminUser ? $adminUser->notifications()->where('is_read', false)->count() : 0;
     $menuSections = [
         [
             'label' => 'Tổng quan',
@@ -46,11 +47,11 @@
             'items' => [
                 ['label' => 'Nhóm học', 'icon' => 'fas fa-layer-group', 'route' => 'admin.categories', 'active' => request()->routeIs('admin.categories*')],
 
-                ['label' => 'Khóa học', 'icon' => 'fas fa-laptop-code', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
+                ['label' => 'Khóa học công khai', 'icon' => 'fas fa-book-open', 'route' => 'admin.subjects', 'active' => request()->routeIs('admin.subjects*') || request()->routeIs('admin.subject.*')],
+                ['label' => 'Khóa học triển khai', 'icon' => 'fas fa-laptop-code', 'route' => 'admin.courses', 'active' => request()->routeIs('admin.courses*') || request()->routeIs('admin.course.*')],
                 ['label' => 'Lớp học', 'icon' => 'fas fa-people-group', 'route' => 'admin.classes.index', 'active' => request()->routeIs('admin.classes.*')],
                 ['label' => 'Module', 'icon' => 'fas fa-cubes-stacked', 'route' => 'admin.modules.index', 'active' => request()->routeIs('admin.modules.*') || request()->routeIs('admin.courses.modules.*')],
                 ['label' => 'Phòng học', 'icon' => 'fas fa-door-open', 'route' => 'admin.rooms.index', 'active' => request()->routeIs('admin.rooms.*')],
-                ['label' => 'Khung giờ học', 'icon' => 'fas fa-clock', 'route' => 'admin.course-time-slots.index', 'active' => request()->routeIs('admin.course-time-slots.*')],
                 [
                     'label' => 'Đăng ký học',
                     'icon' => 'fas fa-clipboard-check',
@@ -60,7 +61,14 @@
                 ],
                 ['label' => 'Lịch học', 'icon' => 'fas fa-calendar-days', 'route' => 'admin.schedules.index', 'active' => request()->routeIs('admin.schedules.*')],
                 [
-                    'label' => 'Yêu cầu đổi lịch',
+                    'label' => 'Kiểm tra xung đột',
+                    'icon' => 'fas fa-triangle-exclamation',
+                    'route' => 'admin.schedules.conflicts',
+                    'active' => request()->routeIs('admin.schedules.conflicts'),
+                    'badge' => ($sidebarBadges['schedule_conflicts'] ?? 0) ?: null,
+                ],
+                [
+                    'label' => 'Yêu cầu dời buổi',
                     'icon' => 'fas fa-calendar-rotate',
                     'route' => 'admin.schedule-change-requests.index',
                     'active' => request()->routeIs('admin.schedule-change-requests.*'),
@@ -131,7 +139,7 @@
                         <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-lg hover:bg-slate-100">
                             <i class="fas fa-bars text-slate-600"></i>
                         </button>
-                        <!-- Desktop Collapse Toggle Button -->
+                        
                         <button onclick="toggleSidebar()" class="hidden lg:block p-2 rounded-lg hover:bg-slate-100" title="Thu gọn/Mở rộng menu">
                             <i class="fas fa-bars text-slate-600"></i>
                         </button>
@@ -145,20 +153,59 @@
                             <i class="fas fa-house"></i>
                             <span class="hidden sm:inline">Trang chủ</span>
                         </a>
-                        <button class="relative p-2 rounded-full hover:bg-slate-100" title="Muc can xu ly">
-                            <i class="fas fa-bell text-slate-500"></i>
-                            <?php if($totalPendingItems > 0): ?>
-                                <span class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
-                                    <?php echo e($totalPendingItems > 99 ? '99+' : $totalPendingItems); ?>
+                        <div x-data="{ notificationsOpen: false }" class="relative" data-notification-poller data-notification-poller-url="<?php echo e(route('admin.notifications.poll')); ?>">
+                            <button @click="notificationsOpen = !notificationsOpen" class="relative rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-cyan-700" title="Thông báo">
+                                <i class="fas fa-bell"></i>
+                                <?php if($adminUnreadNotifications > 0): ?>
+                                    <span data-notification-badge class="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
+                                        <?php echo e($adminUnreadNotifications > 99 ? '99+' : $adminUnreadNotifications); ?>
 
-                                </span>
-                            <?php endif; ?>
-                        </button>
-                        <div class="flex items-center gap-2">
-                            <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
-                                <span class="text-sm font-semibold"><?php echo e(substr($adminUser?->name ?? 'A', 0, 1)); ?></span>
+                                    </span>
+                                <?php else: ?>
+                                    <span data-notification-badge class="absolute -right-1 -top-1 hidden min-w-[18px] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white"></span>
+                                <?php endif; ?>
+                            </button>
+
+                            <div x-show="notificationsOpen" x-cloak @click.away="notificationsOpen = false" class="absolute right-0 z-50 mt-3 w-96 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                                <div class="border-b border-slate-100 px-5 py-4">
+                                    <p class="text-sm font-semibold text-slate-900">Thông báo</p>
+                                    <p class="mt-1 text-xs text-slate-500"><span data-notification-unread-count><?php echo e($adminUnreadNotifications); ?></span> chưa đọc</p>
+                                </div>
+
+                                <div class="max-h-96 overflow-y-auto" data-notification-list>
+                                    <?php $__empty_1 = true; $__currentLoopData = $adminNotificationItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <a href="<?php echo e(route('admin.notifications.show', $notification)); ?>" class="block border-b border-slate-100 px-5 py-4 transition hover:bg-slate-50">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-slate-900"><?php echo e($notification->title); ?></p>
+                                                    <p class="mt-1 text-sm leading-6 text-slate-500"><?php echo e($notification->message); ?></p>
+                                                </div>
+                                                <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full <?php echo e($notification->is_read ? 'bg-slate-300' : 'bg-cyan-500'); ?>"></span>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                        <div class="px-5 py-8 text-center text-sm text-slate-500" data-notification-empty>
+                                            Chưa có thông báo nào.
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <a href="<?php echo e(route('admin.notifications.index')); ?>" class="block border-t border-slate-100 px-5 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50">
+                                    Mở hộp thông báo
+                                </a>
                             </div>
-                            <span class="hidden sm:inline text-sm font-medium text-slate-700"><?php echo e($adminUser?->name ?? 'Admin'); ?></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="<?php echo e(route('admin.profile.show')); ?>" class="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-slate-100" title="Thong tin ca nhan">
+                                <?php if($adminUser?->avatarUrl()): ?>
+                                    <img src="<?php echo e($adminUser->avatarUrl()); ?>" alt="Avatar" class="h-8 w-8 rounded-full object-cover ring-2 ring-cyan-100">
+                                <?php else: ?>
+                                    <div class="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
+                                        <span class="text-sm font-semibold"><?php echo e(substr($adminUser?->name ?? 'A', 0, 1)); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                                <span class="hidden sm:inline text-sm font-medium text-slate-700"><?php echo e($adminUser?->name ?? 'Admin'); ?></span>
+                            </a>
                             <form method="POST" action="<?php echo e(route('logout')); ?>" class="inline">
                                 <?php echo csrf_field(); ?>
                                 <button type="submit" class="ml-2 p-2 rounded-lg hover:bg-slate-100 hover:bg-red-50 cursor-pointer" title="Đăng xuất">
@@ -181,7 +228,7 @@
             <?php endif; ?>
 
             <div class="px-4 py-4 sm:px-6 lg:px-8">
-                <?php echo $__env->make('components.admin.alert', ['session' => session()], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                <?php echo $__env->make('components.quan_tri.thong_bao', ['session' => session()], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             </div>
 
             <main class="px-4 pb-10 sm:px-6 lg:px-8">
@@ -255,4 +302,4 @@
 </script>
 </body>
 </html>
-<?php /**PATH D:\XXamp\htdocs\khaitriedu-main\resources\views/layouts/admin.blade.php ENDPATH**/ ?>
+<?php /**PATH D:\XXamp\htdocs\khaitriedu-main\resources\views/bo_cuc/quan_tri.blade.php ENDPATH**/ ?>

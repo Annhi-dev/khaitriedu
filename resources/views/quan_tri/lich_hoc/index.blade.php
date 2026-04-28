@@ -83,6 +83,13 @@
                                 Xem lớp học
                             </a>
                         @endif
+                        <form method="post" action="{{ route('admin.courses.delete', $course->id) }}" onsubmit="return confirm('Xóa khóa học này?');" class="relative z-10">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50">
+                                <i class="fas fa-trash mr-1.5 text-[10px]"></i>
+                                Xóa
+                            </button>
+                        </form>
                     </div>
                 </div>
 

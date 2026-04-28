@@ -340,7 +340,7 @@ class AdminEnrollmentService
             ->whereIn('status', Enrollment::courseAccessStatuses())
             ->get()
             ->first(function (Enrollment $enrollment) use ($targetClassRoom): bool {
-                $existingClassRoom = $enrollment->currentClassRoom();
+                $existingClassRoom = $enrollment->conflictReferenceClassRoom();
 
                 return $existingClassRoom !== null
                     && (int) $existingClassRoom->id !== (int) $targetClassRoom->id
