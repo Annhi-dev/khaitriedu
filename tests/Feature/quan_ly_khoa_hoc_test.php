@@ -570,9 +570,9 @@ class quan_ly_khoa_hoc_test extends TestCase
 
         BaiHoc::create([
             'module_id' => $module->id,
-            'title' => 'Bu?i 1: T?ng quan khoa h?c - Nh?p m?n',
-            'description' => 'Mo ta bi sai ?',
-            'content' => 'Noi dung buoi hoc bi sai ?',
+            'title' => 'Buổi 1: Tổng quan khóa học - Nhập môn',
+            'description' => 'Mô tả bị sai dấu',
+            'content' => 'Nội dung buổi học bị sai dấu',
             'order' => 1,
             'duration' => 45,
         ]);
@@ -614,7 +614,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'course_id' => $course->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
-            'name' => 'Kh?a n?i b? - TH?C S? QU?N TR? KINH DOANH',
+            'name' => 'Khóa nội bộ - THẠC SĨ QUẢN TRỊ KINH DOANH',
             'start_date' => '2026-04-01',
             'duration' => 12,
             'status' => LopHoc::STATUS_OPEN,
