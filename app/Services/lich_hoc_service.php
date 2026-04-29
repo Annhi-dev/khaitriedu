@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -24,10 +24,10 @@ class AdminScheduleService
     {
         $search = trim((string) ($filters['search'] ?? ''));
 
-        return Enrollment::query()
+        return GhiDanh::query()
             ->with(['user', 'subject.category'])
             ->whereNull('lop_hoc_id')
-            ->whereIn('status', [Enrollment::STATUS_PENDING, Enrollment::STATUS_APPROVED])
+            ->whereIn('status', [GhiDanh::STATUS_PENDING, GhiDanh::STATUS_APPROVED])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
                     $builder->whereHas('user', function (Builder $userQuery) use ($search) {
@@ -38,7 +38,7 @@ class AdminScheduleService
                     });
                 });
             })
-            ->orderByRaw("case when status = '" . Enrollment::STATUS_APPROVED . "' then 0 else 1 end")
+            ->orderByRaw("case when status = '" . GhiDanh::STATUS_APPROVED . "' then 0 else 1 end")
             ->orderByDesc('submitted_at')
             ->orderByDesc('id')
             ->paginate(12)
@@ -52,23 +52,23 @@ class AdminScheduleService
         $courseId = $filters['course_id'] ?? null;
         $date = $filters['date'] ?? null;
 
-        return Course::query()
+        return KhoaHoc::query()
             ->with(['subject.category', 'teacher', 'enrollments.user', 'classRooms.room', 'classRooms.teacher', 'classRooms.schedules'])
             ->withCount([
-                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
             ])
             ->whereNotNull('teacher_id')
             ->whereIn('status', [
-                Course::STATUS_PENDING_OPEN,
-                Course::STATUS_SCHEDULED,
-                Course::STATUS_ACTIVE,
+                KhoaHoc::STATUS_PENDING_OPEN,
+                KhoaHoc::STATUS_SCHEDULED,
+                KhoaHoc::STATUS_ACTIVE,
             ])
             ->when($teacherId, fn (Builder $query) => $query->where('teacher_id', $teacherId))
             ->when($courseId, fn (Builder $query) => $query->whereKey($courseId))
             ->when($studentId, function (Builder $query) use ($studentId) {
                 $query->whereHas('enrollments', function (Builder $enrollmentQuery) use ($studentId) {
                     $enrollmentQuery->where('user_id', $studentId)
-                        ->whereIn('status', Enrollment::courseAccessStatuses());
+                        ->whereIn('status', GhiDanh::courseAccessStatuses());
                 });
             })
             ->when($date, function (Builder $query) use ($date) {
@@ -79,29 +79,29 @@ class AdminScheduleService
                             ->orWhereDate('end_date', '>=', $date);
                     });
             })
-            ->orderByRaw("case when status = '" . Course::STATUS_PENDING_OPEN . "' then 0 when status = '" . Course::STATUS_SCHEDULED . "' then 1 when status = '" . Course::STATUS_ACTIVE . "' then 2 else 3 end")
+            ->orderByRaw("case when status = '" . KhoaHoc::STATUS_PENDING_OPEN . "' then 0 when status = '" . KhoaHoc::STATUS_SCHEDULED . "' then 1 when status = '" . KhoaHoc::STATUS_ACTIVE . "' then 2 else 3 end")
             ->orderBy('title')
             ->paginate(12)
             ->withQueryString();
     }
 
-    public function getSchedulingContext(Enrollment $enrollment): array
+    public function getSchedulingContext(GhiDanh $enrollment): array
     {
         $enrollment->load(['user', 'subject.category', 'course.teacher', 'assignedTeacher.department']);
 
-        $courses = Course::query()
+        $courses = KhoaHoc::query()
             ->with(['teacher', 'subject'])
             ->where('subject_id', $enrollment->subject_id)
             ->orderBy('title')
             ->get();
 
-        $waitingCourses = Course::query()
+        $waitingCourses = KhoaHoc::query()
             ->with(['teacher', 'subject'])
             ->withCount([
-                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
             ])
             ->where('subject_id', $enrollment->subject_id)
-            ->where('status', Course::STATUS_PENDING_OPEN)
+            ->where('status', KhoaHoc::STATUS_PENDING_OPEN)
             ->orderBy('title')
             ->get();
 
@@ -121,32 +121,32 @@ class AdminScheduleService
             'teachers' => $teachers,
             'rooms' => $this->roomOptions(),
             'suggestedCourseTitle' => $this->suggestedCourseTitle($enrollment),
-            'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
+            'minimumStudentsToOpen' => KhoaHoc::minimumStudentsToOpen(),
         ];
     }
 
-    public function getOpenCourseContext(Course $course): array
+    public function getOpenCourseContext(KhoaHoc $course): array
     {
         $course->load([
             'subject.category',
             'teacher',
             'enrollments.user',
         ])->loadCount([
-            'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+            'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
         ]);
 
         $rooms = $this->availableRoomsForCourse($course);
 
         return [
             'course' => $course,
-            'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
-            'studentsNeeded' => max(0, Course::minimumStudentsToOpen() - (int) $course->scheduled_students_count),
+            'minimumStudentsToOpen' => KhoaHoc::minimumStudentsToOpen(),
+            'studentsNeeded' => max(0, KhoaHoc::minimumStudentsToOpen() - (int) $course->scheduled_students_count),
             'rooms' => $rooms,
             'availableRoomsCount' => $rooms->count(),
         ];
     }
 
-    public function getCourseDetailContext(Course $course): array
+    public function getCourseDetailContext(KhoaHoc $course): array
     {
         $course->load([
             'subject.category',
@@ -157,33 +157,33 @@ class AdminScheduleService
             'classRooms.teacher',
             'classRooms.schedules.room',
         ])->loadCount([
-            'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+            'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
         ]);
 
         $classRoom = $course->currentClassRoom();
         $classRoom?->loadMissing(['room', 'teacher', 'schedules.room']);
 
         $activeEnrollments = $course->enrollments
-            ->filter(fn (Enrollment $enrollment) => in_array($enrollment->status, Enrollment::courseAccessStatuses(), true))
+            ->filter(fn (GhiDanh $enrollment) => in_array($enrollment->status, GhiDanh::courseAccessStatuses(), true))
             ->values();
 
-        Enrollment::syncDisplayStatusesByClass($activeEnrollments);
+        GhiDanh::syncDisplayStatusesByClass($activeEnrollments);
 
         $activeEnrollments = $activeEnrollments
-            ->sortBy(function (Enrollment $enrollment) {
+            ->sortBy(function (GhiDanh $enrollment) {
                 return match ($enrollment->displayStatus()) {
-                    Enrollment::STATUS_SCHEDULED => 0,
-                    Enrollment::STATUS_ACTIVE => 1,
-                    Enrollment::STATUS_APPROVED => 2,
-                    Enrollment::STATUS_PENDING => 3,
+                    GhiDanh::STATUS_SCHEDULED => 0,
+                    GhiDanh::STATUS_ACTIVE => 1,
+                    GhiDanh::STATUS_APPROVED => 2,
+                    GhiDanh::STATUS_PENDING => 3,
                     default => 9,
                 };
             })
             ->values();
 
         $classSchedules = $classRoom?->schedules
-            ? $classRoom->schedules->sortBy(function (ClassSchedule $schedule) {
-                return array_search($schedule->day_of_week, array_keys(ClassSchedule::$dayOptions), true);
+            ? $classRoom->schedules->sortBy(function (LichHoc $schedule) {
+                return array_search($schedule->day_of_week, array_keys(LichHoc::$dayOptions), true);
             })->values()
             : collect();
 
@@ -193,11 +193,11 @@ class AdminScheduleService
             'classSchedules' => $classSchedules,
             'activeEnrollments' => $activeEnrollments,
             'scheduledStudentsCount' => (int) $course->scheduled_students_count,
-            'minimumStudentsToOpen' => Course::minimumStudentsToOpen(),
+            'minimumStudentsToOpen' => KhoaHoc::minimumStudentsToOpen(),
         ];
     }
 
-    public function syncCourseSchedule(Course $course, ?int $roomId = null): ?ClassRoom
+    public function syncCourseSchedule(KhoaHoc $course, ?int $roomId = null): ?LopHoc
     {
         $course->loadMissing(['subject', 'classRooms.room', 'classRooms.schedules']);
 
@@ -241,10 +241,10 @@ class AdminScheduleService
         );
     }
 
-    public function scheduleEnrollment(Enrollment $enrollment, array $data, User $admin): string
+    public function scheduleEnrollment(GhiDanh $enrollment, array $data, NguoiDung $admin): string
     {
         return DB::transaction(function () use ($enrollment, $data, $admin): string {
-            $enrollment = Enrollment::query()
+            $enrollment = GhiDanh::query()
                 ->lockForUpdate()
                 ->findOrFail($enrollment->id);
 
@@ -304,7 +304,7 @@ class AdminScheduleService
                 'start_time' => (string) $startTime,
                 'end_time' => (string) $endTime,
                 'capacity' => (int) $capacity,
-                'status' => Course::STATUS_SCHEDULED,
+                'status' => KhoaHoc::STATUS_SCHEDULED,
             ]);
             $course->schedule = $this->buildScheduleSummary($course);
             $course->save();
@@ -325,7 +325,7 @@ class AdminScheduleService
                 'lop_hoc_id' => $classRoom->id,
                 'assigned_teacher_id' => (int) $teacherId,
                 'schedule' => $course->schedule,
-                'status' => Enrollment::STATUS_SCHEDULED,
+                'status' => GhiDanh::STATUS_SCHEDULED,
                 'note' => $data['note'] ?? $enrollment->note,
                 'reviewed_by' => $admin->id,
                 'reviewed_at' => now(),
@@ -333,7 +333,7 @@ class AdminScheduleService
 
             $enrollment->update($enrollmentPayload);
             $course->enrollments()
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->update([
                     'lop_hoc_id' => $classRoom->id,
                     'assigned_teacher_id' => (int) $teacherId,
@@ -348,15 +348,15 @@ class AdminScheduleService
         });
     }
 
-    public function openPendingCourse(Course $course, array $data, User $admin): string
+    public function openPendingCourse(KhoaHoc $course, array $data, NguoiDung $admin): string
     {
         return DB::transaction(function () use ($course, $data, $admin): string {
-            $course = Course::query()
+            $course = KhoaHoc::query()
                 ->lockForUpdate()
                 ->findOrFail($course->id);
 
             $course->loadMissing(['teacher', 'subject', 'enrollments.user'])->loadCount([
-                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments as scheduled_students_count' => fn (Builder $query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
             ]);
 
             if (! $course->isPendingOpen()) {
@@ -365,9 +365,9 @@ class AdminScheduleService
                 ]);
             }
 
-            if ((int) $course->scheduled_students_count < Course::minimumStudentsToOpen()) {
+            if ((int) $course->scheduled_students_count < KhoaHoc::minimumStudentsToOpen()) {
                 throw ValidationException::withMessages([
-                    'course' => 'Lớp chưa đủ tối thiểu ' . Course::minimumStudentsToOpen() . ' học viên để mở.',
+                    'course' => 'Lớp chưa đủ tối thiểu ' . KhoaHoc::minimumStudentsToOpen() . ' học viên để mở.',
                 ]);
             }
 
@@ -409,7 +409,7 @@ class AdminScheduleService
             );
 
             $enrollments = $course->enrollments()
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->lockForUpdate()
                 ->get();
 
@@ -420,7 +420,7 @@ class AdminScheduleService
             $course->fill([
                 'start_date' => $startDate,
                 'end_date' => $endDate,
-                'status' => Course::STATUS_SCHEDULED,
+                'status' => KhoaHoc::STATUS_SCHEDULED,
             ]);
             $course->schedule = $this->buildScheduleSummary($course);
             $course->save();
@@ -436,7 +436,7 @@ class AdminScheduleService
             );
 
             $course->enrollments()
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->update([
                     'lop_hoc_id' => $classRoom->id,
                     'assigned_teacher_id' => $teacherId,
@@ -454,15 +454,15 @@ class AdminScheduleService
 
     public function teacherOptions(): Collection
     {
-        return User::query()
+        return NguoiDung::query()
             ->teachers()
             ->with('department')
-            ->where('status', User::STATUS_ACTIVE)
+            ->where('status', NguoiDung::STATUS_ACTIVE)
             ->orderBy('name')
             ->get();
     }
 
-    public function teacherOptionsForSubject(?Subject $subject): Collection
+    public function teacherOptionsForSubject(?MonHoc $subject): Collection
     {
         $teachers = $this->teacherOptions();
 
@@ -472,12 +472,12 @@ class AdminScheduleService
 
         $subject->loadMissing('category');
 
-        $filteredTeachers = $teachers->filter(fn (User $teacher) => $this->teacherMatchesSubject($teacher, $subject));
+        $filteredTeachers = $teachers->filter(fn (NguoiDung $teacher) => $this->teacherMatchesSubject($teacher, $subject));
 
         return $filteredTeachers->values();
     }
 
-    public function teacherMatchesSubject(User $teacher, ?Subject $subject): bool
+    public function teacherMatchesSubject(NguoiDung $teacher, ?MonHoc $subject): bool
     {
         if (! $subject) {
             return true;
@@ -507,6 +507,10 @@ class AdminScheduleService
             ->filter()
             ->values();
 
+        if ($teacherTexts->isEmpty() || $subjectTexts->isEmpty()) {
+            return true;
+        }
+
         foreach ($teacherTexts as $teacherText) {
             foreach ($subjectTexts as $subjectText) {
                 if ($teacherText === '' || $subjectText === '') {
@@ -524,38 +528,38 @@ class AdminScheduleService
 
     public function studentOptions(): Collection
     {
-        return User::query()
+        return NguoiDung::query()
             ->students()
-            ->whereHas('enrollments', fn (Builder $query) => $query->whereIn('status', Enrollment::courseAccessStatuses()))
+            ->whereHas('enrollments', fn (Builder $query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()))
             ->orderBy('name')
             ->get();
     }
 
     public function courseOptions(): Collection
     {
-        return Course::query()
+        return KhoaHoc::query()
             ->orderBy('title')
             ->get();
     }
 
     public function classRoomOptions(): Collection
     {
-        return ClassRoom::query()
+        return LopHoc::query()
             ->with(['course.subject', 'room', 'teacher', 'schedules'])
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->orderByDesc('id')
             ->get();
     }
 
     public function roomOptions(): Collection
     {
-        return Room::query()
-            ->where('status', Room::STATUS_ACTIVE)
+        return PhongHoc::query()
+            ->where('status', PhongHoc::STATUS_ACTIVE)
             ->orderBy('name')
             ->get();
     }
 
-    public function availableRoomsForCourse(Course $course): Collection
+    public function availableRoomsForCourse(KhoaHoc $course): Collection
     {
         $meetingDays = $course->meetingDayValues();
         $startTime = (string) ($course->start_time ?? '');
@@ -568,8 +572,8 @@ class AdminScheduleService
         }
 
         return $this->roomOptions()
-            ->filter(function (Room $room) use ($meetingDays, $startTime, $endTime, $startDate, $endDate): bool {
-                return ! ClassRoom::roomHasConflict(
+            ->filter(function (PhongHoc $room) use ($meetingDays, $startTime, $endTime, $startDate, $endDate): bool {
+                return ! LopHoc::roomHasConflict(
                     $room->id,
                     $meetingDays,
                     $startTime,
@@ -586,7 +590,7 @@ class AdminScheduleService
         return trim(Str::lower(Str::ascii($value)));
     }
 
-    protected function savePendingOpenEnrollment(Enrollment $enrollment, Course $course, array $data, User $admin): string
+    protected function savePendingOpenEnrollment(GhiDanh $enrollment, KhoaHoc $course, array $data, NguoiDung $admin): string
     {
         $teacherId = $data['teacher_id'] ?? $course->teacher_id;
         $meetingDays = $this->resolveMeetingDays($course, $data);
@@ -626,7 +630,7 @@ class AdminScheduleService
             'start_time' => (string) $startTime,
             'end_time' => (string) $endTime,
             'capacity' => (int) $capacity,
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
         $course->schedule = $this->buildPendingOpenSummary($course);
         $course->save();
@@ -636,7 +640,7 @@ class AdminScheduleService
             'subject_id' => $course->subject_id,
             'assigned_teacher_id' => (int) $teacherId,
             'schedule' => $course->schedule,
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'status' => GhiDanh::STATUS_SCHEDULED,
             'note' => $data['note'] ?? $enrollment->note,
             'reviewed_by' => $admin->id,
             'reviewed_at' => now(),
@@ -646,13 +650,13 @@ class AdminScheduleService
         $this->notifyStudentPendingOpen($enrollment->fresh(['user', 'subject', 'course']), $course->fresh(), $currentCount);
 
         if ($course->wasRecentlyCreated) {
-            return 'Đã lưu lớp chờ mở. Hiện có ' . $currentCount . '/' . Course::minimumStudentsToOpen() . ' học viên.';
+            return 'Đã lưu lớp chờ mở. Hiện có ' . $currentCount . '/' . KhoaHoc::minimumStudentsToOpen() . ' học viên.';
         }
 
-        return 'Đã ghép học viên vào lớp chờ mở. Hiện có ' . $currentCount . '/' . Course::minimumStudentsToOpen() . ' học viên.';
+        return 'Đã ghép học viên vào lớp chờ mở. Hiện có ' . $currentCount . '/' . KhoaHoc::minimumStudentsToOpen() . ' học viên.';
     }
 
-    protected function resolveMeetingDays(Course $course, array $data): array
+    protected function resolveMeetingDays(KhoaHoc $course, array $data): array
     {
         $selectedDays = $data['day_of_week'] ?? null;
 
@@ -667,11 +671,11 @@ class AdminScheduleService
         return $course->meetingDayValues();
     }
 
-    protected function resolveCourse(Enrollment $enrollment, array $data, bool $lockForUpdate = false): Course
+    protected function resolveCourse(GhiDanh $enrollment, array $data, bool $lockForUpdate = false): KhoaHoc
     {
         if ($this->shouldCreateNewClass($enrollment)) {
             if (! empty($data['course_id'])) {
-                $courseQuery = Course::query();
+                $courseQuery = KhoaHoc::query();
 
                 if ($lockForUpdate) {
                     $courseQuery->lockForUpdate();
@@ -697,16 +701,16 @@ class AdminScheduleService
             $title = trim((string) ($data['new_course_title'] ?? ''));
             $title = $title !== '' ? $title : $this->suggestedCourseTitle($enrollment);
 
-            return new Course([
+            return new KhoaHoc([
                 'subject_id' => $enrollment->subject_id,
                 'title' => $title,
                 'description' => $data['new_course_description'] ?? null,
-                'status' => Course::STATUS_DRAFT,
+                'status' => KhoaHoc::STATUS_DRAFT,
             ]);
         }
 
         if (! empty($data['course_id'])) {
-            $courseQuery = Course::query();
+            $courseQuery = KhoaHoc::query();
 
             if ($lockForUpdate) {
                 $courseQuery->lockForUpdate();
@@ -731,18 +735,18 @@ class AdminScheduleService
             ]);
         }
 
-        return new Course([
+        return new KhoaHoc([
             'subject_id' => $enrollment->subject_id,
             'title' => $title,
             'description' => $data['new_course_description'] ?? null,
-            'status' => Course::STATUS_DRAFT,
+            'status' => KhoaHoc::STATUS_DRAFT,
         ]);
     }
 
-    protected function suggestedCourseTitle(Enrollment $enrollment): string
+    protected function suggestedCourseTitle(GhiDanh $enrollment): string
     {
         $subjectName = trim((string) ($enrollment->subject?->name ?? 'Lớp học'));
-        $existingTitles = Course::query()
+        $existingTitles = KhoaHoc::query()
             ->where('subject_id', $enrollment->subject_id)
             ->pluck('title')
             ->filter(fn ($title) => is_string($title) && trim($title) !== '')
@@ -767,18 +771,18 @@ class AdminScheduleService
         return $candidate;
     }
 
-    protected function shouldCreateNewClass(Enrollment $enrollment): bool
+    protected function shouldCreateNewClass(GhiDanh $enrollment): bool
     {
         return $enrollment->isCustomScheduleRequest()
             && in_array($enrollment->normalizedStatus(), [
-                Enrollment::STATUS_PENDING,
-                Enrollment::STATUS_APPROVED,
+                GhiDanh::STATUS_PENDING,
+                GhiDanh::STATUS_APPROVED,
             ], true);
     }
 
     protected function ensureTeacherIsValid(int $teacherId): void
     {
-        if (! User::query()->teachers()->whereKey($teacherId)->exists()) {
+        if (! NguoiDung::query()->teachers()->whereKey($teacherId)->exists()) {
             throw ValidationException::withMessages([
                 'teacher_id' => 'Giảng viên được chọn không hợp lệ.',
             ]);
@@ -787,7 +791,7 @@ class AdminScheduleService
 
     protected function ensureRoomIsValid(int $roomId): void
     {
-        if (! Room::query()->where('status', Room::STATUS_ACTIVE)->whereKey($roomId)->exists()) {
+        if (! PhongHoc::query()->where('status', PhongHoc::STATUS_ACTIVE)->whereKey($roomId)->exists()) {
             throw ValidationException::withMessages([
                 'room_id' => 'Phòng học được chọn không hợp lệ hoặc đang tạm ngưng.',
             ]);
@@ -796,11 +800,11 @@ class AdminScheduleService
 
     protected function ensureTeacherAvailability(?int $excludeCourseId, int $teacherId, array $meetingDays, string $startDate, string $endDate, string $startTime, string $endTime): void
     {
-        $conflict = Course::query()
+        $conflict = KhoaHoc::query()
             ->where('teacher_id', $teacherId)
             ->where('start_time', '<', $endTime)
             ->where('end_time', '>', $startTime)
-            ->whereIn('status', Course::schedulingStatuses())
+            ->whereIn('status', KhoaHoc::schedulingStatuses())
             ->when($excludeCourseId, fn (Builder $query) => $query->whereKeyNot($excludeCourseId))
             ->whereDate('start_date', '<=', $endDate)
             ->where(function (Builder $query) use ($startDate) {
@@ -808,7 +812,7 @@ class AdminScheduleService
                     ->orWhereDate('end_date', '>=', $startDate);
             })
             ->get()
-            ->first(fn (Course $course) => $this->meetingDaysOverlap($meetingDays, $course->meetingDayValues()));
+            ->first(fn (KhoaHoc $course) => $this->meetingDaysOverlap($meetingDays, $course->meetingDayValues()));
 
         if ($conflict) {
             throw ValidationException::withMessages([
@@ -817,18 +821,18 @@ class AdminScheduleService
         }
     }
 
-    protected function ensureStudentAvailability(Enrollment $enrollment, ?int $excludeCourseId, array $meetingDays, string $startDate, string $endDate, string $startTime, string $endTime): void
+    protected function ensureStudentAvailability(GhiDanh $enrollment, ?int $excludeCourseId, array $meetingDays, string $startDate, string $endDate, string $startTime, string $endTime): void
     {
-        $conflict = Enrollment::query()
+        $conflict = GhiDanh::query()
             ->where('user_id', $enrollment->user_id)
             ->whereKeyNot($enrollment->id)
-            ->whereIn('status', [Enrollment::STATUS_SCHEDULED, Enrollment::STATUS_ACTIVE])
+            ->whereIn('status', [GhiDanh::STATUS_SCHEDULED, GhiDanh::STATUS_ACTIVE])
             ->with('course')
             ->whereHas('course', function (Builder $query) use ($excludeCourseId, $startDate, $endDate, $startTime, $endTime) {
                 $query->when($excludeCourseId, fn (Builder $courseQuery) => $courseQuery->whereKeyNot($excludeCourseId))
                     ->where('start_time', '<', $endTime)
                     ->where('end_time', '>', $startTime)
-                    ->whereIn('status', Course::schedulingStatuses())
+                    ->whereIn('status', KhoaHoc::schedulingStatuses())
                     ->whereDate('start_date', '<=', $endDate)
                     ->where(function (Builder $builder) use ($startDate) {
                         $builder->whereNull('end_date')
@@ -836,7 +840,7 @@ class AdminScheduleService
                     });
             })
             ->get()
-            ->first(fn (Enrollment $conflictEnrollment) => $conflictEnrollment->course !== null
+            ->first(fn (GhiDanh $conflictEnrollment) => $conflictEnrollment->course !== null
                 && $this->meetingDaysOverlap($meetingDays, $conflictEnrollment->course->meetingDayValues()));
 
         if ($conflict) {
@@ -856,18 +860,18 @@ class AdminScheduleService
         ?int $excludeClassRoomId = null
     ): void
     {
-        if (ClassRoom::roomHasConflict($roomId, $meetingDays, $startTime, $endTime, $startDate, $endDate, $excludeClassRoomId)) {
+        if (LopHoc::roomHasConflict($roomId, $meetingDays, $startTime, $endTime, $startDate, $endDate, $excludeClassRoomId)) {
             throw ValidationException::withMessages([
                 'room_id' => 'Phòng học đã có lớp khác trùng vào khung giờ này.',
             ]);
         }
     }
 
-    protected function ensureCapacity(Course $course, int $capacity, Enrollment $enrollment): void
+    protected function ensureCapacity(KhoaHoc $course, int $capacity, GhiDanh $enrollment): void
     {
         $currentCount = $course->exists
             ? $course->enrollments()
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->when($enrollment->course_id === $course->id, fn (Builder $query) => $query->whereKeyNot($enrollment->id))
                 ->count()
             : 0;
@@ -879,7 +883,7 @@ class AdminScheduleService
         }
     }
 
-    protected function buildScheduleSummary(Course $course): string
+    protected function buildScheduleSummary(KhoaHoc $course): string
     {
         $startDate = $course->start_date instanceof Carbon ? $course->start_date : Carbon::parse($course->start_date);
         $endDate = $course->end_date instanceof Carbon ? $course->end_date : Carbon::parse($course->end_date);
@@ -890,11 +894,11 @@ class AdminScheduleService
             . ' đến ' . $endDate->format('d/m/Y');
     }
 
-    protected function buildPendingOpenSummary(Course $course): string
+    protected function buildPendingOpenSummary(KhoaHoc $course): string
     {
         return $course->meetingDaysLabel()
             . ', ' . $course->start_time . ' - ' . $course->end_time
-            . ' | Chờ đủ ' . Course::minimumStudentsToOpen() . ' học viên để mở lớp';
+            . ' | Chờ đủ ' . KhoaHoc::minimumStudentsToOpen() . ' học viên để mở lớp';
     }
 
     protected function meetingDaysOverlap(array $sourceDays, array $targetDays): bool
@@ -912,7 +916,7 @@ class AdminScheduleService
         $startTime = substr($startTime, 0, 5);
         $endTime = substr($endTime, 0, 5);
 
-        $conflict = Enrollment::query()
+        $conflict = GhiDanh::query()
             ->with([
                 'classRoom.course',
                 'classRoom.schedules',
@@ -920,9 +924,9 @@ class AdminScheduleService
             ])
             ->where('user_id', $studentId)
             ->when($ignoreEnrollmentId, fn (Builder $query) => $query->whereKeyNot($ignoreEnrollmentId))
-            ->whereIn('status', Enrollment::scheduleBlockingStatuses())
+            ->whereIn('status', GhiDanh::scheduleBlockingStatuses())
             ->get()
-            ->first(function (Enrollment $enrollment) use ($meetingDays, $startTime, $endTime): bool {
+            ->first(function (GhiDanh $enrollment) use ($meetingDays, $startTime, $endTime): bool {
                 $existingClassRoom = $enrollment->conflictReferenceClassRoom();
 
                 if (! $existingClassRoom) {
@@ -952,35 +956,35 @@ class AdminScheduleService
         }
     }
 
-    protected function queuedStudentCount(Course $course): int
+    protected function queuedStudentCount(KhoaHoc $course): int
     {
         return $course->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->count();
     }
 
-    protected function notifyStudentPendingOpen(Enrollment $enrollment, Course $course, int $currentCount): void
+    protected function notifyStudentPendingOpen(GhiDanh $enrollment, KhoaHoc $course, int $currentCount): void
     {
-        Notification::create([
+        ThongBao::create([
             'user_id' => $enrollment->user_id,
             'title' => 'Lớp đang chờ mở',
             'message' => 'Bạn đã được ghép vào ' . $course->title
-                . '. Hiện lớp có ' . $currentCount . '/' . Course::minimumStudentsToOpen()
+                . '. Hiện lớp có ' . $currentCount . '/' . KhoaHoc::minimumStudentsToOpen()
                 . ' học viên. Admin sẽ chốt ngày bắt đầu và ngày kết thúc khi lớp đủ người.',
             'type' => 'info',
             'link' => route('student.enroll.my-classes'),
         ]);
     }
 
-    protected function notifyStudentsCourseOpened(Course $course): void
+    protected function notifyStudentsCourseOpened(KhoaHoc $course): void
     {
         $studentIds = $course->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->pluck('user_id')
             ->unique();
 
         foreach ($studentIds as $studentId) {
-            Notification::create([
+            ThongBao::create([
                 'user_id' => $studentId,
                 'title' => 'Lớp đã được mở',
                 'message' => 'Lớp ' . $course->title . ' đã được mở chính thức với lịch '
@@ -991,27 +995,27 @@ class AdminScheduleService
         }
     }
 
-    protected function findExistingClassRoomForCourse(int $courseId): ?ClassRoom
+    protected function findExistingClassRoomForCourse(int $courseId): ?LopHoc
     {
-        return ClassRoom::query()
+        return LopHoc::query()
             ->where('course_id', $courseId)
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->orderByDesc('id')
             ->first();
     }
 
     protected function syncClassRoomForCourse(
-        Course $course,
+        KhoaHoc $course,
         int $roomId,
         int $teacherId,
         array $meetingDays,
         string $startTime,
         string $endTime,
         ?string $startDate = null
-    ): ClassRoom {
-        $classRoom = ClassRoom::query()
+    ): LopHoc {
+        $classRoom = LopHoc::query()
             ->where('course_id', $course->id)
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->lockForUpdate()
             ->orderByDesc('id')
             ->first();
@@ -1023,7 +1027,7 @@ class AdminScheduleService
             'room_id' => $roomId,
             'teacher_id' => $teacherId,
             'duration' => $course->subject?->duration,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ];
 
         if ($startDate) {
@@ -1031,7 +1035,7 @@ class AdminScheduleService
         }
 
         if (! $classRoom) {
-            $classRoom = ClassRoom::query()->create($payload);
+            $classRoom = LopHoc::query()->create($payload);
         } else {
             $classRoom->fill($payload)->save();
         }
@@ -1057,7 +1061,7 @@ class AdminScheduleService
                 continue;
             }
 
-            ClassSchedule::query()->create([
+            LichHoc::query()->create([
                 'lop_hoc_id' => $classRoom->id,
                 'teacher_id' => $teacherId,
                 'room_id' => $roomId,
@@ -1074,19 +1078,19 @@ class AdminScheduleService
         return $classRoom->fresh(['room', 'schedules']);
     }
 
-    protected function refreshClassStatusByCapacity(ClassRoom $classRoom): void
+    protected function refreshClassStatusByCapacity(LopHoc $classRoom): void
     {
         $classRoom->loadCount('enrollments');
         $classRoom->loadMissing('room');
 
-        if (! $classRoom->room || $classRoom->status === ClassRoom::STATUS_COMPLETED || $classRoom->status === ClassRoom::STATUS_CLOSED) {
+        if (! $classRoom->room || $classRoom->status === LopHoc::STATUS_COMPLETED || $classRoom->status === LopHoc::STATUS_CLOSED) {
             return;
         }
 
         $classRoom->update([
             'status' => (int) $classRoom->enrollments_count >= (int) $classRoom->room->capacity
-                ? ClassRoom::STATUS_FULL
-                : ClassRoom::STATUS_OPEN,
+                ? LopHoc::STATUS_FULL
+                : LopHoc::STATUS_OPEN,
         ]);
     }
 }

@@ -70,10 +70,10 @@
                             <td class="px-6 py-4">
                                 @php
                                     $type = match ($timeSlot->status) {
-                                        \App\Models\CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
-                                        \App\Models\CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS,
-                                        \App\Models\CourseTimeSlot::STATUS_CLASS_OPENED => 'success',
-                                        \App\Models\CourseTimeSlot::STATUS_CANCELLED => 'danger',
+                                        \App\Models\KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION,
+                                        \App\Models\KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS,
+                                        \App\Models\KhungGioKhoaHoc::STATUS_CLASS_OPENED => 'success',
+                                        \App\Models\KhungGioKhoaHoc::STATUS_CANCELLED => 'danger',
                                         default => 'warning',
                                     };
                                 @endphp

@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\AttendanceRecord;
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\LeaveRequest;
-use App\Models\Notification;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\DiemDanh;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\YeuCauXinPhep;
+use App\Models\ThongBao;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,17 +26,17 @@ class xin_phep_nghi_test extends TestCase
         Carbon::setTestNow('2026-04-17 09:00:00');
 
         try {
-            $student = User::factory()->student()->create(['name' => 'Hoc vien xin phep']);
-            $teacher = User::factory()->teacher()->create(['name' => 'Giang vien xin phep']);
+            $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien xin phep']);
+            $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien xin phep']);
             ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createTeachingBundle($teacher, 'Friday');
 
-            Enrollment::create([
+            GhiDanh::create([
                 'user_id' => $student->id,
                 'subject_id' => $classRoom->subject_id,
                 'course_id' => $classRoom->course_id,
                 'lop_hoc_id' => $classRoom->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $classRoom->scheduleSummary(),
                 'is_submitted' => true,
                 'submitted_at' => now(),
@@ -59,7 +59,7 @@ class xin_phep_nghi_test extends TestCase
                     'note' => 'Da thong bao cho gia dinh va lop truong.',
                 ]);
 
-            $leaveRequest = LeaveRequest::query()->firstOrFail();
+            $leaveRequest = YeuCauXinPhep::query()->firstOrFail();
 
             $storeResponse->assertRedirect(route('student.leave-requests.show', $leaveRequest));
             $storeResponse->assertSessionHas('status');
@@ -70,7 +70,7 @@ class xin_phep_nghi_test extends TestCase
                 'class_room_id' => $classRoom->id,
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => '2026-04-17 00:00:00',
-                'status' => LeaveRequest::STATUS_PENDING,
+                'status' => YeuCauXinPhep::STATUS_PENDING,
             ]);
 
             $this->assertDatabaseHas('thong_bao', [
@@ -96,23 +96,23 @@ class xin_phep_nghi_test extends TestCase
         Carbon::setTestNow('2026-04-17 09:00:00');
 
         try {
-            $teacher = User::factory()->teacher()->create(['name' => 'Giang vien xu ly']);
-            $student = User::factory()->student()->create(['name' => 'Hoc vien duyet phep']);
+            $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien xu ly']);
+            $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien duyet phep']);
             ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createTeachingBundle($teacher, 'Friday');
 
-            Enrollment::create([
+            GhiDanh::create([
                 'user_id' => $student->id,
                 'subject_id' => $classRoom->subject_id,
                 'course_id' => $classRoom->course_id,
                 'lop_hoc_id' => $classRoom->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $classRoom->scheduleSummary(),
                 'is_submitted' => true,
                 'submitted_at' => now(),
             ]);
 
-            $leaveRequest = LeaveRequest::create([
+            $leaveRequest = YeuCauXinPhep::create([
                 'student_id' => $student->id,
                 'teacher_id' => $teacher->id,
                 'enrollment_id' => null,
@@ -121,10 +121,10 @@ class xin_phep_nghi_test extends TestCase
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => '2026-04-17',
                 'reason' => 'Bi om nen xin nghi buoi nay.',
-                'status' => LeaveRequest::STATUS_PENDING,
+                'status' => YeuCauXinPhep::STATUS_PENDING,
             ]);
 
-            AttendanceRecord::create([
+            DiemDanh::create([
                 'course_id' => $classRoom->course_id,
                 'class_room_id' => $classRoom->id,
                 'class_schedule_id' => $schedule->id,
@@ -132,7 +132,7 @@ class xin_phep_nghi_test extends TestCase
                 'student_id' => $student->id,
                 'teacher_id' => $teacher->id,
                 'attendance_date' => '2026-04-17',
-                'status' => AttendanceRecord::STATUS_ABSENT,
+                'status' => DiemDanh::STATUS_ABSENT,
                 'note' => 'Ban dau ghi nhan vang khong phep.',
                 'recorded_at' => now(),
             ]);
@@ -140,7 +140,7 @@ class xin_phep_nghi_test extends TestCase
             $response = $this
                 ->actingAs($teacher)
                 ->post(route('teacher.leave-requests.review', $leaveRequest), [
-                    'status' => LeaveRequest::STATUS_ACCEPTED,
+                    'status' => YeuCauXinPhep::STATUS_ACCEPTED,
                     'teacher_note' => 'Da chấp nhận xin phép cho buổi này.',
                 ]);
 
@@ -149,14 +149,14 @@ class xin_phep_nghi_test extends TestCase
 
             $leaveRequest->refresh();
 
-            $this->assertSame(LeaveRequest::STATUS_ACCEPTED, $leaveRequest->status);
+            $this->assertSame(YeuCauXinPhep::STATUS_ACCEPTED, $leaveRequest->status);
             $this->assertSame($teacher->id, $leaveRequest->reviewed_by);
             $this->assertDatabaseHas('attendance_records', [
                 'student_id' => $student->id,
                 'class_room_id' => $classRoom->id,
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => '2026-04-17 00:00:00',
-                'status' => AttendanceRecord::STATUS_EXCUSED,
+                'status' => DiemDanh::STATUS_EXCUSED,
                 'teacher_id' => $teacher->id,
             ]);
 
@@ -182,23 +182,23 @@ class xin_phep_nghi_test extends TestCase
         Carbon::setTestNow('2026-04-17 09:00:00');
 
         try {
-            $teacher = User::factory()->teacher()->create(['name' => 'Giang vien cap nhat']);
-            $student = User::factory()->student()->create(['name' => 'Hoc vien doi xu ly']);
+            $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien cap nhat']);
+            $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien doi xu ly']);
             ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createTeachingBundle($teacher, 'Friday');
 
-            Enrollment::create([
+            GhiDanh::create([
                 'user_id' => $student->id,
                 'subject_id' => $classRoom->subject_id,
                 'course_id' => $classRoom->course_id,
                 'lop_hoc_id' => $classRoom->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $classRoom->scheduleSummary(),
                 'is_submitted' => true,
                 'submitted_at' => now(),
             ]);
 
-            $leaveRequest = LeaveRequest::create([
+            $leaveRequest = YeuCauXinPhep::create([
                 'student_id' => $student->id,
                 'teacher_id' => $teacher->id,
                 'enrollment_id' => null,
@@ -207,10 +207,10 @@ class xin_phep_nghi_test extends TestCase
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => '2026-04-17',
                 'reason' => 'Ban dau xin phep nghi hoc.',
-                'status' => LeaveRequest::STATUS_PENDING,
+                'status' => YeuCauXinPhep::STATUS_PENDING,
             ]);
 
-            AttendanceRecord::create([
+            DiemDanh::create([
                 'course_id' => $classRoom->course_id,
                 'class_room_id' => $classRoom->id,
                 'class_schedule_id' => $schedule->id,
@@ -218,7 +218,7 @@ class xin_phep_nghi_test extends TestCase
                 'student_id' => $student->id,
                 'teacher_id' => $teacher->id,
                 'attendance_date' => '2026-04-17',
-                'status' => AttendanceRecord::STATUS_ABSENT,
+                'status' => DiemDanh::STATUS_ABSENT,
                 'note' => 'Ban dau ghi nhan vang khong phep.',
                 'recorded_at' => now(),
             ]);
@@ -226,26 +226,26 @@ class xin_phep_nghi_test extends TestCase
             $acceptResponse = $this
                 ->actingAs($teacher)
                 ->post(route('teacher.leave-requests.review', $leaveRequest), [
-                    'status' => LeaveRequest::STATUS_ACCEPTED,
+                    'status' => YeuCauXinPhep::STATUS_ACCEPTED,
                     'teacher_note' => 'Da chap nhan lan dau.',
                 ]);
 
             $acceptResponse->assertRedirect(route('teacher.leave-requests.show', $leaveRequest));
 
             $leaveRequest->refresh();
-            $this->assertSame(LeaveRequest::STATUS_ACCEPTED, $leaveRequest->status);
+            $this->assertSame(YeuCauXinPhep::STATUS_ACCEPTED, $leaveRequest->status);
             $this->assertDatabaseHas('attendance_records', [
                 'student_id' => $student->id,
                 'class_room_id' => $classRoom->id,
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => '2026-04-17 00:00:00',
-                'status' => AttendanceRecord::STATUS_EXCUSED,
+                'status' => DiemDanh::STATUS_EXCUSED,
             ]);
 
             $rejectResponse = $this
                 ->actingAs($teacher)
                 ->post(route('teacher.leave-requests.review', $leaveRequest), [
-                    'status' => LeaveRequest::STATUS_REJECTED,
+                    'status' => YeuCauXinPhep::STATUS_REJECTED,
                     'teacher_note' => 'Cap nhat lai thanh tu choi.',
                 ]);
 
@@ -254,14 +254,14 @@ class xin_phep_nghi_test extends TestCase
 
             $leaveRequest->refresh();
 
-            $this->assertSame(LeaveRequest::STATUS_REJECTED, $leaveRequest->status);
+            $this->assertSame(YeuCauXinPhep::STATUS_REJECTED, $leaveRequest->status);
             $this->assertSame($teacher->id, $leaveRequest->reviewed_by);
             $this->assertDatabaseHas('attendance_records', [
                 'student_id' => $student->id,
                 'class_room_id' => $classRoom->id,
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => '2026-04-17 00:00:00',
-                'status' => AttendanceRecord::STATUS_ABSENT,
+                'status' => DiemDanh::STATUS_ABSENT,
             ]);
             $this->assertDatabaseHas('thong_bao', [
                 'user_id' => $student->id,
@@ -274,12 +274,12 @@ class xin_phep_nghi_test extends TestCase
 
     public function test_student_cannot_open_another_students_leave_request(): void
     {
-        $teacher = User::factory()->teacher()->create();
-        $owner = User::factory()->student()->create();
-        $otherStudent = User::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $owner = NguoiDung::factory()->student()->create();
+        $otherStudent = NguoiDung::factory()->student()->create();
         ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createTeachingBundle($teacher, 'Friday');
 
-        $leaveRequest = LeaveRequest::create([
+        $leaveRequest = YeuCauXinPhep::create([
             'student_id' => $owner->id,
             'teacher_id' => $teacher->id,
             'course_id' => $classRoom->course_id,
@@ -287,7 +287,7 @@ class xin_phep_nghi_test extends TestCase
             'class_schedule_id' => $schedule->id,
             'attendance_date' => now()->toDateString(),
             'reason' => 'Ly do rieng tu.',
-            'status' => LeaveRequest::STATUS_PENDING,
+            'status' => YeuCauXinPhep::STATUS_PENDING,
         ]);
 
         $response = $this
@@ -297,25 +297,25 @@ class xin_phep_nghi_test extends TestCase
         $response->assertNotFound();
     }
 
-    private function createTeachingBundle(User $teacher, string $dayOfWeek = 'Friday'): array
+    private function createTeachingBundle(NguoiDung $teacher, string $dayOfWeek = 'Friday'): array
     {
         $slug = 'xin-phep-' . str()->random(6);
 
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-hoc-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Ky nang giao tiep ' . $slug,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1750000,
             'duration' => 3,
         ]);
 
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Lop xin phep ' . $slug,
             'description' => 'Lop hoc phuc vu test xin phep.',
@@ -326,31 +326,31 @@ class xin_phep_nghi_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'capacity' => 20,
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
             'schedule' => 'Lich test xin phep',
         ]);
 
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'P' . fake()->unique()->numberBetween(100, 999),
             'name' => 'Phong xin phep ' . fake()->unique()->numberBetween(1, 99),
             'type' => 'offline',
             'location' => 'Tang 2',
             'capacity' => 25,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => 'Lop xin phep ' . $slug,
             'room_id' => $room->id,
             'teacher_id' => $teacher->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
             'duration' => 3,
             'start_date' => now()->toDateString(),
         ]);
 
-        $schedule = ClassSchedule::create([
+        $schedule = LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,

@@ -6,12 +6,12 @@
 @section('content')
 @php
     $badgeClasses = match ($leaveRequest->status) {
-        \App\Models\LeaveRequest::STATUS_ACCEPTED => 'bg-emerald-100 text-emerald-700',
-        \App\Models\LeaveRequest::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
-        \App\Models\LeaveRequest::STATUS_ACKNOWLEDGED => 'bg-cyan-100 text-cyan-700',
+        \App\Models\YeuCauXinPhep::STATUS_ACCEPTED => 'bg-emerald-100 text-emerald-700',
+        \App\Models\YeuCauXinPhep::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
+        \App\Models\YeuCauXinPhep::STATUS_ACKNOWLEDGED => 'bg-cyan-100 text-cyan-700',
         default => 'bg-amber-100 text-amber-700',
     };
-    $statusOptions = \App\Models\LeaveRequest::statusOptions();
+    $statusOptions = \App\Models\YeuCauXinPhep::statusOptions();
 @endphp
 
 <div class="space-y-6">
@@ -108,7 +108,7 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Kết quả xử lý</label>
                         <select name="status" class="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none">
-                            @foreach (\App\Models\LeaveRequest::teacherReviewStatuses() as $status)
+                            @foreach (\App\Models\YeuCauXinPhep::teacherReviewStatuses() as $status)
                                 <option value="{{ $status }}" @selected(old('status', $leaveRequest->status) === $status)>{{ $statusOptions[$status] ?? $status }}</option>
                             @endforeach
                         </select>

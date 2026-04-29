@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewScheduleChangeRequest;
-use App\Models\ScheduleChangeRequest;
-use App\Models\User;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguoiDung;
 use App\Services\AdminScheduleChangeRequestService;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class ScheduleChangeRequestController extends Controller
 {
     public function index(Request $request, AdminScheduleChangeRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -24,9 +24,9 @@ class ScheduleChangeRequestController extends Controller
         return view('quan_tri.yeu_cau_doi_lich.index', compact('current', 'filters', 'requests'));
     }
 
-    public function show(ScheduleChangeRequest $scheduleChangeRequest)
+    public function show(YeuCauDoiLich $scheduleChangeRequest)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -44,9 +44,9 @@ class ScheduleChangeRequestController extends Controller
         return view('quan_tri.yeu_cau_doi_lich.show', compact('current', 'scheduleChangeRequest'));
     }
 
-    public function review(ReviewScheduleChangeRequest $request, ScheduleChangeRequest $scheduleChangeRequest, AdminScheduleChangeRequestService $service)
+    public function review(ReviewScheduleChangeRequest $request, YeuCauDoiLich $scheduleChangeRequest, AdminScheduleChangeRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

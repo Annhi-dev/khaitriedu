@@ -1,27 +1,27 @@
 <?php
 
-use App\Models\Announcement;
-use App\Models\AttendanceRecord;
-use App\Models\Certificate;
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\CourseTimeSlot;
-use App\Models\ClassRoom;
-use App\Models\Department;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\LessonProgress;
-use App\Models\Notification;
-use App\Models\Question;
-use App\Models\Quiz;
-use App\Models\QuizAnswer;
-use App\Models\Review;
-use App\Models\Room;
-use App\Models\ScheduleChangeRequest;
-use App\Models\SlotRegistration;
-use App\Models\Subject;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\ThongBaoChung;
+use App\Models\DiemDanh;
+use App\Models\ChungChi;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\KhungGioKhoaHoc;
+use App\Models\LopHoc;
+use App\Models\PhongBan;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\TienDoBaiHoc;
+use App\Models\ThongBao;
+use App\Models\CauHoi;
+use App\Models\BaiKiemTra;
+use App\Models\TraLoiBaiKiemTra;
+use App\Models\DanhGia;
+use App\Models\PhongHoc;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguyenVongKhungGio;
+use App\Models\MonHoc;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use App\Services\CourseCurriculumService;
 use App\Services\AdminScheduleConflictService;
 use App\Services\CourseScheduleSyncService;
@@ -41,7 +41,7 @@ Artisan::command('curriculum:sync-modules {courseIds?*}', function () {
         ->values()
         ->all();
 
-    $query = Course::query()
+    $query = KhoaHoc::query()
         ->with(['subject.category', 'modules.lessons'])
         ->orderBy('title');
 
@@ -78,7 +78,7 @@ Artisan::command('schedule:sync-courses {courseIds?*}', function () {
         ->values()
         ->all();
 
-    $query = Course::query()
+    $query = KhoaHoc::query()
         ->with(['subject.category', 'classRooms.schedules'])
         ->orderBy('title');
 
@@ -112,12 +112,12 @@ Artisan::command('schedule:sync-courses {courseIds?*}', function () {
 })->purpose('Đồng bộ lịch demo cho các khóa học');
 
 Artisan::command('demo:repair-teacher-assignments', function () {
-    $teachers = User::query()
+    $teachers = NguoiDung::query()
         ->teachers()
         ->orderBy('id')
         ->get(['id', 'name']);
 
-    $courses = Course::query()
+    $courses = KhoaHoc::query()
         ->with(['subject.category', 'classRooms.schedules', 'enrollments'])
         ->orderBy('id')
         ->get();
@@ -175,7 +175,7 @@ Artisan::command('demo:repair-teacher-assignments', function () {
             }
 
             $activeClassRooms = $course->classRooms()
-                ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+                ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
                 ->with('schedules')
                 ->get();
 
@@ -191,7 +191,7 @@ Artisan::command('demo:repair-teacher-assignments', function () {
             }
 
             $updatedEnrollments += $course->enrollments()
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->where('assigned_teacher_id', '!=', $teacherId)
                 ->update(['assigned_teacher_id' => $teacherId]);
         }
@@ -239,93 +239,93 @@ Artisan::command('demo:seed-report', function () {
         $this->line('Snapshot of the seeded dataset after migrate --seed.');
 
         $section('Accounts');
-        $line('Admins', User::query()->whereHas('role', fn ($query) => $query->where('name', User::ROLE_ADMIN))->count());
-        $line('Teachers', User::query()->teachers()->count());
-        $line('Students', User::query()->students()->count());
-        $line('Active users', User::query()->where('status', User::STATUS_ACTIVE)->count());
-        $line('Locked users', User::query()->where('status', User::STATUS_LOCKED)->count());
+        $line('Admins', NguoiDung::query()->whereHas('role', fn ($query) => $query->where('name', NguoiDung::ROLE_ADMIN))->count());
+        $line('Teachers', NguoiDung::query()->teachers()->count());
+        $line('Students', NguoiDung::query()->students()->count());
+        $line('Active users', NguoiDung::query()->where('status', NguoiDung::STATUS_ACTIVE)->count());
+        $line('Locked users', NguoiDung::query()->where('status', NguoiDung::STATUS_LOCKED)->count());
 
         $section('Catalog');
-        $line('Departments', Department::query()->count());
-        $line('Categories', Category::query()->count());
-        $line('Subjects', Subject::query()->count());
-        $line('Open subjects', Subject::query()->where('status', Subject::STATUS_OPEN)->count());
-        $line('Courses', Course::query()->count());
-        $line('Demo courses', Course::query()->where('title', 'like', 'KhaiTriEdu 2026 - %')->count());
-        $line('Internal courses', Course::query()->where('title', 'like', 'Khóa nội bộ - %')->count());
-        $line('Rooms', Room::query()->count());
+        $line('Departments', PhongBan::query()->count());
+        $line('Categories', NhomHoc::query()->count());
+        $line('Subjects', MonHoc::query()->count());
+        $line('Open subjects', MonHoc::query()->where('status', MonHoc::STATUS_OPEN)->count());
+        $line('Courses', KhoaHoc::query()->count());
+        $line('Demo courses', KhoaHoc::query()->where('title', 'like', 'KhaiTriEdu 2026 - %')->count());
+        $line('Internal courses', KhoaHoc::query()->where('title', 'like', 'Khóa nội bộ - %')->count());
+        $line('Rooms', PhongHoc::query()->count());
 
-        $printStatusBlock('Department status', Department::statusOptions(), $statusCounts(Department::class));
-        $printStatusBlock('Category status', [
-            Category::STATUS_ACTIVE => 'Active',
-            Category::STATUS_INACTIVE => 'Inactive',
-        ], $statusCounts(Category::class));
-        $printStatusBlock('Subject status', [
-            Subject::STATUS_DRAFT => 'Draft',
-            Subject::STATUS_OPEN => 'Open',
-            Subject::STATUS_CLOSED => 'Closed',
-            Subject::STATUS_ARCHIVED => 'Archived',
-        ], $statusCounts(Subject::class));
-        $printStatusBlock('Room status', Room::statusOptions(), $statusCounts(Room::class));
-        $printStatusBlock('Course status', [
-            Course::STATUS_DRAFT => 'Draft',
-            Course::STATUS_PENDING_OPEN => 'Pending open',
-            Course::STATUS_SCHEDULED => 'Scheduled',
-            Course::STATUS_ACTIVE => 'Active',
-            Course::STATUS_COMPLETED => 'Completed',
-            Course::STATUS_ARCHIVED => 'Archived',
-        ], $statusCounts(Course::class));
+        $printStatusBlock('PhongBan status', PhongBan::statusOptions(), $statusCounts(PhongBan::class));
+        $printStatusBlock('NhomHoc status', [
+            NhomHoc::STATUS_ACTIVE => 'Active',
+            NhomHoc::STATUS_INACTIVE => 'Inactive',
+        ], $statusCounts(NhomHoc::class));
+        $printStatusBlock('MonHoc status', [
+            MonHoc::STATUS_DRAFT => 'Draft',
+            MonHoc::STATUS_OPEN => 'Open',
+            MonHoc::STATUS_CLOSED => 'Closed',
+            MonHoc::STATUS_ARCHIVED => 'Archived',
+        ], $statusCounts(MonHoc::class));
+        $printStatusBlock('PhongHoc status', PhongHoc::statusOptions(), $statusCounts(PhongHoc::class));
+        $printStatusBlock('KhoaHoc status', [
+            KhoaHoc::STATUS_DRAFT => 'Draft',
+            KhoaHoc::STATUS_PENDING_OPEN => 'Pending open',
+            KhoaHoc::STATUS_SCHEDULED => 'Scheduled',
+            KhoaHoc::STATUS_ACTIVE => 'Active',
+            KhoaHoc::STATUS_COMPLETED => 'Completed',
+            KhoaHoc::STATUS_ARCHIVED => 'Archived',
+        ], $statusCounts(KhoaHoc::class));
 
         $section('Scheduling');
-        $line('Course time slots', CourseTimeSlot::query()->count());
-        $line('Open registration slots', CourseTimeSlot::query()->where('status', CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION)->count());
-        $line('Ready to open class slots', CourseTimeSlot::query()->where('status', CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS)->count());
-        $line('Class rooms', ClassRoom::query()->count());
-        $line('Open class rooms', ClassRoom::query()->where('status', ClassRoom::STATUS_OPEN)->count());
-        $line('Full class rooms', ClassRoom::query()->where('status', ClassRoom::STATUS_FULL)->count());
-        $line('Closed class rooms', ClassRoom::query()->where('status', ClassRoom::STATUS_CLOSED)->count());
-        $line('Completed class rooms', ClassRoom::query()->where('status', ClassRoom::STATUS_COMPLETED)->count());
-        $line('Enrollment records', Enrollment::query()->count());
-        $line('Slot registrations', SlotRegistration::query()->count());
-        $line('Schedule change requests', ScheduleChangeRequest::query()->count());
+        $line('KhoaHoc time slots', KhungGioKhoaHoc::query()->count());
+        $line('Open registration slots', KhungGioKhoaHoc::query()->where('status', KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION)->count());
+        $line('Ready to open class slots', KhungGioKhoaHoc::query()->where('status', KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS)->count());
+        $line('Class rooms', LopHoc::query()->count());
+        $line('Open class rooms', LopHoc::query()->where('status', LopHoc::STATUS_OPEN)->count());
+        $line('Full class rooms', LopHoc::query()->where('status', LopHoc::STATUS_FULL)->count());
+        $line('Closed class rooms', LopHoc::query()->where('status', LopHoc::STATUS_CLOSED)->count());
+        $line('Completed class rooms', LopHoc::query()->where('status', LopHoc::STATUS_COMPLETED)->count());
+        $line('GhiDanh records', GhiDanh::query()->count());
+        $line('Slot registrations', NguyenVongKhungGio::query()->count());
+        $line('Schedule change requests', YeuCauDoiLich::query()->count());
 
-        $printStatusBlock('Enrollment status', [
-            Enrollment::STATUS_PENDING => 'Pending',
-            Enrollment::STATUS_APPROVED => 'Approved',
-            Enrollment::STATUS_REJECTED => 'Rejected',
-            Enrollment::STATUS_ENROLLED => 'Enrolled',
-            Enrollment::STATUS_SCHEDULED => 'Scheduled',
-            Enrollment::STATUS_ACTIVE => 'Active',
-            Enrollment::STATUS_COMPLETED => 'Completed',
-        ], $statusCounts(Enrollment::class));
-        $printStatusBlock('Slot registration status', SlotRegistration::statusOptions(), $statusCounts(SlotRegistration::class));
+        $printStatusBlock('GhiDanh status', [
+            GhiDanh::STATUS_PENDING => 'Pending',
+            GhiDanh::STATUS_APPROVED => 'Approved',
+            GhiDanh::STATUS_REJECTED => 'Rejected',
+            GhiDanh::STATUS_ENROLLED => 'Enrolled',
+            GhiDanh::STATUS_SCHEDULED => 'Scheduled',
+            GhiDanh::STATUS_ACTIVE => 'Active',
+            GhiDanh::STATUS_COMPLETED => 'Completed',
+        ], $statusCounts(GhiDanh::class));
+        $printStatusBlock('Slot registration status', NguyenVongKhungGio::statusOptions(), $statusCounts(NguyenVongKhungGio::class));
         $printStatusBlock('Schedule change status', [
-            ScheduleChangeRequest::STATUS_PENDING => 'Pending',
-            ScheduleChangeRequest::STATUS_APPROVED => 'Approved',
-            ScheduleChangeRequest::STATUS_REJECTED => 'Rejected',
-        ], $statusCounts(ScheduleChangeRequest::class));
+            YeuCauDoiLich::STATUS_PENDING => 'Pending',
+            YeuCauDoiLich::STATUS_APPROVED => 'Approved',
+            YeuCauDoiLich::STATUS_REJECTED => 'Rejected',
+        ], $statusCounts(YeuCauDoiLich::class));
 
         $section('Learning Outcomes');
-        $line('Attendance records', AttendanceRecord::query()->count());
-        $line('Grades', Grade::query()->count());
-        $line('Teacher evaluations', \App\Models\TeacherEvaluation::query()->count());
-        $line('Quizzes', Quiz::query()->count());
-        $line('Questions', Question::query()->count());
-        $line('Quiz answers', QuizAnswer::query()->count());
-        $line('Lesson progress rows', LessonProgress::query()->count());
-        $line('Certificates', Certificate::query()->count());
-        $line('Reviews', Review::query()->count());
-        $line('Announcements', Announcement::query()->count());
-        $line('Notifications', Notification::query()->count());
+        $line('Attendance records', DiemDanh::query()->count());
+        $line('Grades', DiemSo::query()->count());
+        $line('Teacher evaluations', \App\Models\DanhGiaGiaoVien::query()->count());
+        $line('Quizzes', BaiKiemTra::query()->count());
+        $line('Questions', CauHoi::query()->count());
+        $line('BaiKiemTra answers', TraLoiBaiKiemTra::query()->count());
+        $line('BaiHoc progress rows', TienDoBaiHoc::query()->count());
+        $line('Certificates', ChungChi::query()->count());
+        $line('Reviews', DanhGia::query()->count());
+        $line('Announcements', ThongBaoChung::query()->count());
+        $line('Notifications', ThongBao::query()->count());
 
         $section('Teacher Applications');
-        $line('Applications total', TeacherApplication::query()->count());
+        $line('Applications total', DonUngTuyenGiaoVien::query()->count());
         $printStatusBlock('Teacher application status', [
-            TeacherApplication::STATUS_PENDING => 'Pending',
-            TeacherApplication::STATUS_APPROVED => 'Approved',
-            TeacherApplication::STATUS_REJECTED => 'Rejected',
-            TeacherApplication::STATUS_NEEDS_REVISION => 'Needs revision',
-        ], $statusCounts(TeacherApplication::class));
+            DonUngTuyenGiaoVien::STATUS_PENDING => 'Pending',
+            DonUngTuyenGiaoVien::STATUS_APPROVED => 'Approved',
+            DonUngTuyenGiaoVien::STATUS_REJECTED => 'Rejected',
+            DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION => 'Needs revision',
+        ], $statusCounts(DonUngTuyenGiaoVien::class));
 
         return self::SUCCESS;
     } catch (\Throwable $e) {
@@ -338,7 +338,7 @@ Artisan::command('demo:seed-report', function () {
 Artisan::command('enrollment:audit-class-links {--repair}', function () {
     $repair = (bool) $this->option('repair');
 
-    $enrollments = Enrollment::query()
+    $enrollments = GhiDanh::query()
         ->with([
             'user',
             'course.classRooms.room',
@@ -599,7 +599,7 @@ Artisan::command('enrollment:prune-schedule-conflicts {--dry-run}', function () 
 })->purpose('Xoa enrollment gay trung lich hoc, giu lai ban moi nhat trong moi cum');
 
 Artisan::command('enrollment:report-weekly-conflicts {studentId?}', function (?string $studentId = null) {
-    $students = User::query()
+    $students = NguoiDung::query()
         ->students()
         ->when($studentId !== null, fn ($query) => $query->whereKey((int) $studentId))
         ->orderBy('id')

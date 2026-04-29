@@ -26,13 +26,13 @@
 
     $statusLabel = $enrollment->displayStatusLabel();
     $statusTone = match ($enrollment->displayStatus()) {
-        \App\Models\Enrollment::STATUS_COMPLETED => 'bg-slate-100 text-slate-700',
-        \App\Models\Enrollment::STATUS_ACTIVE => 'bg-emerald-100 text-emerald-700',
-        \App\Models\Enrollment::STATUS_SCHEDULED, \App\Models\Enrollment::STATUS_ENROLLED, \App\Models\Enrollment::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
+        \App\Models\GhiDanh::STATUS_COMPLETED => 'bg-slate-100 text-slate-700',
+        \App\Models\GhiDanh::STATUS_ACTIVE => 'bg-emerald-100 text-emerald-700',
+        \App\Models\GhiDanh::STATUS_SCHEDULED, \App\Models\GhiDanh::STATUS_ENROLLED, \App\Models\GhiDanh::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
         default => 'bg-amber-100 text-amber-700',
     };
 
-    $schedules = $classRoom?->schedules?->sortBy(fn ($schedule) => array_search($schedule->day_of_week, array_keys(\App\Models\ClassSchedule::$dayOptions), true))->values() ?? collect();
+    $schedules = $classRoom?->schedules?->sortBy(fn ($schedule) => array_search($schedule->day_of_week, array_keys(\App\Models\LichHoc::$dayOptions), true))->values() ?? collect();
     $progressPercent = null;
     if ($classRoom?->scheduleRangeStart() && $classRoom?->scheduleRangeEnd()) {
         $start = $classRoom->scheduleRangeStart();
@@ -166,7 +166,7 @@
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @foreach($schedules as $schedule)
                             <tr>
-                                <td class="px-4 py-4 font-medium text-slate-900">{{ \App\Models\ClassSchedule::$dayOptions[$schedule->day_of_week] ?? $schedule->day_of_week }}</td>
+                                <td class="px-4 py-4 font-medium text-slate-900">{{ \App\Models\LichHoc::$dayOptions[$schedule->day_of_week] ?? $schedule->day_of_week }}</td>
                                 <td class="px-4 py-4 text-slate-600">{{ substr((string) $schedule->start_time, 0, 5) }}</td>
                                 <td class="px-4 py-4 text-slate-600">{{ substr((string) $schedule->end_time, 0, 5) }}</td>
                                 <td class="px-4 py-4 text-slate-600">{{ $schedule->room?->name ?? $classRoom?->room?->name ?? 'Chưa phân phòng' }}</td>

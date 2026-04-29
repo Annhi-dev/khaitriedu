@@ -63,10 +63,10 @@
                             <td class="px-6 py-4">
                                 @php
                                     $type = match ($registration->status) {
-                                        \App\Models\SlotRegistration::STATUS_SCHEDULED,
-                                        \App\Models\SlotRegistration::STATUS_RECORDED => 'success',
-                                        \App\Models\SlotRegistration::STATUS_NEEDS_RESELECT => 'warning',
-                                        \App\Models\SlotRegistration::STATUS_REJECTED => 'danger',
+                                        \App\Models\NguyenVongKhungGio::STATUS_SCHEDULED,
+                                        \App\Models\NguyenVongKhungGio::STATUS_RECORDED => 'success',
+                                        \App\Models\NguyenVongKhungGio::STATUS_NEEDS_RESELECT => 'warning',
+                                        \App\Models\NguyenVongKhungGio::STATUS_REJECTED => 'danger',
                                         default => 'info',
                                     };
                                 @endphp

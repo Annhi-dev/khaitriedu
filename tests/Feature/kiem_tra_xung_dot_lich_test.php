@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\AdminScheduleConflictService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,9 +20,9 @@ class kiem_tra_xung_dot_lich_test extends TestCase
 
     public function test_admin_can_detect_teacher_and_room_conflicts_for_manual_schedule(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacherOne = User::factory()->teacher()->create();
-        $teacherTwo = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
+        $teacherTwo = NguoiDung::factory()->teacher()->create();
         $roomOne = $this->createRoom('PH001');
         $roomTwo = $this->createRoom('PH002');
         [, $subject] = $this->createSubject();
@@ -56,8 +56,8 @@ class kiem_tra_xung_dot_lich_test extends TestCase
 
     public function test_admin_can_open_conflict_checker_from_existing_class_without_self_conflict(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom('PH010');
         [, $subject] = $this->createSubject('Tin hoc van phong', 'tin-hoc-van-phong');
         $classRoom = $this->createClassRoom($subject, $teacher, $room, 'Khóa hiện hành');
@@ -77,10 +77,10 @@ class kiem_tra_xung_dot_lich_test extends TestCase
 
     public function test_admin_can_review_student_schedule_conflicts_for_cleanup(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc vien trung lich']);
-        $teacherA = User::factory()->teacher()->create(['name' => 'Giang vien A']);
-        $teacherB = User::factory()->teacher()->create(['name' => 'Giang vien B']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien trung lich']);
+        $teacherA = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien A']);
+        $teacherB = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien B']);
         $roomA = $this->createRoom('PH100');
         $roomB = $this->createRoom('PH101');
         [, $subjectA] = $this->createSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep', 'Ngoai ngu');
@@ -89,25 +89,25 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         $classRoomA = $this->createClassRoom($subjectA, $teacherA, $roomA, 'Lop trung lich A');
         $classRoomB = $this->createClassRoom($subjectB, $teacherB, $roomB, 'Lop trung lich B');
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectA->id,
             'course_id' => $classRoomA->course_id,
             'lop_hoc_id' => $classRoomA->id,
             'assigned_teacher_id' => $teacherA->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $classRoomA->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectB->id,
             'course_id' => $classRoomB->course_id,
             'lop_hoc_id' => $classRoomB->id,
             'assigned_teacher_id' => $teacherB->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $classRoomB->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -133,8 +133,8 @@ class kiem_tra_xung_dot_lich_test extends TestCase
 
     public function test_admin_student_conflicts_are_grouped_by_class_pair(): void
     {
-        $teacherA = User::factory()->teacher()->create(['name' => 'Giang vien A']);
-        $teacherB = User::factory()->teacher()->create(['name' => 'Giang vien B']);
+        $teacherA = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien A']);
+        $teacherB = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien B']);
         $roomA = $this->createRoom('PH200');
         $roomB = $this->createRoom('PH201');
         [, $subjectA] = $this->createSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep', 'Ngoai ngu');
@@ -143,29 +143,29 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         $classRoomA = $this->createClassRoom($subjectA, $teacherA, $roomA, 'Lop trung lich A');
         $classRoomB = $this->createClassRoom($subjectB, $teacherB, $roomB, 'Lop trung lich B');
 
-        $studentOne = User::factory()->student()->create(['name' => 'Hoc vien 1']);
-        $studentTwo = User::factory()->student()->create(['name' => 'Hoc vien 2']);
+        $studentOne = NguoiDung::factory()->student()->create(['name' => 'Hoc vien 1']);
+        $studentTwo = NguoiDung::factory()->student()->create(['name' => 'Hoc vien 2']);
 
         foreach ([$studentOne, $studentTwo] as $student) {
-            Enrollment::create([
+            GhiDanh::create([
                 'user_id' => $student->id,
                 'subject_id' => $subjectA->id,
                 'course_id' => $classRoomA->course_id,
                 'lop_hoc_id' => $classRoomA->id,
                 'assigned_teacher_id' => $teacherA->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $classRoomA->scheduleSummary(),
                 'is_submitted' => true,
                 'submitted_at' => now(),
             ]);
 
-            Enrollment::create([
+            GhiDanh::create([
                 'user_id' => $student->id,
                 'subject_id' => $subjectB->id,
                 'course_id' => $classRoomB->course_id,
                 'lop_hoc_id' => $classRoomB->id,
                 'assigned_teacher_id' => $teacherB->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $classRoomB->scheduleSummary(),
                 'is_submitted' => true,
                 'submitted_at' => now(),
@@ -186,16 +186,16 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         string $categoryName = 'Ngoại ngữ - Tin học'
     ): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => $categoryName,
             'slug' => $slug . '-group-' . fake()->unique()->numberBetween(100, 999),
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $name,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 2500000,
             'duration' => 3,
         ]);
@@ -203,9 +203,9 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         return [$category, $subject];
     }
 
-    private function createPendingOpenCourse(Subject $subject, User $teacher): Course
+    private function createPendingOpenCourse(MonHoc $subject, NguoiDung $teacher): KhoaHoc
     {
-        return Course::create([
+        return KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Khóa chờ mở trùng giờ',
             'description' => 'Khóa demo chờ mở để test xung đột giảng viên.',
@@ -214,13 +214,13 @@ class kiem_tra_xung_dot_lich_test extends TestCase
             'meeting_days' => ['Monday'],
             'start_time' => '18:00',
             'end_time' => '20:00',
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
     }
 
-    private function createClassRoom(Subject $subject, User $teacher, Room $room, string $title = 'Khóa đã mở trùng phòng'): ClassRoom
+    private function createClassRoom(MonHoc $subject, NguoiDung $teacher, PhongHoc $room, string $title = 'Khóa đã mở trùng phòng'): LopHoc
     {
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $title,
             'description' => 'Khóa demo lớp hiện hành.',
@@ -231,10 +231,10 @@ class kiem_tra_xung_dot_lich_test extends TestCase
             'end_date' => '2026-06-01',
             'start_time' => '18:00',
             'end_time' => '20:00',
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $course->title,
@@ -242,10 +242,10 @@ class kiem_tra_xung_dot_lich_test extends TestCase
             'teacher_id' => $teacher->id,
             'start_date' => '2026-05-01',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -257,15 +257,15 @@ class kiem_tra_xung_dot_lich_test extends TestCase
         return $classRoom;
     }
 
-    private function createRoom(string $code): Room
+    private function createRoom(string $code): PhongHoc
     {
-        return Room::create([
+        return PhongHoc::create([
             'code' => $code,
             'name' => 'Phòng ' . $code,
             'type' => 'offline',
             'location' => 'Tầng 2',
             'capacity' => 30,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
     }
 }

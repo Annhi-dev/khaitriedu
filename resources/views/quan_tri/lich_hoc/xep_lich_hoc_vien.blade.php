@@ -2,7 +2,7 @@
 @section('title', 'Xếp lịch học viên')
 @section('content')
 @php
-    $dayLabels = \App\Models\Course::dayOptions();
+    $dayLabels = \App\Models\KhoaHoc::dayOptions();
     $preferredDays = $enrollment->preferred_days;
     $normalizeTime = fn (?string $time) => \App\Helpers\ScheduleHelper::normalizeTimeValue($time);
     $selectedDays = is_array($preferredDays)
@@ -10,8 +10,8 @@
         : ((is_string($preferredDays) && $preferredDays !== '') ? (json_decode($preferredDays, true) ?: []) : []);
     $forceCreateNewClass = $enrollment->isCustomScheduleRequest()
         && in_array($enrollment->normalizedStatus(), [
-            \App\Models\Enrollment::STATUS_PENDING,
-            \App\Models\Enrollment::STATUS_APPROVED,
+            \App\Models\GhiDanh::STATUS_PENDING,
+            \App\Models\GhiDanh::STATUS_APPROVED,
         ], true);
     $defaultMeetingDays = old('day_of_week', $forceCreateNewClass
         ? $selectedDays
@@ -87,7 +87,7 @@
                                         data-capacity="{{ $waitingCourse->capacity ?? 20 }}"
                                         @selected($selectedCourseId === (string) $waitingCourse->id)
                                     >
-                                        {{ $waitingCourse->title }} - {{ $waitingCourse->scheduled_students_count }}/{{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} học viên
+                                        {{ $waitingCourse->title }} - {{ $waitingCourse->scheduled_students_count }}/{{ $minimumStudentsToOpen ?? \App\Models\KhoaHoc::minimumStudentsToOpen() }} học viên
                                     </option>
                                 @endforeach
                             </select>
@@ -177,7 +177,7 @@
                         </div>
                     @else
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-                            Ngày bắt đầu và ngày kết thúc sẽ được chọn sau khi lớp đủ tối thiểu {{ $minimumStudentsToOpen ?? \App\Models\Course::minimumStudentsToOpen() }} học viên.
+                            Ngày bắt đầu và ngày kết thúc sẽ được chọn sau khi lớp đủ tối thiểu {{ $minimumStudentsToOpen ?? \App\Models\KhoaHoc::minimumStudentsToOpen() }} học viên.
                         </div>
                     @endif
 

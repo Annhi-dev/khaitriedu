@@ -178,9 +178,9 @@
                             </td>
                             <td class="px-6 py-4">
                                 <x-quan_tri.huy_hieu :type="match ($teacher->status) {
-                                    \App\Models\User::STATUS_ACTIVE => 'success',
-                                    \App\Models\User::STATUS_INACTIVE => 'warning',
-                                    \App\Models\User::STATUS_LOCKED => 'danger',
+                                    \App\Models\NguoiDung::STATUS_ACTIVE => 'success',
+                                    \App\Models\NguoiDung::STATUS_INACTIVE => 'warning',
+                                    \App\Models\NguoiDung::STATUS_LOCKED => 'danger',
                                     default => 'default',
                                 }" :text="$teacher->statusLabel()" />
                             </td>

@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Teacher;
 
 use App\Helpers\ScheduleHelper;
-use App\Models\Room;
+use App\Models\PhongHoc;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -76,7 +76,7 @@ class StoreTeacherClassScheduleChangeRequest extends FormRequest
             'requested_end_at' => ['nullable', 'required_without:requested_start_time', 'date', 'after:requested_start_at'],
             'requested_room_id' => [
                 'nullable',
-                Rule::exists('rooms', 'id')->where(fn ($query) => $query->where('status', Room::STATUS_ACTIVE)),
+                Rule::exists('rooms', 'id')->where(fn ($query) => $query->where('status', PhongHoc::STATUS_ACTIVE)),
             ],
             'reason' => ['required', 'string', 'max:1000'],
         ];

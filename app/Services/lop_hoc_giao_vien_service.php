@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\AttendanceRecord;
-use App\Models\ClassRoom;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\TeacherEvaluation;
-use App\Models\User;
+use App\Models\DiemDanh;
+use App\Models\LopHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\DanhGiaGiaoVien;
+use App\Models\NguoiDung;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
@@ -15,43 +15,43 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherClassroomService
 {
-    public function getAssignedClasses(User $teacher): Collection
+    public function getAssignedClasses(NguoiDung $teacher): Collection
     {
-        return ClassRoom::query()
+        return LopHoc::query()
             ->where('teacher_id', $teacher->id)
             ->with(['subject.category', 'room', 'schedules'])
             ->withCount([
-                'enrollments as students_count' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments as students_count' => fn ($query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
             ])
             ->orderByDesc('id')
             ->get();
     }
 
-    public function getClassDetail(User $teacher, ClassRoom $classRoom, array $filters): array
+    public function getClassDetail(NguoiDung $teacher, LopHoc $classRoom, array $filters): array
     {
         $ownedClass = $this->resolveOwnedClass($teacher, $classRoom);
 
-        $enrollments = Enrollment::query()
+        $enrollments = GhiDanh::query()
             ->where('lop_hoc_id', $ownedClass->id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->with(['user', 'course', 'classRoom'])
             ->get()
-            ->filter(fn (Enrollment $enrollment) => $enrollment->user !== null)
-            ->sortBy(fn (Enrollment $enrollment) => mb_strtolower($enrollment->user->name))
+            ->filter(fn (GhiDanh $enrollment) => $enrollment->user !== null)
+            ->sortBy(fn (GhiDanh $enrollment) => mb_strtolower($enrollment->user->name))
             ->values();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         $ownedClass->setRelation('enrollments', $enrollments);
         $ownedClass->setRelation('schedules', $ownedClass->schedules->sortBy(function ($schedule) {
-            return array_search($schedule->day_of_week, array_keys(\App\Models\ClassSchedule::$dayOptions), true);
+            return array_search($schedule->day_of_week, array_keys(\App\Models\LichHoc::$dayOptions), true);
         })->values());
 
         $selectedSchedule = $ownedClass->schedules->firstWhere('id', (int) ($filters['schedule_id'] ?? 0))
             ?? $ownedClass->schedules->first();
         $selectedDate = $filters['date'] ?? now()->toDateString();
 
-        $attendanceMap = AttendanceRecord::query()
+        $attendanceMap = DiemDanh::query()
             ->where('class_room_id', $ownedClass->id)
             ->when($selectedSchedule, fn ($query) => $query->where('class_schedule_id', $selectedSchedule->id))
             ->whereDate('attendance_date', $selectedDate)
@@ -59,15 +59,15 @@ class TeacherClassroomService
             ->keyBy('student_id');
 
         $gradeColumns = $this->gradeColumns($ownedClass);
-        $gradeMap = Grade::query()
+        $gradeMap = DiemSo::query()
             ->where('class_room_id', $ownedClass->id)
             ->whereIn('test_name', $gradeColumns->pluck('name')->all())
             ->get()
-            ->keyBy(fn (Grade $grade) => $grade->student_id . '|' . $grade->test_name);
+            ->keyBy(fn (DiemSo $grade) => $grade->student_id . '|' . $grade->test_name);
 
         $averageScoreMap = $this->averageScoreMap($enrollments, $gradeColumns, $gradeMap);
 
-        $evaluationHistory = TeacherEvaluation::query()
+        $evaluationHistory = DanhGiaGiaoVien::query()
             ->where('class_room_id', $ownedClass->id)
             ->with('student')
             ->latest()
@@ -75,26 +75,26 @@ class TeacherClassroomService
             ->get();
 
         $evaluationStudentOptions = $enrollments
-            ->map(fn (Enrollment $enrollment) => $enrollment->user)
-            ->filter(fn (?User $student) => $student !== null)
+            ->map(fn (GhiDanh $enrollment) => $enrollment->user)
+            ->filter(fn (?NguoiDung $student) => $student !== null)
             ->merge(
                 $evaluationHistory
-                    ->map(fn (TeacherEvaluation $evaluation) => $evaluation->student)
-                    ->filter(fn (?User $student) => $student !== null)
+                    ->map(fn (DanhGiaGiaoVien $evaluation) => $evaluation->student)
+                    ->filter(fn (?NguoiDung $student) => $student !== null)
             )
-            ->unique(fn (User $student) => (int) $student->id)
-            ->sortBy(fn (User $student) => mb_strtolower((string) $student->name))
+            ->unique(fn (NguoiDung $student) => (int) $student->id)
+            ->sortBy(fn (NguoiDung $student) => mb_strtolower((string) $student->name))
             ->values();
 
         $selectedStudentId = (int) ($filters['student_id'] ?? ($evaluationStudentOptions->first()?->id ?? 0));
 
-        if ($selectedStudentId !== 0 && ! $evaluationStudentOptions->contains(fn (User $student) => (int) $student->id === $selectedStudentId)) {
+        if ($selectedStudentId !== 0 && ! $evaluationStudentOptions->contains(fn (NguoiDung $student) => (int) $student->id === $selectedStudentId)) {
             $selectedStudentId = (int) ($evaluationStudentOptions->first()?->id ?? 0);
         }
 
         $currentEvaluation = $selectedStudentId === 0
             ? null
-            : TeacherEvaluation::query()
+            : DanhGiaGiaoVien::query()
                 ->where('class_room_id', $ownedClass->id)
                 ->where('student_id', $selectedStudentId)
                 ->first();
@@ -116,7 +116,7 @@ class TeacherClassroomService
         ];
     }
 
-    public function storeAttendance(User $teacher, ClassRoom $classRoom, array $data): void
+    public function storeAttendance(NguoiDung $teacher, LopHoc $classRoom, array $data): void
     {
         $ownedClass = $this->resolveOwnedClass($teacher, $classRoom, ['schedules']);
         $schedule = $ownedClass->schedules->firstWhere('id', (int) $data['class_schedule_id']);
@@ -136,7 +136,7 @@ class TeacherClassroomService
                 continue;
             }
 
-            AttendanceRecord::updateOrCreate(
+            DiemDanh::updateOrCreate(
                 [
                     'class_room_id' => $ownedClass->id,
                     'class_schedule_id' => $schedule->id,
@@ -155,7 +155,7 @@ class TeacherClassroomService
         }
     }
 
-    public function storeGrades(User $teacher, ClassRoom $classRoom, array $data): void
+    public function storeGrades(NguoiDung $teacher, LopHoc $classRoom, array $data): void
     {
         $ownedClass = $this->resolveOwnedClass($teacher, $classRoom);
         $enrollments = $this->activeEnrollmentMap($ownedClass);
@@ -181,7 +181,7 @@ class TeacherClassroomService
                     $payload['weight'] = $this->normalizeWeight($column['weight'] ?? 1);
                 }
 
-                Grade::updateOrCreate(
+                DiemSo::updateOrCreate(
                     [
                         'class_room_id' => $ownedClass->id,
                         'student_id' => $enrollment->user_id,
@@ -193,7 +193,7 @@ class TeacherClassroomService
         }
     }
 
-    public function gradeColumnsForClass(ClassRoom $classRoom): Collection
+    public function gradeColumnsForClass(LopHoc $classRoom): Collection
     {
         return $this->gradeColumns($classRoom);
     }
@@ -203,7 +203,7 @@ class TeacherClassroomService
         return $this->supportsGradeWeights();
     }
 
-    public function updateGradeWeights(ClassRoom $classRoom, array $weights): void
+    public function updateGradeWeights(LopHoc $classRoom, array $weights): void
     {
         if (! $this->supportsGradeWeights()) {
             throw ValidationException::withMessages([
@@ -220,7 +220,7 @@ class TeacherClassroomService
 
         if ($this->supportsGradeWeightSnapshots()) {
             foreach ($columns as $column) {
-                Grade::query()
+                DiemSo::query()
                     ->where('class_room_id', $classRoom->id)
                     ->where('test_name', $column['name'])
                     ->update([
@@ -230,7 +230,7 @@ class TeacherClassroomService
         }
     }
 
-    public function storeEvaluation(User $teacher, ClassRoom $classRoom, array $data): void
+    public function storeEvaluation(NguoiDung $teacher, LopHoc $classRoom, array $data): void
     {
         $ownedClass = $this->resolveOwnedClass($teacher, $classRoom);
 
@@ -240,7 +240,7 @@ class TeacherClassroomService
             ]);
         }
 
-        TeacherEvaluation::updateOrCreate(
+        DanhGiaGiaoVien::updateOrCreate(
             [
                 'class_room_id' => $ownedClass->id,
                 'student_id' => $data['student_id'],
@@ -253,48 +253,48 @@ class TeacherClassroomService
         );
     }
 
-    protected function canEvaluateStudent(ClassRoom $classRoom, int $studentId): bool
+    protected function canEvaluateStudent(LopHoc $classRoom, int $studentId): bool
     {
         if ($studentId <= 0) {
             return false;
         }
 
-        $hasEligibleEnrollment = Enrollment::query()
+        $hasEligibleEnrollment = GhiDanh::query()
             ->where('lop_hoc_id', $classRoom->id)
             ->where('user_id', $studentId)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->exists();
 
         if ($hasEligibleEnrollment) {
             return true;
         }
 
-        return TeacherEvaluation::query()
+        return DanhGiaGiaoVien::query()
             ->where('class_room_id', $classRoom->id)
             ->where('student_id', $studentId)
             ->exists();
     }
 
-    protected function resolveOwnedClass(User $teacher, ClassRoom $classRoom, array $with = []): ClassRoom
+    protected function resolveOwnedClass(NguoiDung $teacher, LopHoc $classRoom, array $with = []): LopHoc
     {
-        $query = ClassRoom::query()
+        $query = LopHoc::query()
             ->where('teacher_id', $teacher->id)
             ->with(array_merge(['subject.category', 'room', 'teacher', 'schedules'], $with));
 
         $ownedClass = $query->find($classRoom->id);
 
         if (! $ownedClass) {
-            throw (new ModelNotFoundException())->setModel(ClassRoom::class, [$classRoom->id]);
+            throw (new ModelNotFoundException())->setModel(LopHoc::class, [$classRoom->id]);
         }
 
         return $ownedClass;
     }
 
-    protected function activeEnrollmentMap(ClassRoom $classRoom): Collection
+    protected function activeEnrollmentMap(LopHoc $classRoom): Collection
     {
-        return Enrollment::query()
+        return GhiDanh::query()
             ->where('lop_hoc_id', $classRoom->id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->with('user')
             ->get()
             ->keyBy('user_id');
@@ -324,9 +324,9 @@ class TeacherClassroomService
         return (float) $value;
     }
 
-    protected function gradeColumns(ClassRoom $classRoom): Collection
+    protected function gradeColumns(LopHoc $classRoom): Collection
     {
-        $configuredCount = $classRoom->subject?->resolvedTestCount() ?? \App\Models\Subject::DEFAULT_TEST_COUNT;
+        $configuredCount = $classRoom->subject?->resolvedTestCount() ?? \App\Models\MonHoc::DEFAULT_TEST_COUNT;
         $classWeights = collect($classRoom->grade_weights ?? [])
             ->mapWithKeys(fn ($weight, $index) => [(string) $index => $this->normalizeWeight($weight)]);
         $selectColumns = ['test_name'];
@@ -335,7 +335,7 @@ class TeacherClassroomService
             $selectColumns[] = 'weight';
         }
 
-        $existingGrades = Grade::query()
+        $existingGrades = DiemSo::query()
             ->where('class_room_id', $classRoom->id)
             ->whereNotNull('test_name')
             ->where('test_name', '!=', '')
@@ -369,7 +369,7 @@ class TeacherClassroomService
 
     protected function averageScoreMap(Collection $enrollments, Collection $gradeColumns, Collection $gradeMap): Collection
     {
-        return $enrollments->mapWithKeys(function (Enrollment $enrollment) use ($gradeColumns, $gradeMap) {
+        return $enrollments->mapWithKeys(function (GhiDanh $enrollment) use ($gradeColumns, $gradeMap) {
             $numerator = 0.0;
             $denominator = 0;
             $hasScore = false;
@@ -406,9 +406,9 @@ class TeacherClassroomService
         return max(1, (int) $value);
     }
 
-    protected function normalizedGradeWeights(ClassRoom $classRoom, array $weights): array
+    protected function normalizedGradeWeights(LopHoc $classRoom, array $weights): array
     {
-        $configuredCount = $classRoom->subject?->resolvedTestCount() ?? \App\Models\Subject::DEFAULT_TEST_COUNT;
+        $configuredCount = $classRoom->subject?->resolvedTestCount() ?? \App\Models\MonHoc::DEFAULT_TEST_COUNT;
         $normalized = [];
 
         for ($index = 1; $index <= $configuredCount; $index++) {
@@ -420,11 +420,11 @@ class TeacherClassroomService
 
     protected function supportsGradeWeights(): bool
     {
-        return Schema::hasColumn((new ClassRoom())->getTable(), 'grade_weights');
+        return Schema::hasColumn((new LopHoc())->getTable(), 'grade_weights');
     }
 
     protected function supportsGradeWeightSnapshots(): bool
     {
-        return Schema::hasColumn((new Grade())->getTable(), 'weight');
+        return Schema::hasColumn((new DiemSo())->getTable(), 'weight');
     }
 }

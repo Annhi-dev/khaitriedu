@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use App\Helpers\ScheduleHelper;
-use App\Models\Enrollment;
-use App\Models\User;
+use App\Models\GhiDanh;
+use App\Models\NguoiDung;
 use App\Services\AdminScheduleService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -82,13 +82,13 @@ class ScheduleEnrollmentRequest extends FormRequest
             }
 
             $enrollment = $this->route('enrollment');
-            if (! $enrollment instanceof Enrollment) {
+            if (! $enrollment instanceof GhiDanh) {
                 return;
             }
 
-            $teacher = User::query()
+            $teacher = NguoiDung::query()
                 ->teachers()
-                ->where('status', User::STATUS_ACTIVE)
+                ->where('status', NguoiDung::STATUS_ACTIVE)
                 ->with('department')
                 ->find((int) $this->input('teacher_id'));
 

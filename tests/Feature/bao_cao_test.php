@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Review;
-use App\Models\ScheduleChangeRequest;
-use App\Models\Subject;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\DanhGia;
+use App\Models\YeuCauDoiLich;
+use App\Models\MonHoc;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,7 +21,7 @@ class bao_cao_test extends TestCase
 
     public function test_admin_can_access_admin_report_page(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
@@ -35,33 +35,33 @@ class bao_cao_test extends TestCase
 
     public function test_report_returns_correct_basic_metrics_for_selected_period(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
 
         try {
             Carbon::setTestNow('2026-03-05 09:00:00');
-            $teacherInPeriod = User::factory()->teacher()->create([
+            $teacherInPeriod = NguoiDung::factory()->teacher()->create([
                 'name' => 'Giang Vien Bao Cao',
                 'email' => 'teacher-report@example.com',
             ]);
 
             Carbon::setTestNow('2026-03-06 09:00:00');
-            $studentA = User::factory()->student()->create([
+            $studentA = NguoiDung::factory()->student()->create([
                 'name' => 'Hoc Vien Mot',
                 'email' => 'student-one@example.com',
             ]);
 
             Carbon::setTestNow('2026-03-07 09:00:00');
-            $studentB = User::factory()->student()->create([
+            $studentB = NguoiDung::factory()->student()->create([
                 'name' => 'Hoc Vien Hai',
                 'email' => 'student-two@example.com',
             ]);
 
             Carbon::setTestNow('2026-01-08 09:00:00');
-            $teacherOutsidePeriod = User::factory()->teacher()->create([
+            $teacherOutsidePeriod = NguoiDung::factory()->teacher()->create([
                 'name' => 'Giang Vien Cu',
                 'email' => 'teacher-old@example.com',
             ]);
-            $studentOutsidePeriod = User::factory()->student()->create([
+            $studentOutsidePeriod = NguoiDung::factory()->student()->create([
                 'name' => 'Hoc Vien Cu',
                 'email' => 'student-old@example.com',
             ]);
@@ -70,36 +70,36 @@ class bao_cao_test extends TestCase
 
             $activeCourse = $this->createInternalCourse($subject, $teacherInPeriod, [
                 'title' => 'Tin hoc van phong - Lop bao cao',
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'schedule' => 'Thu 2, 18:00 - 20:00',
             ]);
             $this->createInternalCourse($subject, $teacherOutsidePeriod, [
                 'title' => 'Tin hoc van phong - Lop nhap',
-                'status' => Course::STATUS_DRAFT,
+                'status' => KhoaHoc::STATUS_DRAFT,
             ]);
 
             Carbon::setTestNow('2026-03-09 09:00:00');
-            TeacherApplication::create([
+            DonUngTuyenGiaoVien::create([
                 'name' => 'Ung vien moi',
                 'email' => 'ung-vien-moi@example.com',
-                'status' => TeacherApplication::STATUS_PENDING,
+                'status' => DonUngTuyenGiaoVien::STATUS_PENDING,
             ]);
 
             Carbon::setTestNow('2026-01-10 09:00:00');
-            TeacherApplication::create([
+            DonUngTuyenGiaoVien::create([
                 'name' => 'Ung vien cu',
                 'email' => 'ung-vien-cu@example.com',
-                'status' => TeacherApplication::STATUS_APPROVED,
+                'status' => DonUngTuyenGiaoVien::STATUS_APPROVED,
             ]);
 
             Carbon::setTestNow('2026-03-10 09:00:00');
             $pendingEnrollment = $this->createEnrollment($studentA, $subject, [
-                'status' => Enrollment::STATUS_PENDING,
+                'status' => GhiDanh::STATUS_PENDING,
             ]);
             $activeEnrollmentA = $this->createEnrollment($studentA, $subject, [
                 'course_id' => $activeCourse->id,
                 'assigned_teacher_id' => $teacherInPeriod->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $activeCourse->schedule,
             ]);
 
@@ -107,7 +107,7 @@ class bao_cao_test extends TestCase
             $activeEnrollmentB = $this->createEnrollment($studentB, $subject, [
                 'course_id' => $activeCourse->id,
                 'assigned_teacher_id' => $teacherInPeriod->id,
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => GhiDanh::STATUS_ACTIVE,
                 'schedule' => $activeCourse->schedule,
             ]);
 
@@ -115,26 +115,26 @@ class bao_cao_test extends TestCase
             $this->createEnrollment($studentOutsidePeriod, $subject, [
                 'course_id' => $activeCourse->id,
                 'assigned_teacher_id' => $teacherInPeriod->id,
-                'status' => Enrollment::STATUS_COMPLETED,
+                'status' => GhiDanh::STATUS_COMPLETED,
                 'schedule' => $activeCourse->schedule,
             ]);
 
             Carbon::setTestNow('2026-03-12 09:00:00');
-            Grade::create([
+            DiemSo::create([
                 'enrollment_id' => $activeEnrollmentA->id,
                 'score' => 80,
                 'grade' => 'A',
             ]);
 
             Carbon::setTestNow('2026-03-13 09:00:00');
-            Grade::create([
+            DiemSo::create([
                 'enrollment_id' => $activeEnrollmentB->id,
                 'score' => 40,
                 'grade' => 'C',
             ]);
 
             Carbon::setTestNow('2026-03-14 09:00:00');
-            Review::create([
+            DanhGia::create([
                 'user_id' => $studentA->id,
                 'course_id' => $activeCourse->id,
                 'rating' => 5,
@@ -142,7 +142,7 @@ class bao_cao_test extends TestCase
             ]);
 
             Carbon::setTestNow('2026-03-15 09:00:00');
-            Review::create([
+            DanhGia::create([
                 'user_id' => $studentB->id,
                 'course_id' => $activeCourse->id,
                 'rating' => 3,
@@ -150,12 +150,12 @@ class bao_cao_test extends TestCase
             ]);
 
             Carbon::setTestNow('2026-03-16 09:00:00');
-            ScheduleChangeRequest::create([
+            YeuCauDoiLich::create([
                 'teacher_id' => $teacherInPeriod->id,
                 'course_id' => $activeCourse->id,
                 'current_schedule' => $activeCourse->schedule,
                 'reason' => 'Can doi sang ca som hon',
-                'status' => ScheduleChangeRequest::STATUS_PENDING,
+                'status' => YeuCauDoiLich::STATUS_PENDING,
             ]);
         } finally {
             Carbon::setTestNow();
@@ -221,7 +221,7 @@ class bao_cao_test extends TestCase
 
     public function test_student_is_blocked_from_admin_report(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->withSession(['user_id' => $student->id])
@@ -233,16 +233,16 @@ class bao_cao_test extends TestCase
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-hoc-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $subjectName,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
             'duration' => 24,
         ]);
@@ -250,12 +250,12 @@ class bao_cao_test extends TestCase
         return [$category, $subject];
     }
 
-    private function createEnrollment(User $student, Subject $subject, array $overrides = []): Enrollment
+    private function createEnrollment(NguoiDung $student, MonHoc $subject, array $overrides = []): GhiDanh
     {
-        return Enrollment::create(array_merge([
+        return GhiDanh::create(array_merge([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'start_time' => '18:00',
             'end_time' => '20:00',
             'preferred_days' => json_encode(['Monday', 'Wednesday', 'Friday']),
@@ -264,15 +264,15 @@ class bao_cao_test extends TestCase
         ], $overrides));
     }
 
-    private function createInternalCourse(Subject $subject, ?User $teacher = null, array $overrides = []): Course
+    private function createInternalCourse(MonHoc $subject, ?NguoiDung $teacher = null, array $overrides = []): KhoaHoc
     {
-        return Course::create(array_merge([
+        return KhoaHoc::create(array_merge([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop noi bo',
             'description' => 'Lop hoc noi bo phuc vu bao cao he thong.',
             'teacher_id' => $teacher?->id,
             'capacity' => 20,
-            'status' => Course::STATUS_DRAFT,
+            'status' => KhoaHoc::STATUS_DRAFT,
         ], $overrides));
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -86,12 +86,12 @@ class ProfileController extends Controller
         return back()->with('status', 'Cập nhật thông tin cá nhân thành công.');
     }
 
-    private function resolveCurrentUser(Request $request): ?User
+    private function resolveCurrentUser(Request $request): ?NguoiDung
     {
         return $this->sessionUser() ?? Auth::user();
     }
 
-    private function resolveProfileContext(User $user): array
+    private function resolveProfileContext(NguoiDung $user): array
     {
         if ($user->isAdmin()) {
             return ['bo_cuc.quan_tri', 'admin.profile.update', 'admin.dashboard'];

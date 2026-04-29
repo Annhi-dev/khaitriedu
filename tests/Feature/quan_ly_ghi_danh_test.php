@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,23 +19,23 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_view_and_filter_enrollments(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         [, $subjectA] = $this->createCatalogSubject('Tin hoc van phong');
         [, $subjectB] = $this->createCatalogSubject('Tieng Anh giao tiep', 'ngoai-ngu');
-        $studentA = User::factory()->student()->create([
+        $studentA = NguoiDung::factory()->student()->create([
             'name' => 'Nguyen Van Lan',
             'email' => 'lan@example.com',
         ]);
-        $studentB = User::factory()->student()->create([
+        $studentB = NguoiDung::factory()->student()->create([
             'name' => 'Tran Minh',
             'email' => 'minh@example.com',
         ]);
 
         $enrollmentA = $this->createPendingEnrollment($studentA, $subjectA);
-        $enrollmentB = Enrollment::create([
+        $enrollmentB = GhiDanh::create([
             'user_id' => $studentB->id,
             'subject_id' => $subjectB->id,
-            'status' => Enrollment::STATUS_REJECTED,
+            'status' => GhiDanh::STATUS_REJECTED,
             'start_time' => '08:00',
             'end_time' => '10:00',
             'preferred_days' => json_encode(['Tuesday', 'Thursday']),
@@ -48,7 +48,7 @@ class quan_ly_ghi_danh_test extends TestCase
             ->withSession(['user_id' => $admin->id])
             ->get(route('admin.enrollments', [
                 'search' => 'Lan',
-                'status' => Enrollment::STATUS_PENDING,
+                'status' => GhiDanh::STATUS_PENDING,
             ]));
 
         $response->assertOk();
@@ -58,9 +58,9 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_distinguish_custom_schedule_requests_from_fixed_class_enrollments(): void
     {
-        $admin = User::factory()->admin()->create();
-        $studentCustom = User::factory()->student()->create(['name' => 'Hoc Vien Linh Hoat']);
-        $studentFixed = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $studentCustom = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Linh Hoat']);
+        $studentFixed = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
         [, $subjectCustom] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
         [, $subjectFixed] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
@@ -82,9 +82,9 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_filter_enrollments_by_request_source(): void
     {
-        $admin = User::factory()->admin()->create();
-        $studentCustom = User::factory()->student()->create(['name' => 'Hoc Vien Theo Yeu Cau']);
-        $studentFixed = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $studentCustom = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Theo Yeu Cau']);
+        $studentFixed = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
         [, $subjectCustom] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
         [, $subjectFixed] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
@@ -94,7 +94,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response = $this
             ->withSession(['user_id' => $admin->id])
             ->get(route('admin.enrollments', [
-                'request_source' => Enrollment::REQUEST_SOURCE_FIXED_CLASS,
+                'request_source' => GhiDanh::REQUEST_SOURCE_FIXED_CLASS,
             ]));
 
         $response->assertOk();
@@ -105,9 +105,9 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_filter_enrollments_by_student(): void
     {
-        $admin = User::factory()->admin()->create();
-        $targetStudent = User::factory()->student()->create(['name' => 'Hoc Vien Can Loc']);
-        $otherStudent = User::factory()->student()->create(['name' => 'Hoc Vien Khac']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $targetStudent = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Can Loc']);
+        $otherStudent = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Khac']);
         [, $subjectA] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
         [, $subjectB] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
@@ -129,9 +129,9 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_filter_enrollments_by_class_room(): void
     {
-        $admin = User::factory()->admin()->create();
-        $studentA = User::factory()->student()->create(['name' => 'Hoc Vien Lop A']);
-        $studentB = User::factory()->student()->create(['name' => 'Hoc Vien Lop B']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $studentA = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop A']);
+        $studentB = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop B']);
         [, $subjectA] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
         [, $subjectB] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
@@ -151,8 +151,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_approve_enrollment(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
@@ -169,7 +169,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
             'reviewed_by' => $admin->id,
             'note' => 'Ho so hop le',
         ]);
@@ -178,9 +178,9 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_custom_schedule_request_cannot_be_scheduled_directly_from_detail_form(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createInternalCourse($subject, $teacher, 'T2-T4-T6, 18:00-20:00');
         $enrollment = $this->createPendingEnrollment($student, $subject);
@@ -200,7 +200,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response->assertSessionHasErrors('action');
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'course_id' => null,
             'assigned_teacher_id' => null,
         ]);
@@ -208,8 +208,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_reject_enrollment_with_reason(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
@@ -226,7 +226,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_REJECTED,
+            'status' => GhiDanh::STATUS_REJECTED,
             'note' => 'Lich dang ky chua phu hop voi khoa hoc nay',
             'reviewed_by' => $admin->id,
         ]);
@@ -234,8 +234,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_request_enrollment_update_and_keep_it_pending(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
@@ -252,7 +252,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'note' => 'Vui long bo sung them khung gio hoc trong tuan',
             'reviewed_by' => $admin->id,
         ]);
@@ -260,8 +260,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_custom_schedule_request_detail_guides_admin_to_create_new_class_in_phase_9(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
@@ -279,8 +279,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_view_custom_schedule_request_detail_with_request_source_label(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createPendingEnrollment($student, $subject);
 
@@ -297,8 +297,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_view_fixed_class_enrollment_detail_in_dedicated_screen(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         [, $classRoom, $enrollment] = $this->createFixedClassEnrollment($student, $subject);
 
@@ -319,13 +319,13 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_view_pending_fixed_class_enrollment_with_approval_action(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Cho Duyet']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Cho Duyet']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         [, , $enrollment] = $this->createFixedClassEnrollment($student, $subject);
 
         $enrollment->update([
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
         ]);
 
         $response = $this
@@ -340,8 +340,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_can_approve_fixed_class_enrollment_without_losing_class_data(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         [, $classRoom, $enrollment] = $this->createFixedClassEnrollment($student, $subject);
 
@@ -358,7 +358,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
 
         $updatedEnrollment = $enrollment->fresh();
-        $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
+        $this->assertSame(GhiDanh::STATUS_APPROVED, $updatedEnrollment->status);
         $this->assertSame($classRoom->id, $updatedEnrollment->lop_hoc_id);
         $this->assertSame($classRoom->course_id, $updatedEnrollment->course_id);
         $this->assertSame($classRoom->teacher_id, $updatedEnrollment->assigned_teacher_id);
@@ -368,19 +368,19 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_activating_fixed_class_enrollment_syncs_status_for_all_students_in_same_class(): void
     {
-        $admin = User::factory()->admin()->create();
-        $studentA = User::factory()->student()->create(['name' => 'Hoc Vien A']);
-        $studentB = User::factory()->student()->create(['name' => 'Hoc Vien B']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $studentA = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien A']);
+        $studentB = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien B']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         [$course, $classRoom, $enrollmentA] = $this->createFixedClassEnrollment($studentA, $subject);
 
-        $enrollmentB = Enrollment::create([
+        $enrollmentB = GhiDanh::create([
             'user_id' => $studentB->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $classRoom->teacher_id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'schedule' => $course->schedule,
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -401,21 +401,21 @@ class quan_ly_ghi_danh_test extends TestCase
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollmentA->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'reviewed_by' => $admin->id,
         ]);
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollmentB->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'reviewed_by' => $admin->id,
         ]);
     }
 
     public function test_admin_can_approve_fixed_class_enrollment_and_restore_missing_course_from_class(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         [, $classRoom, $enrollment] = $this->createFixedClassEnrollment($student, $subject);
 
@@ -423,7 +423,7 @@ class quan_ly_ghi_danh_test extends TestCase
             'course_id' => null,
             'assigned_teacher_id' => null,
             'schedule' => null,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
         ]);
 
         $response = $this
@@ -440,7 +440,7 @@ class quan_ly_ghi_danh_test extends TestCase
         $response->assertRedirect(route('admin.enrollments.show', $enrollment));
 
         $updatedEnrollment = $enrollment->fresh();
-        $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
+        $this->assertSame(GhiDanh::STATUS_APPROVED, $updatedEnrollment->status);
         $this->assertSame($classRoom->id, $updatedEnrollment->lop_hoc_id);
         $this->assertSame($classRoom->course_id, $updatedEnrollment->course_id);
         $this->assertSame($classRoom->teacher_id, $updatedEnrollment->assigned_teacher_id);
@@ -450,8 +450,8 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_admin_list_shows_current_class_label_for_fixed_class_enrollment_without_course_id(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Lop Co Dinh']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         [, $classRoom, $enrollment] = $this->createFixedClassEnrollment($student, $subject);
 
@@ -469,7 +469,7 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_student_is_blocked_from_admin_enrollments(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->withSession(['user_id' => $student->id])
@@ -481,7 +481,7 @@ class quan_ly_ghi_danh_test extends TestCase
 
     public function test_teacher_is_blocked_from_admin_enrollments(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $response = $this
             ->withSession(['user_id' => $teacher->id])
@@ -493,28 +493,28 @@ class quan_ly_ghi_danh_test extends TestCase
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'ngoai-ngu-tin-hoc-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $subjectName,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
         ]);
 
         return [$category, $subject];
     }
 
-    private function createPendingEnrollment(User $student, Subject $subject): Enrollment
+    private function createPendingEnrollment(NguoiDung $student, MonHoc $subject): GhiDanh
     {
-        return Enrollment::create([
+        return GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'start_time' => '18:00',
             'end_time' => '20:00',
             'preferred_days' => json_encode(['Monday', 'Wednesday', 'Friday']),
@@ -523,9 +523,9 @@ class quan_ly_ghi_danh_test extends TestCase
         ]);
     }
 
-    private function createInternalCourse(Subject $subject, ?User $teacher = null, ?string $schedule = null): Course
+    private function createInternalCourse(MonHoc $subject, ?NguoiDung $teacher = null, ?string $schedule = null): KhoaHoc
     {
-        return Course::create([
+        return KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop toi',
             'description' => 'Lop hoc noi bo danh cho hoc vien da duoc xep lop.',
@@ -534,32 +534,32 @@ class quan_ly_ghi_danh_test extends TestCase
         ]);
     }
 
-    private function createFixedClassEnrollment(User $student, Subject $subject): array
+    private function createFixedClassEnrollment(NguoiDung $student, MonHoc $subject): array
     {
-        $teacher = User::factory()->teacher()->create([
+        $teacher = NguoiDung::factory()->teacher()->create([
             'name' => 'Giang vien co dinh',
         ]);
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'PH' . fake()->unique()->numberBetween(100, 999),
             'name' => 'Phong hoc co dinh ' . fake()->unique()->numberBetween(1, 99),
             'type' => 'offline',
             'location' => 'Tang 3',
             'capacity' => 20,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
         $course = $this->createInternalCourse($subject, $teacher, 'T3-T5-T7, 18:00 - 20:00');
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $subject->name . ' - Lop co dinh',
             'room_id' => $room->id,
             'teacher_id' => $teacher->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
             'duration' => 3,
         ]);
 
         foreach (['Tuesday', 'Thursday', 'Saturday'] as $dayOfWeek) {
-            ClassSchedule::create([
+            LichHoc::create([
                 'lop_hoc_id' => $classRoom->id,
                 'teacher_id' => $teacher->id,
                 'room_id' => $room->id,
@@ -569,13 +569,13 @@ class quan_ly_ghi_danh_test extends TestCase
             ]);
         }
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'schedule' => $course->schedule,
             'is_submitted' => true,
             'submitted_at' => now(),

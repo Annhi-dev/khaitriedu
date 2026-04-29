@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
+use App\Models\NguoiDung;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +17,7 @@ class RoleMiddleware
         $sessionUserId = $request->session()->get('user_id');
 
         if ($sessionUserId && (! $user || (int) $user->id !== (int) $sessionUserId)) {
-            $user = User::with('role')->find($sessionUserId);
+            $user = NguoiDung::with('role')->find($sessionUserId);
 
             if ($user) {
                 Auth::setUser($user);
@@ -25,7 +25,7 @@ class RoleMiddleware
         }
 
         if ($user && ! $user->relationLoaded('role')) {
-            $reloadedUser = User::with('role')->find($user->id);
+            $reloadedUser = NguoiDung::with('role')->find($user->id);
 
             if ($reloadedUser) {
                 $user = $reloadedUser;

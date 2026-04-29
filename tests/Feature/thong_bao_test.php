@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Notification;
-use App\Models\User;
+use App\Models\ThongBao;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,9 +13,9 @@ class thong_bao_test extends TestCase
 
     public function test_student_can_open_notification_inbox_and_mark_it_as_read(): void
     {
-        $student = User::factory()->student()->create(['name' => 'Hoc vien thong bao']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien thong bao']);
 
-        $notification = Notification::create([
+        $notification = ThongBao::create([
             'user_id' => $student->id,
             'title' => 'Lịch học đã thay đổi',
             'message' => 'Thời khóa biểu của bạn vừa được cập nhật.',
@@ -53,9 +53,9 @@ class thong_bao_test extends TestCase
 
     public function test_teacher_can_open_notification_inbox_and_mark_it_as_read(): void
     {
-        $teacher = User::factory()->teacher()->create(['name' => 'Giang vien thong bao']);
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien thong bao']);
 
-        $notification = Notification::create([
+        $notification = ThongBao::create([
             'user_id' => $teacher->id,
             'title' => 'Yêu cầu dời buổi đã được duyệt',
             'message' => 'Admin vừa chốt lại lịch dạy mới cho lớp của bạn.',
@@ -93,9 +93,9 @@ class thong_bao_test extends TestCase
 
     public function test_admin_can_open_notification_inbox_and_mark_it_as_read(): void
     {
-        $admin = User::factory()->admin()->create(['name' => 'Admin thong bao']);
+        $admin = NguoiDung::factory()->admin()->create(['name' => 'Admin thong bao']);
 
-        $notification = Notification::create([
+        $notification = ThongBao::create([
             'user_id' => $admin->id,
             'title' => 'Đăng ký lớp cần duyệt',
             'message' => 'Có 1 yêu cầu đăng ký mới đang chờ xử lý.',
@@ -133,10 +133,10 @@ class thong_bao_test extends TestCase
 
     public function test_student_cannot_open_another_users_notification(): void
     {
-        $owner = User::factory()->student()->create();
-        $otherStudent = User::factory()->student()->create();
+        $owner = NguoiDung::factory()->student()->create();
+        $otherStudent = NguoiDung::factory()->student()->create();
 
-        $notification = Notification::create([
+        $notification = ThongBao::create([
             'user_id' => $owner->id,
             'title' => 'Thông báo riêng',
             'message' => 'Nội dung chỉ dành cho học viên này.',
@@ -155,9 +155,9 @@ class thong_bao_test extends TestCase
 
     public function test_student_notification_poll_endpoint_returns_live_summary(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
-        Notification::create([
+        ThongBao::create([
             'user_id' => $student->id,
             'title' => 'Thông báo 1',
             'message' => 'Thông báo chưa đọc.',
@@ -166,7 +166,7 @@ class thong_bao_test extends TestCase
             'is_read' => false,
         ]);
 
-        Notification::create([
+        ThongBao::create([
             'user_id' => $student->id,
             'title' => 'Thông báo 2',
             'message' => 'Thông báo đã đọc.',

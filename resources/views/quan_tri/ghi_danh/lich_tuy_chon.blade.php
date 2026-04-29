@@ -2,7 +2,7 @@
 @section('title', 'Chi tiết yêu cầu lịch học riêng')
 @section('content')
 @php
-    $dayLabels = \App\Models\Course::dayOptions();
+    $dayLabels = \App\Models\KhoaHoc::dayOptions();
     $preferredDays = $enrollment->preferred_days;
     $selectedDays = is_array($preferredDays)
         ? $preferredDays

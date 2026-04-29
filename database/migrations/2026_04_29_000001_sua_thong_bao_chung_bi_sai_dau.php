@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Announcement;
+use App\Models\ThongBaoChung;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
@@ -35,7 +35,7 @@ return new class extends Migration
         ];
 
         foreach ($rows as $id => $payload) {
-            Announcement::query()
+            ThongBaoChung::query()
                 ->whereKey($id)
                 ->update($payload);
         }
@@ -71,7 +71,7 @@ return new class extends Migration
         ];
 
         foreach ($rows as $id => $payload) {
-            Announcement::query()
+            ThongBaoChung::query()
                 ->whereKey($id)
                 ->update($payload);
         }

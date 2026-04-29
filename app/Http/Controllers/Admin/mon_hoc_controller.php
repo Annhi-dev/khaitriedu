@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSubjectRequest;
 use App\Http\Requests\Admin\UpdateSubjectRequest;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\AdminSubjectService;
 use Illuminate\Http\Request;
 
@@ -14,7 +14,7 @@ class SubjectController extends Controller
 {
     public function index(Request $request, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -28,7 +28,7 @@ class SubjectController extends Controller
 
     public function create(Request $request, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -52,7 +52,7 @@ class SubjectController extends Controller
 
     public function store(StoreSubjectRequest $request, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -68,9 +68,9 @@ class SubjectController extends Controller
         return redirect()->route('admin.subject.show', $subject)->with('status', 'Khóa học đã được tạo thành công.');
     }
 
-    public function show(Subject $subject, AdminSubjectService $subjectService)
+    public function show(MonHoc $subject, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -81,9 +81,9 @@ class SubjectController extends Controller
         ));
     }
 
-    public function edit(Subject $subject, AdminSubjectService $subjectService)
+    public function edit(MonHoc $subject, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -93,9 +93,9 @@ class SubjectController extends Controller
         return view('quan_tri.mon_hoc.edit', compact('current', 'subject', 'categories'));
     }
 
-    public function update(UpdateSubjectRequest $request, Subject $subject, AdminSubjectService $subjectService)
+    public function update(UpdateSubjectRequest $request, MonHoc $subject, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -105,9 +105,9 @@ class SubjectController extends Controller
         return redirect()->route('admin.subject.show', $subject)->with('status', 'Khóa học đã được cập nhật.');
     }
 
-    public function archive(Subject $subject, AdminSubjectService $subjectService)
+    public function archive(MonHoc $subject, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -117,9 +117,9 @@ class SubjectController extends Controller
         return redirect()->route('admin.subject.show', $subject)->with('status', $message);
     }
 
-    public function reopen(Subject $subject, AdminSubjectService $subjectService)
+    public function reopen(MonHoc $subject, AdminSubjectService $subjectService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

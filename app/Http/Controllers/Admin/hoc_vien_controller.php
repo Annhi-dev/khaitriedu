@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreStudentRequest;
 use App\Http\Requests\Admin\UpdateStudentRequest;
-use App\Models\User;
+use App\Models\NguoiDung;
 use App\Services\AdminStudentService;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class StudentController extends Controller
 {
     public function index(Request $request, AdminStudentService $studentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -27,7 +27,7 @@ class StudentController extends Controller
 
     public function create()
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -37,7 +37,7 @@ class StudentController extends Controller
 
     public function store(StoreStudentRequest $request, AdminStudentService $studentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -47,9 +47,9 @@ class StudentController extends Controller
         return redirect()->route('admin.students.show', $student)->with('status', 'Học viên đã được tạo thành công.');
     }
 
-    public function show(User $student, AdminStudentService $studentService)
+    public function show(NguoiDung $student, AdminStudentService $studentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -62,9 +62,9 @@ class StudentController extends Controller
         ));
     }
 
-    public function edit(User $student)
+    public function edit(NguoiDung $student)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -74,9 +74,9 @@ class StudentController extends Controller
         return view('quan_tri.hoc_vien.edit', compact('current', 'student'));
     }
 
-    public function update(UpdateStudentRequest $request, User $student, AdminStudentService $studentService)
+    public function update(UpdateStudentRequest $request, NguoiDung $student, AdminStudentService $studentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -87,9 +87,9 @@ class StudentController extends Controller
         return redirect()->route('admin.students.show', $student)->with('status', 'Thông tin học viên đã được cập nhật.');
     }
 
-    public function lock(User $student, AdminStudentService $studentService)
+    public function lock(NguoiDung $student, AdminStudentService $studentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -100,9 +100,9 @@ class StudentController extends Controller
         return redirect()->route('admin.students.show', $student)->with('status', 'Tài khoản học viên đã được khóa.');
     }
 
-    public function unlock(User $student, AdminStudentService $studentService)
+    public function unlock(NguoiDung $student, AdminStudentService $studentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -113,7 +113,7 @@ class StudentController extends Controller
         return redirect()->route('admin.students.show', $student)->with('status', 'Tài khoản học viên đã được mở khóa.');
     }
 
-    protected function resolveStudent(User $student): User
+    protected function resolveStudent(NguoiDung $student): NguoiDung
     {
         abort_if(! $student->isStudent(), 404);
 

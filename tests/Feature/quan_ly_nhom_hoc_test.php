@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,19 +15,19 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_view_study_group_list(): void
     {
-        $admin = User::factory()->admin()->create();
-        $visible = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $visible = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc',
             'program' => 'Tong hop',
             'level' => 'Co ban',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
             'order' => 1,
         ]);
-        $hidden = Category::create([
+        $hidden = NhomHoc::create([
             'name' => 'Ky nang mem',
             'slug' => 'ky-nang-mem',
-            'status' => Category::STATUS_INACTIVE,
+            'status' => NhomHoc::STATUS_INACTIVE,
             'order' => 2,
         ]);
 
@@ -43,19 +43,19 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_filter_study_groups(): void
     {
-        $admin = User::factory()->admin()->create();
-        $target = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $target = NhomHoc::create([
             'name' => 'Tieng Anh Thieu Nhi',
             'slug' => 'tieng-anh-thieu-nhi',
             'program' => 'Tre em',
-            'status' => Category::STATUS_INACTIVE,
+            'status' => NhomHoc::STATUS_INACTIVE,
             'order' => 1,
         ]);
-        $other = Category::create([
+        $other = NhomHoc::create([
             'name' => 'Tin hoc van phong',
             'slug' => 'tin-hoc-van-phong',
             'program' => 'Nguoi lon',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
             'order' => 2,
         ]);
 
@@ -63,7 +63,7 @@ class quan_ly_nhom_hoc_test extends TestCase
             ->withSession(['user_id' => $admin->id])
             ->get(route('admin.categories', [
                 'search' => 'Thieu Nhi',
-                'status' => Category::STATUS_INACTIVE,
+                'status' => NhomHoc::STATUS_INACTIVE,
             ]));
 
         $response->assertOk();
@@ -73,7 +73,7 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_create_study_group(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
@@ -83,17 +83,17 @@ class quan_ly_nhom_hoc_test extends TestCase
                 'description' => 'Nhom hoc tong hop cho cac khoa ngoai ngu va tin hoc.',
                 'program' => 'Tong hop',
                 'level' => 'Co ban',
-                'status' => Category::STATUS_ACTIVE,
+                'status' => NhomHoc::STATUS_ACTIVE,
                 'order' => 5,
             ]);
 
-        $category = Category::where('name', 'Ngoai ngu - Tin hoc')->first();
+        $category = NhomHoc::where('name', 'Ngoai ngu - Tin hoc')->first();
 
         $response->assertRedirect(route('admin.categories.show', $category));
         $this->assertDatabaseHas('danh_muc', [
             'id' => $category->id,
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
             'program' => 'Tong hop',
             'level' => 'Co ban',
         ]);
@@ -101,11 +101,11 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_update_study_group(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc cu',
             'slug' => 'nhom-hoc-cu',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
             'order' => 1,
         ]);
 
@@ -117,7 +117,7 @@ class quan_ly_nhom_hoc_test extends TestCase
                 'description' => 'Da bo sung mo ta moi',
                 'program' => 'Luyen thi',
                 'level' => 'Nang cao',
-                'status' => Category::STATUS_INACTIVE,
+                'status' => NhomHoc::STATUS_INACTIVE,
                 'order' => 9,
             ]);
 
@@ -128,23 +128,23 @@ class quan_ly_nhom_hoc_test extends TestCase
             'slug' => 'nhom-hoc-da-sua',
             'program' => 'Luyen thi',
             'level' => 'Nang cao',
-            'status' => Category::STATUS_INACTIVE,
+            'status' => NhomHoc::STATUS_INACTIVE,
             'order' => 9,
         ]);
     }
 
     public function test_admin_can_view_study_group_detail(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu',
             'slug' => 'ngoai-ngu',
             'description' => 'Nhom ngoai ngu tong hop',
             'program' => 'Giao tiep',
             'level' => 'A1',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        Subject::create([
+        MonHoc::create([
             'name' => 'Tieng Anh giao tiep',
             'description' => 'Khoa hoc giao tiep co ban',
             'price' => 1200000,
@@ -163,34 +163,34 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_study_group_detail_shows_only_actual_courses_of_that_group(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'price' => 1500000,
             'category_id' => $category->id,
         ]);
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Tin hoc van phong',
             'description' => 'Khoa hoc thuoc nhom dang xem',
         ]);
 
-        $otherCategory = Category::create([
+        $otherCategory = NhomHoc::create([
             'name' => 'Dao tao nghe',
             'slug' => 'dao-tao-nghe',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $otherSubject = Subject::create([
+        $otherSubject = MonHoc::create([
             'name' => 'Dao tao nghe',
             'price' => 1800000,
             'category_id' => $otherCategory->id,
         ]);
-        $otherCourse = Course::create([
+        $otherCourse = KhoaHoc::create([
             'subject_id' => $otherSubject->id,
             'title' => 'Ke toan doanh nghiep',
             'description' => 'Khoa hoc thuoc nhom khac',
@@ -208,33 +208,33 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_open_course_management_from_study_group_context(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'price' => 1500000,
             'category_id' => $category->id,
         ]);
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Anh van thieu nhi',
         ]);
 
-        $otherCategory = Category::create([
+        $otherCategory = NhomHoc::create([
             'name' => 'Dao tao dai han',
             'slug' => 'dao-tao-dai-han',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $otherSubject = Subject::create([
+        $otherSubject = MonHoc::create([
             'name' => 'Dao tao dai han',
             'price' => 2000000,
             'category_id' => $otherCategory->id,
         ]);
-        $otherCourse = Course::create([
+        $otherCourse = KhoaHoc::create([
             'subject_id' => $otherSubject->id,
             'title' => 'Lien thong dai hoc',
         ]);
@@ -254,13 +254,13 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_create_course_directly_from_study_group_context(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'price' => 1500000,
             'category_id' => $category->id,
@@ -286,13 +286,13 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_delete_route_deactivates_but_does_not_hard_delete_group_with_dependencies(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Tin hoc',
             'slug' => 'tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tin hoc van phong',
             'price' => 1500000,
             'category_id' => $category->id,
@@ -305,7 +305,7 @@ class quan_ly_nhom_hoc_test extends TestCase
         $response->assertRedirect(route('admin.categories.show', $category));
         $this->assertDatabaseHas('danh_muc', [
             'id' => $category->id,
-            'status' => Category::STATUS_INACTIVE,
+            'status' => NhomHoc::STATUS_INACTIVE,
         ]);
         $this->assertDatabaseHas('mon_hoc', [
             'id' => $subject->id,
@@ -315,11 +315,11 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_admin_can_activate_study_group_again(): void
     {
-        $admin = User::factory()->admin()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc tam dung',
             'slug' => 'nhom-hoc-tam-dung',
-            'status' => Category::STATUS_INACTIVE,
+            'status' => NhomHoc::STATUS_INACTIVE,
         ]);
 
         $response = $this
@@ -329,13 +329,13 @@ class quan_ly_nhom_hoc_test extends TestCase
         $response->assertRedirect(route('admin.categories.show', $category));
         $this->assertDatabaseHas('danh_muc', [
             'id' => $category->id,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
     }
 
     public function test_student_is_blocked_from_study_group_management(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->withSession(['user_id' => $student->id])
@@ -347,7 +347,7 @@ class quan_ly_nhom_hoc_test extends TestCase
 
     public function test_teacher_is_blocked_from_study_group_management(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $response = $this
             ->withSession(['user_id' => $teacher->id])

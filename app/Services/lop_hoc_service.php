@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,16 +19,16 @@ class AdminClassRoomService
     ) {
     }
 
-    public function create(array $data): ClassRoom
+    public function create(array $data): LopHoc
     {
-        $subject = Subject::query()->findOrFail((int) $data['subject_id']);
-        $course = Course::query()->findOrFail((int) $data['course_id']);
-        $teacher = User::query()
+        $subject = MonHoc::query()->findOrFail((int) $data['subject_id']);
+        $course = KhoaHoc::query()->findOrFail((int) $data['course_id']);
+        $teacher = NguoiDung::query()
             ->teachers()
-            ->where('status', User::STATUS_ACTIVE)
+            ->where('status', NguoiDung::STATUS_ACTIVE)
             ->find((int) $data['teacher_id']);
-        $room = Room::query()
-            ->where('status', Room::STATUS_ACTIVE)
+        $room = PhongHoc::query()
+            ->where('status', PhongHoc::STATUS_ACTIVE)
             ->find((int) $data['room_id']);
 
         if ((int) $course->subject_id !== (int) $subject->id) {
@@ -72,8 +72,8 @@ class AdminClassRoomService
             }
         }
 
-        return DB::transaction(function () use ($data, $subject, $course, $teacher, $room): ClassRoom {
-            $classRoom = ClassRoom::create([
+        return DB::transaction(function () use ($data, $subject, $course, $teacher, $room): LopHoc {
+            $classRoom = LopHoc::create([
                 'subject_id' => $subject->id,
                 'course_id' => $course->id,
                 'name' => $data['name'] ?? $course->title,
@@ -82,11 +82,11 @@ class AdminClassRoomService
                 'start_date' => $data['start_date'] ?? null,
                 'duration' => $subject->duration,
                 'note' => $data['note'] ?? null,
-                'status' => ClassRoom::STATUS_OPEN,
+                'status' => LopHoc::STATUS_OPEN,
             ]);
 
             foreach ($data['schedules'] as $slot) {
-                ClassSchedule::create([
+                LichHoc::create([
                     'lop_hoc_id' => $classRoom->id,
                     'teacher_id' => $teacher->id,
                     'room_id' => $room->id,

@@ -12,10 +12,10 @@
         ? $classRoom->room->name . ($classRoom->room->code ? ' (' . $classRoom->room->code . ')' : '')
         : 'Chưa phân phòng';
     $classStatusType = match ($classRoom?->status) {
-        \App\Models\ClassRoom::STATUS_OPEN => 'success',
-        \App\Models\ClassRoom::STATUS_FULL => 'warning',
-        \App\Models\ClassRoom::STATUS_COMPLETED => 'info',
-        \App\Models\ClassRoom::STATUS_CLOSED => 'default',
+        \App\Models\LopHoc::STATUS_OPEN => 'success',
+        \App\Models\LopHoc::STATUS_FULL => 'warning',
+        \App\Models\LopHoc::STATUS_COMPLETED => 'info',
+        \App\Models\LopHoc::STATUS_CLOSED => 'default',
         default => 'default',
     };
 @endphp
@@ -189,7 +189,7 @@
                                         <div class="flex flex-wrap items-start justify-between gap-4">
                                             <div>
                                                 <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Buổi {{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</p>
-                                                <p class="mt-2 text-lg font-semibold text-slate-900">{{ \App\Models\ClassSchedule::$dayOptions[$schedule->day_of_week] ?? $schedule->day_of_week }}</p>
+                                                <p class="mt-2 text-lg font-semibold text-slate-900">{{ \App\Models\LichHoc::$dayOptions[$schedule->day_of_week] ?? $schedule->day_of_week }}</p>
                                                 <p class="mt-1 text-sm text-slate-600">{{ $schedule->start_time }} - {{ $schedule->end_time }}</p>
                                             </div>
                                             <div class="text-right">
@@ -200,7 +200,7 @@
                                         </div>
 
                                         <div class="mt-4 flex flex-wrap gap-2">
-                                            <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">{{ \App\Models\ClassSchedule::$dayOptions[$schedule->day_of_week] ?? $schedule->day_of_week }}</span>
+                                            <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">{{ \App\Models\LichHoc::$dayOptions[$schedule->day_of_week] ?? $schedule->day_of_week }}</span>
                                             <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">{{ $schedule->start_time }} - {{ $schedule->end_time }}</span>
                                             <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">{{ $schedule->room?->name ?? $roomLabel }}</span>
                                         </div>

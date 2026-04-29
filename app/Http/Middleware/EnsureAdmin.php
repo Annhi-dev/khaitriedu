@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Enrollment;
-use App\Models\ScheduleChangeRequest;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\GhiDanh;
+use App\Models\YeuCauDoiLich;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use App\Services\AdminScheduleConflictService;
 use Closure;
 use Illuminate\Http\Request;
@@ -25,7 +25,7 @@ class EnsureAdmin
         $sessionUserId = $request->session()->get('user_id');
 
         if ($sessionUserId && (! $user || (int) $user->id !== (int) $sessionUserId)) {
-            $user = User::with('role')->find($sessionUserId);
+            $user = NguoiDung::with('role')->find($sessionUserId);
 
             if ($user) {
                 Auth::setUser($user);
@@ -33,7 +33,7 @@ class EnsureAdmin
         }
 
         if ($user && ! $user->relationLoaded('role')) {
-            $reloadedUser = User::with('role')->find($user->id);
+            $reloadedUser = NguoiDung::with('role')->find($user->id);
 
             if ($reloadedUser) {
                 $user = $reloadedUser;
@@ -45,7 +45,7 @@ class EnsureAdmin
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập khu vực quản trị.');
         }
 
-        if (isset($user->status) && $user->status !== User::STATUS_ACTIVE) {
+        if (isset($user->status) && $user->status !== NguoiDung::STATUS_ACTIVE) {
             Auth::logout();
             $request->session()->invalidate();
 
@@ -62,14 +62,14 @@ class EnsureAdmin
             $studentConflictCount = $scheduleConflictService->studentConflictPairCount();
 
             $adminSidebarBadges = [
-                'teacher_applications_pending' => TeacherApplication::query()
-                    ->where('status', TeacherApplication::STATUS_PENDING)
+                'teacher_applications_pending' => DonUngTuyenGiaoVien::query()
+                    ->where('status', DonUngTuyenGiaoVien::STATUS_PENDING)
                     ->count(),
-                'enrollments_pending' => Enrollment::query()
-                    ->where('status', Enrollment::STATUS_PENDING)
+                'enrollments_pending' => GhiDanh::query()
+                    ->where('status', GhiDanh::STATUS_PENDING)
                     ->count(),
-                'schedule_change_requests_pending' => ScheduleChangeRequest::query()
-                    ->where('status', ScheduleChangeRequest::STATUS_PENDING)
+                'schedule_change_requests_pending' => YeuCauDoiLich::query()
+                    ->where('status', YeuCauDoiLich::STATUS_PENDING)
                     ->count(),
                 'schedule_conflicts' => $studentConflictCount,
             ];

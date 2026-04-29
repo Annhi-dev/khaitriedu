@@ -1,7 +1,7 @@
 @php
     $module = $module ?? null;
     $defaultPosition = $defaultPosition ?? null;
-    $statusValue = old('status', $module->status ?? \App\Models\Module::STATUS_PUBLISHED);
+    $statusValue = old('status', $module->status ?? \App\Models\HocPhan::STATUS_PUBLISHED);
     $positionValue = old('position', $module->position ?? $defaultPosition ?? '');
     $sessionCountValue = old('session_count', $module->session_count ?? ($module->lessons_count ?? ''));
 @endphp
@@ -33,8 +33,8 @@
     <div class="md:col-span-2">
         <label for="status" class="mb-2 block text-sm font-medium text-slate-700">Trạng thái hiển thị</label>
         <select id="status" name="status" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-            <option value="{{ \App\Models\Module::STATUS_PUBLISHED }}" @selected($statusValue === \App\Models\Module::STATUS_PUBLISHED)>Đang hiển thị</option>
-            <option value="{{ \App\Models\Module::STATUS_UNPUBLISHED }}" @selected($statusValue === \App\Models\Module::STATUS_UNPUBLISHED)>Đang ẩn</option>
+            <option value="{{ \App\Models\HocPhan::STATUS_PUBLISHED }}" @selected($statusValue === \App\Models\HocPhan::STATUS_PUBLISHED)>Đang hiển thị</option>
+            <option value="{{ \App\Models\HocPhan::STATUS_UNPUBLISHED }}" @selected($statusValue === \App\Models\HocPhan::STATUS_UNPUBLISHED)>Đang ẩn</option>
         </select>
         @error('status')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
     </div>
@@ -45,4 +45,3 @@
         @error('content')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
     </div>
 </div>
-

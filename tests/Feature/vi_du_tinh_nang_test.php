@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Role;
-use App\Models\User;
+use App\Models\VaiTro;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,8 +20,8 @@ class vi_du_tinh_nang_test extends TestCase
 
     public function test_authenticated_user_can_still_open_the_public_home_page(): void
     {
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
 
         $response = $this

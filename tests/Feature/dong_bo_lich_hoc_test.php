@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\CourseScheduleSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -20,63 +20,63 @@ class dong_bo_lich_hoc_test extends TestCase
 
     public function test_sync_service_fills_missing_demo_schedule_and_is_idempotent(): void
     {
-        $teacher = User::factory()->teacher()->create();
-        Room::create([
+        $teacher = NguoiDung::factory()->teacher()->create();
+        PhongHoc::create([
             'code' => 'PH001',
             'name' => 'Phòng demo 1',
             'type' => 'offline',
             'location' => 'Tầng 2',
             'capacity' => 30,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
-        Room::create([
+        PhongHoc::create([
             'code' => 'PH002',
             'name' => 'Phòng demo 2',
             'type' => 'offline',
             'location' => 'Tầng 3',
             'capacity' => 30,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
-        $englishCategory = Category::create([
+        $englishCategory = NhomHoc::create([
             'name' => 'Ngoại ngữ - Tin học',
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $longTermCategory = Category::create([
+        $longTermCategory = NhomHoc::create([
             'name' => 'Đào tạo dài hạn',
             'slug' => 'dao-tao-dai-han',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $englishSubject = Subject::create([
+        $englishSubject = MonHoc::create([
             'name' => 'ANH VĂN KHUNG 6 BẬC',
             'category_id' => $englishCategory->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'duration' => 3,
             'price' => 2000000,
         ]);
-        $longTermSubject = Subject::create([
+        $longTermSubject = MonHoc::create([
             'name' => 'THẠC SĨ QTKD',
             'category_id' => $longTermCategory->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'duration' => 6,
             'price' => 6000000,
         ]);
 
-        $englishCourse = Course::create([
+        $englishCourse = KhoaHoc::create([
             'subject_id' => $englishSubject->id,
             'title' => 'Khóa 26 - ANH VĂN KHUNG 6 BẬC',
             'description' => 'Khóa demo tiếng Anh.',
             'teacher_id' => $teacher->id,
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
-        $longTermCourse = Course::create([
+        $longTermCourse = KhoaHoc::create([
             'subject_id' => $longTermSubject->id,
             'title' => 'Khóa 26 - THẠC SĨ QTKD',
             'description' => 'Khóa demo dài hạn.',
             'teacher_id' => $teacher->id,
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
 
         $service = app(CourseScheduleSyncService::class);
@@ -107,16 +107,16 @@ class dong_bo_lich_hoc_test extends TestCase
         $this->assertCount(2, $longTermCourse->classRooms->first()->schedules);
 
         $this->assertNoClassRoomConflicts(
-            ClassRoom::query()->with(['schedules', 'course.subject'])->get()
+            LopHoc::query()->with(['schedules', 'course.subject'])->get()
         );
 
-        $classRoomCount = ClassRoom::count();
-        $scheduleCount = ClassSchedule::count();
+        $classRoomCount = LopHoc::count();
+        $scheduleCount = LichHoc::count();
 
         $service->syncCourses(collect([$englishCourse->fresh(['subject.category', 'classRooms.schedules']), $longTermCourse->fresh(['subject.category', 'classRooms.schedules'])]));
 
-        $this->assertSame($classRoomCount, ClassRoom::count());
-        $this->assertSame($scheduleCount, ClassSchedule::count());
+        $this->assertSame($classRoomCount, LopHoc::count());
+        $this->assertSame($scheduleCount, LichHoc::count());
     }
 
     private function assertNoClassRoomConflicts(Collection $classRooms): void
@@ -136,7 +136,7 @@ class dong_bo_lich_hoc_test extends TestCase
         }
     }
 
-    private function classRoomsConflict(ClassRoom $first, ClassRoom $second): bool
+    private function classRoomsConflict(LopHoc $first, LopHoc $second): bool
     {
         if (! $this->weeklySchedulesOverlap($first, $second)) {
             return false;
@@ -150,10 +150,10 @@ class dong_bo_lich_hoc_test extends TestCase
             || $first->room_id === $second->room_id;
     }
 
-    private function weeklySchedulesOverlap(ClassRoom $first, ClassRoom $second): bool
+    private function weeklySchedulesOverlap(LopHoc $first, LopHoc $second): bool
     {
-        return $first->schedules->contains(function (ClassSchedule $firstSchedule) use ($second): bool {
-            return $second->schedules->contains(function (ClassSchedule $secondSchedule) use ($firstSchedule): bool {
+        return $first->schedules->contains(function (LichHoc $firstSchedule) use ($second): bool {
+            return $second->schedules->contains(function (LichHoc $secondSchedule) use ($firstSchedule): bool {
                 if ($firstSchedule->day_of_week !== $secondSchedule->day_of_week) {
                     return false;
                 }
@@ -164,7 +164,7 @@ class dong_bo_lich_hoc_test extends TestCase
         });
     }
 
-    private function dateRangesOverlap(ClassRoom $first, ClassRoom $second): bool
+    private function dateRangesOverlap(LopHoc $first, LopHoc $second): bool
     {
         $this->assertNotNull($first->start_date);
         $this->assertNotNull($second->start_date);

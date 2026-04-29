@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\User;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AssignDepartmentTeacherRequest extends FormRequest
@@ -24,7 +24,7 @@ class AssignDepartmentTeacherRequest extends FormRequest
         return [
             function ($validator) {
                 $teacherId = (int) $this->input('teacher_id');
-                $user = User::with('role')->find($teacherId);
+                $user = NguoiDung::with('role')->find($teacherId);
 
                 if (! $user || ! $user->isTeacher()) {
                     $validator->errors()->add('teacher_id', 'Tài khoản được chọn không phải là giảng viên.');

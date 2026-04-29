@@ -66,11 +66,11 @@
                     <div class="mt-2">
                         @if($waitingOpenCourse)
                             <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">{{ $userEnrollment->course->statusLabel() }}</span>
-                        @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_PENDING)
+                        @elseif($normalizedStatus === \App\Models\GhiDanh::STATUS_PENDING)
                             <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">Đang chờ duyệt</span>
-                        @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED)
+                        @elseif($normalizedStatus === \App\Models\GhiDanh::STATUS_APPROVED)
                             <span class="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-800">Da duyet, cho xep lop</span>
-                        @elseif(in_array($normalizedStatus, [\App\Models\Enrollment::STATUS_SCHEDULED, \App\Models\Enrollment::STATUS_ACTIVE, \App\Models\Enrollment::STATUS_COMPLETED], true))
+                        @elseif(in_array($normalizedStatus, [\App\Models\GhiDanh::STATUS_SCHEDULED, \App\Models\GhiDanh::STATUS_ACTIVE, \App\Models\GhiDanh::STATUS_COMPLETED], true))
                             <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">{{ $userEnrollment->statusLabel() }}</span>
                         @else
                             <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Đăng ký bị từ chối</span>
@@ -107,7 +107,7 @@
 
             @if($userEnrollment->note)
                 <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-                    <strong>{{ $normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED ? 'Lý do từ chối' : 'Ghi chú từ admin' }}:</strong> {{ $userEnrollment->note }}
+                    <strong>{{ $normalizedStatus === \App\Models\GhiDanh::STATUS_REJECTED ? 'Lý do từ chối' : 'Ghi chú từ admin' }}:</strong> {{ $userEnrollment->note }}
                 </div>
             @endif
 
@@ -182,9 +182,9 @@
                     <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-white transition hover:bg-primary-dark">
                         <i class="fas fa-paper-plane text-sm"></i>
                         @if($userEnrollment)
-                            @if($normalizedStatus === \App\Models\Enrollment::STATUS_REJECTED)
+                            @if($normalizedStatus === \App\Models\GhiDanh::STATUS_REJECTED)
                                 Gửi lại yêu cầu đăng ký
-                            @elseif($normalizedStatus === \App\Models\Enrollment::STATUS_APPROVED)
+                            @elseif($normalizedStatus === \App\Models\GhiDanh::STATUS_APPROVED)
                                 Cập nhật thời gian mong muốn
                             @else
                                 Cập nhật yêu cầu đăng ký

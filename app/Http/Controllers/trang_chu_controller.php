@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,17 +15,17 @@ class HomeController extends Controller
     {
         $this->sessionUser();
 
-        $studentCount = User::students()->count();
-        $courseCount = Subject::visibleOnCatalog()->count();
-        $teacherCount = User::teachers()->count();
-        $teachers = User::teachers()->limit(6)->get();
-        $courses = Subject::with('category')
+        $studentCount = NguoiDung::students()->count();
+        $courseCount = MonHoc::visibleOnCatalog()->count();
+        $teacherCount = NguoiDung::teachers()->count();
+        $teachers = NguoiDung::teachers()->limit(6)->get();
+        $courses = MonHoc::with('category')
             ->withCount(['courses', 'enrollments'])
             ->visibleOnCatalog()
             ->orderBy('id', 'desc')
             ->limit(3)
             ->get();
-        $categories = Category::active()
+        $categories = NhomHoc::active()
             ->withCount([
                 'subjects as subjects_count' => fn (Builder $query) => $query->publiclyAvailable(),
             ])

@@ -13,7 +13,8 @@
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800">
 @php
-    $studentUser = $current ?? $user ?? Auth::user() ?? (session('user_id') ? \App\Models\User::with('role')->find(session('user_id')) : null);
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag();
+    $studentUser = $current ?? $user ?? Auth::user() ?? (session('user_id') ? \App\Models\NguoiDung::with('role')->find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Khu vực học viên';
     $pageEyebrow = trim($__env->yieldContent('eyebrow'));
     $studentNotificationItems = $studentUser ? $studentUser->notifications()->latest('id')->take(5)->get() : collect();

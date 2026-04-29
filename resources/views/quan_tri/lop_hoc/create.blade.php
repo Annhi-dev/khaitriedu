@@ -117,7 +117,7 @@
 <script>
 (function () {
     let idx = 0;
-    const days = @json(\App\Models\ClassSchedule::$dayOptions);
+    const days = @json(\App\Models\LichHoc::$dayOptions);
     const container = document.getElementById('schedule-rows');
     const addBtn = document.getElementById('add-schedule-btn');
     const subjectSelect = document.getElementById('subject_id');

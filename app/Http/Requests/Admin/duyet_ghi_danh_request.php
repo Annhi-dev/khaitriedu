@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Enrollment;
+use App\Models\GhiDanh;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,12 +19,12 @@ class ReviewEnrollmentRequest extends FormRequest
 
         if (! $action && $this->filled('status')) {
             $action = match ((string) $this->input('status')) {
-                Enrollment::STATUS_APPROVED => 'approve',
-                Enrollment::STATUS_REJECTED => 'reject',
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::LEGACY_STATUS_CONFIRMED => 'schedule',
-                Enrollment::STATUS_ACTIVE => 'activate',
-                Enrollment::STATUS_COMPLETED => 'complete',
+                GhiDanh::STATUS_APPROVED => 'approve',
+                GhiDanh::STATUS_REJECTED => 'reject',
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::LEGACY_STATUS_CONFIRMED => 'schedule',
+                GhiDanh::STATUS_ACTIVE => 'activate',
+                GhiDanh::STATUS_COMPLETED => 'complete',
                 default => 'request_update',
             };
         }

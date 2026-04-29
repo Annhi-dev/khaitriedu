@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $pendingRequests = $requestUpdates->where('status', \App\Models\ScheduleChangeRequest::STATUS_PENDING)->count();
+    $pendingRequests = $requestUpdates->where('status', \App\Models\YeuCauDoiLich::STATUS_PENDING)->count();
     $unreadNotifications = $notifications->where('is_read', false)->count();
 @endphp
 
@@ -114,8 +114,8 @@
                         @forelse ($requestUpdates as $requestItem)
                             @php
                                 $badgeClasses = match ($requestItem->status) {
-                                    \App\Models\ScheduleChangeRequest::STATUS_APPROVED => 'bg-emerald-100 text-emerald-700',
-                                    \App\Models\ScheduleChangeRequest::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
+                                    \App\Models\YeuCauDoiLich::STATUS_APPROVED => 'bg-emerald-100 text-emerald-700',
+                                    \App\Models\YeuCauDoiLich::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
                                     default => 'bg-amber-100 text-amber-700',
                                 };
                             @endphp

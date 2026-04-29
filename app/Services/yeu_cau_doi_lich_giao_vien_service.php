@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\ScheduleChangeRequest;
-use App\Models\User;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,12 +13,12 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherScheduleChangeRequestService
 {
-    public function paginateRequests(User $teacher, array $filters): LengthAwarePaginator
+    public function paginateRequests(NguoiDung $teacher, array $filters): LengthAwarePaginator
     {
         $status = $filters['status'] ?? null;
         $search = trim((string) ($filters['search'] ?? ''));
 
-        return ScheduleChangeRequest::query()
+        return YeuCauDoiLich::query()
             ->with([
                 'course.subject.category',
                 'classRoom.subject.category',
@@ -28,7 +28,7 @@ class TeacherScheduleChangeRequestService
                 'reviewer',
             ])
             ->where('teacher_id', $teacher->id)
-            ->when(in_array($status, ScheduleChangeRequest::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
+            ->when(in_array($status, YeuCauDoiLich::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
                     $builder->whereHas('course', function (Builder $courseQuery) use ($search) {
@@ -40,13 +40,13 @@ class TeacherScheduleChangeRequestService
                     })->orWhere('reason', 'like', '%' . $search . '%');
                 });
             })
-            ->orderByRaw("case when status = '" . ScheduleChangeRequest::STATUS_PENDING . "' then 0 else 1 end")
+            ->orderByRaw("case when status = '" . YeuCauDoiLich::STATUS_PENDING . "' then 0 else 1 end")
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
     }
 
-    public function createRequest(Course $course, User $teacher, array $data): ScheduleChangeRequest
+    public function createRequest(KhoaHoc $course, NguoiDung $teacher, array $data): YeuCauDoiLich
     {
         if ((int) $course->teacher_id !== (int) $teacher->id) {
             throw ValidationException::withMessages([
@@ -54,7 +54,7 @@ class TeacherScheduleChangeRequestService
             ]);
         }
 
-        if (! in_array($course->status, Course::schedulingStatuses(), true)) {
+        if (! in_array($course->status, KhoaHoc::schedulingStatuses(), true)) {
             throw ValidationException::withMessages([
                 'course' => 'Chỉ lớp đã có lịch chính thức mới được gửi yêu cầu dời buổi.',
             ]);
@@ -68,7 +68,7 @@ class TeacherScheduleChangeRequestService
             }
         }
 
-        if (ScheduleChangeRequest::query()->pending()->where('teacher_id', $teacher->id)->where('course_id', $course->id)->exists()) {
+        if (YeuCauDoiLich::query()->pending()->where('teacher_id', $teacher->id)->where('course_id', $course->id)->exists()) {
             throw ValidationException::withMessages([
                 'course' => 'Lớp học này đang có một yêu cầu dời buổi chờ admin xử lý.',
             ]);
@@ -90,7 +90,7 @@ class TeacherScheduleChangeRequestService
             ]);
         }
 
-        return ScheduleChangeRequest::create([
+        return YeuCauDoiLich::create([
             'teacher_id' => $teacher->id,
             'course_id' => $course->id,
             'current_schedule' => $currentSchedule,
@@ -100,11 +100,11 @@ class TeacherScheduleChangeRequestService
             'requested_start_time' => $data['requested_start_time'],
             'requested_end_time' => $data['requested_end_time'],
             'reason' => $data['reason'],
-            'status' => ScheduleChangeRequest::STATUS_PENDING,
+            'status' => YeuCauDoiLich::STATUS_PENDING,
         ]);
     }
 
-    public function createForClassSchedule(ClassSchedule $schedule, User $teacher, array $data): ScheduleChangeRequest
+    public function createForClassSchedule(LichHoc $schedule, NguoiDung $teacher, array $data): YeuCauDoiLich
     {
         $schedule->loadMissing(['classRoom.subject.category', 'classRoom.room', 'classRoom.course', 'room']);
 
@@ -114,7 +114,7 @@ class TeacherScheduleChangeRequestService
             ]);
         }
 
-        if (ScheduleChangeRequest::query()
+        if (YeuCauDoiLich::query()
             ->pending()
             ->where('teacher_id', $teacher->id)
             ->where('class_schedule_id', $schedule->id)
@@ -143,7 +143,7 @@ class TeacherScheduleChangeRequestService
             ]);
         }
 
-        return ScheduleChangeRequest::create([
+        return YeuCauDoiLich::create([
             'teacher_id' => $teacher->id,
             'course_id' => $schedule->classRoom->course_id,
             'class_room_id' => $schedule->classRoom->id,
@@ -156,13 +156,13 @@ class TeacherScheduleChangeRequestService
             'requested_start_time' => $requestedStartAt->format('H:i'),
             'requested_end_time' => $requestedEndAt->format('H:i'),
             'reason' => $data['reason'],
-            'status' => ScheduleChangeRequest::STATUS_PENDING,
+            'status' => YeuCauDoiLich::STATUS_PENDING,
         ]);
     }
 
     protected function buildScheduleLabel(string $dayOfWeek, string $startTime, string $endTime, string $startDate, ?string $endDate): string
     {
-        $preview = new Course([
+        $preview = new KhoaHoc([
             'day_of_week' => $dayOfWeek,
             'start_time' => $startTime,
             'end_time' => $endTime,

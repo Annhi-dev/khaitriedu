@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Course;
-use App\Models\Module;
+use App\Models\KhoaHoc;
+use App\Models\HocPhan;
 use Illuminate\Support\Collection;
 
 class AdminCourseModuleService
 {
-    public function getCourseDetail(Course $course): array
+    public function getCourseDetail(KhoaHoc $course): array
     {
         $course->load(['subject.category', 'teacher']);
         $course->loadCount('enrollments');
@@ -24,7 +24,7 @@ class AdminCourseModuleService
         ];
     }
 
-    public function createModule(Course $course, array $data): Module
+    public function createModule(KhoaHoc $course, array $data): HocPhan
     {
         $position = $data['position'] ?? ((int) $course->modules()->max('position') + 1);
 
@@ -38,7 +38,7 @@ class AdminCourseModuleService
         ]);
     }
 
-    public function updateModule(Course $course, Module $module, array $data): Module
+    public function updateModule(KhoaHoc $course, HocPhan $module, array $data): HocPhan
     {
         $this->ensureModuleBelongsToCourse($course, $module);
 
@@ -54,7 +54,7 @@ class AdminCourseModuleService
         return $module;
     }
 
-    public function deleteModule(Course $course, Module $module): array
+    public function deleteModule(KhoaHoc $course, HocPhan $module): array
     {
         $this->ensureModuleBelongsToCourse($course, $module);
 
@@ -62,11 +62,11 @@ class AdminCourseModuleService
 
         return [
             'type' => 'status',
-            'message' => 'Module và toàn bộ dữ liệu liên quan đã được xóa.',
+            'message' => 'HocPhan và toàn bộ dữ liệu liên quan đã được xóa.',
         ];
     }
 
-    public function reorderModules(Course $course, array $positions): void
+    public function reorderModules(KhoaHoc $course, array $positions): void
     {
         $modules = $course->modules()->get()->keyBy('id');
 
@@ -83,7 +83,7 @@ class AdminCourseModuleService
         }
     }
 
-    protected function ensureModuleBelongsToCourse(Course $course, Module $module): void
+    protected function ensureModuleBelongsToCourse(KhoaHoc $course, HocPhan $module): void
     {
         if ($module->course_id !== $course->id) {
             abort(404);

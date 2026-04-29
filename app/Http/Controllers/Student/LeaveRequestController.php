@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\StoreLeaveRequest;
-use App\Models\LeaveRequest;
-use App\Models\User;
+use App\Models\YeuCauXinPhep;
+use App\Models\NguoiDung;
 use App\Services\LeaveRequestService;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class LeaveRequestController extends Controller
 {
     public function index(LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -27,7 +27,7 @@ class LeaveRequestController extends Controller
 
     public function create(LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -44,7 +44,7 @@ class LeaveRequestController extends Controller
 
     public function store(StoreLeaveRequest $request, LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -55,9 +55,9 @@ class LeaveRequestController extends Controller
         return redirect()->route('student.leave-requests.show', $leaveRequest)->with('status', 'Yêu cầu xin phép nghỉ đã được gửi đến giảng viên.');
     }
 
-    public function show(LeaveRequest $leaveRequest, LeaveRequestService $service)
+    public function show(YeuCauXinPhep $leaveRequest, LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;

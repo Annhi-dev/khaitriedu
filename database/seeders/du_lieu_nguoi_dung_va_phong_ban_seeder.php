@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Department;
-use App\Models\Role;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\PhongBan;
+use App\Models\VaiTro;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -24,28 +24,28 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        $primary = User::updateOrCreate(
+        $primary = NguoiDung::updateOrCreate(
             ['email' => 'admin@khaitriedu.vn'],
             [
                 'name' => 'Nguyễn Minh Triết',
                 'username' => 'admin',
                 'phone' => '0901000001',
                 'password' => '123456',
-                'role_id' => Role::idByName(User::ROLE_ADMIN),
-                'status' => User::STATUS_ACTIVE,
+                'role_id' => VaiTro::idByName(NguoiDung::ROLE_ADMIN),
+                'status' => NguoiDung::STATUS_ACTIVE,
                 'email_verified_at' => $now,
             ]
         );
 
-        $backup = User::updateOrCreate(
+        $backup = NguoiDung::updateOrCreate(
             ['email' => 'quanly@khaitriedu.vn'],
             [
                 'name' => 'Trần Thu Hà',
                 'username' => 'quanly',
                 'phone' => '0901000002',
                 'password' => '123456',
-                'role_id' => Role::idByName(User::ROLE_ADMIN),
-                'status' => User::STATUS_ACTIVE,
+                'role_id' => VaiTro::idByName(NguoiDung::ROLE_ADMIN),
+                'status' => NguoiDung::STATUS_ACTIVE,
                 'email_verified_at' => $now,
             ]
         );
@@ -176,21 +176,21 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
                 'username' => 'ha.trang',
                 'phone' => '0902000016',
                 'department_id' => $departmentIds['DT'],
-                'status' => User::STATUS_LOCKED,
+                'status' => NguoiDung::STATUS_LOCKED,
             ],
         ];
 
         foreach ($teachers as $index => $teacher) {
-            User::updateOrCreate(
+            NguoiDung::updateOrCreate(
                 ['email' => $teacher['email']],
                 [
                     'name' => $teacher['name'],
                     'username' => $teacher['username'],
                     'phone' => $teacher['phone'],
                     'password' => '123456',
-                    'role_id' => Role::idByName(User::ROLE_TEACHER),
+                    'role_id' => VaiTro::idByName(NguoiDung::ROLE_TEACHER),
                     'department_id' => $teacher['department_id'],
-                    'status' => $teacher['status'] ?? User::STATUS_ACTIVE,
+                    'status' => $teacher['status'] ?? NguoiDung::STATUS_ACTIVE,
                     'email_verified_at' => Carbon::now()->subDays(40 - $index),
                 ]
             );
@@ -224,27 +224,27 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
             ['email' => 'nguyen.hoang.long@khaitriedu.vn', 'name' => 'Nguyễn Hoàng Long', 'username' => 'hv22', 'phone' => '0913000022'],
             ['email' => 'truong.my.duyen@khaitriedu.vn', 'name' => 'Trương Mỹ Duyên', 'username' => 'hv23', 'phone' => '0913000023'],
             ['email' => 'phan.minh.nhat@khaitriedu.vn', 'name' => 'Phan Minh Nhật', 'username' => 'hv24', 'phone' => '0913000024'],
-            ['email' => 'le.dieu.linh@khaitriedu.vn', 'name' => 'Lê Diệu Linh', 'username' => 'hv25', 'phone' => '0913000025', 'status' => User::STATUS_LOCKED],
-            ['email' => 'do.tuan.kiet@khaitriedu.vn', 'name' => 'Đỗ Tuấn Kiệt', 'username' => 'hv26', 'phone' => '0913000026', 'status' => User::STATUS_INACTIVE],
+            ['email' => 'le.dieu.linh@khaitriedu.vn', 'name' => 'Lê Diệu Linh', 'username' => 'hv25', 'phone' => '0913000025', 'status' => NguoiDung::STATUS_LOCKED],
+            ['email' => 'do.tuan.kiet@khaitriedu.vn', 'name' => 'Đỗ Tuấn Kiệt', 'username' => 'hv26', 'phone' => '0913000026', 'status' => NguoiDung::STATUS_INACTIVE],
         ];
 
         foreach ($students as $index => $student) {
-            User::updateOrCreate(
+            NguoiDung::updateOrCreate(
                 ['email' => $student['email']],
                 [
                     'name' => $student['name'],
                     'username' => $student['username'],
                     'phone' => $student['phone'],
                     'password' => '123456',
-                    'role_id' => Role::idByName(User::ROLE_STUDENT),
-                    'status' => $student['status'] ?? User::STATUS_ACTIVE,
+                    'role_id' => VaiTro::idByName(NguoiDung::ROLE_STUDENT),
+                    'status' => $student['status'] ?? NguoiDung::STATUS_ACTIVE,
                     'email_verified_at' => Carbon::now()->subDays(28 - $index),
                 ]
             );
         }
     }
 
-    protected function seedTeacherApplications(User $reviewer): void
+    protected function seedTeacherApplications(NguoiDung $reviewer): void
     {
         $applications = [
             [
@@ -253,7 +253,7 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
                 'phone' => '0917000001',
                 'experience' => '8 năm giảng dạy tiếng Anh giao tiếp và luyện thi đầu ra.',
                 'message' => 'Mong được tham gia các lớp buổi tối và cuối tuần.',
-                'status' => TeacherApplication::STATUS_PENDING,
+                'status' => DonUngTuyenGiaoVien::STATUS_PENDING,
             ],
             [
                 'email' => 'hoangnam@khaitriedu.vn',
@@ -261,7 +261,7 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
                 'phone' => '0902000009',
                 'experience' => '10 năm phụ trách điện dân dụng và an toàn điện.',
                 'message' => 'Sẵn sàng nhận lớp thực hành và lớp xưởng.',
-                'status' => TeacherApplication::STATUS_APPROVED,
+                'status' => DonUngTuyenGiaoVien::STATUS_APPROVED,
                 'admin_note' => 'Hồ sơ phù hợp. Mời tham gia buổi trao đổi trực tiếp.',
             ],
             [
@@ -270,7 +270,7 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
                 'phone' => '0917000003',
                 'experience' => '5 năm kế toán doanh nghiệp và dịch vụ thuế.',
                 'message' => 'Có thể bổ sung hồ sơ sư phạm nếu cần.',
-                'status' => TeacherApplication::STATUS_NEEDS_REVISION,
+                'status' => DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION,
                 'admin_note' => 'Vui lòng bổ sung chứng chỉ sư phạm trước khi xét duyệt tiếp.',
             ],
             [
@@ -279,13 +279,13 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
                 'phone' => '0917000004',
                 'experience' => '3 năm hỗ trợ đào tạo nội bộ.',
                 'message' => 'Muốn phát triển sang mảng giảng dạy bán hàng.',
-                'status' => TeacherApplication::STATUS_REJECTED,
+                'status' => DonUngTuyenGiaoVien::STATUS_REJECTED,
                 'rejection_reason' => 'Chưa đáp ứng yêu cầu kinh nghiệm đứng lớp.',
             ],
         ];
 
         foreach ($applications as $index => $application) {
-            TeacherApplication::updateOrCreate(
+            DonUngTuyenGiaoVien::updateOrCreate(
                 ['email' => $application['email']],
                 [
                     'name' => $application['name'],
@@ -296,14 +296,14 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
                     'admin_note' => $application['admin_note'] ?? null,
                     'rejection_reason' => $application['rejection_reason'] ?? null,
                     'reviewed_by' => in_array($application['status'], [
-                        TeacherApplication::STATUS_APPROVED,
-                        TeacherApplication::STATUS_REJECTED,
-                        TeacherApplication::STATUS_NEEDS_REVISION,
+                        DonUngTuyenGiaoVien::STATUS_APPROVED,
+                        DonUngTuyenGiaoVien::STATUS_REJECTED,
+                        DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION,
                     ], true) ? $reviewer->id : null,
                     'reviewed_at' => in_array($application['status'], [
-                        TeacherApplication::STATUS_APPROVED,
-                        TeacherApplication::STATUS_REJECTED,
-                        TeacherApplication::STATUS_NEEDS_REVISION,
+                        DonUngTuyenGiaoVien::STATUS_APPROVED,
+                        DonUngTuyenGiaoVien::STATUS_REJECTED,
+                        DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION,
                     ], true) ? Carbon::now()->subDays(12 - $index) : null,
                 ]
             );
@@ -312,6 +312,6 @@ class DuLieuNguoiDungVaPhongBanSeeder extends Seeder
 
     protected function departmentId(string $code): ?int
     {
-        return Department::query()->where('code', $code)->value('id');
+        return PhongBan::query()->where('code', $code)->value('id');
     }
 }

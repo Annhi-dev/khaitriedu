@@ -54,7 +54,7 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         @forelse($schedules as $course)
             @php
-                $studentsNeeded = max(0, \App\Models\Course::minimumStudentsToOpen() - (int) $course->scheduled_students_count);
+                $studentsNeeded = max(0, \App\Models\KhoaHoc::minimumStudentsToOpen() - (int) $course->scheduled_students_count);
                 $classRoom = $course->currentClassRoom();
                 $detailUrl = route('admin.schedules.courses.show', $course);
             @endphp
@@ -119,7 +119,7 @@
                 @if ($course->isPendingOpen())
                     <div class="relative z-10 mt-4 rounded-2xl {{ $studentsNeeded === 0 ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' : 'border border-amber-200 bg-amber-50 text-amber-800' }} px-4 py-3 text-sm leading-6">
                         @if ($studentsNeeded === 0)
-                            Lop da du toi thieu {{ \App\Models\Course::minimumStudentsToOpen() }} hoc vien va co the mo lop ngay bay gio.
+                            Lop da du toi thieu {{ \App\Models\KhoaHoc::minimumStudentsToOpen() }} hoc vien va co the mo lop ngay bay gio.
                         @else
                             Lop dang cho mo. Con thieu {{ $studentsNeeded }} hoc vien nua de chot ngay khai giang.
                         @endif
@@ -129,7 +129,7 @@
                 <div class="relative z-10 mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Học viên</p>
                     <div class="mt-2 flex flex-wrap gap-2">
-                        @forelse($course->enrollments->whereIn('status', \App\Models\Enrollment::courseAccessStatuses()) as $enrollment)
+                        @forelse($course->enrollments->whereIn('status', \App\Models\GhiDanh::courseAccessStatuses()) as $enrollment)
                             <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">{{ $enrollment->user?->name }}</span>
                         @empty
                             <span class="text-xs text-slate-500">Chua co</span>

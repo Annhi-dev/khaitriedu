@@ -64,7 +64,7 @@
                     <td class="px-4 py-3 text-slate-700">{{ $class->room->name ?? 'Chưa chọn' }}</td>
                     <td class="px-4 py-3">
                         @foreach($class->schedules as $s)
-                            <span class="block text-xs text-slate-600">{{ \App\Models\ClassSchedule::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}: {{ $s->start_time }}–{{ $s->end_time }}</span>
+                            <span class="block text-xs text-slate-600">{{ \App\Models\LichHoc::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}: {{ $s->start_time }}–{{ $s->end_time }}</span>
                         @endforeach
                         @if($class->schedules->isEmpty()) <span class="text-xs text-slate-400">Chưa có lịch</span> @endif
                     </td>

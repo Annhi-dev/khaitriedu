@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Helpers\ScheduleHelper;
-use App\Models\ClassRoom;
-use App\Models\Course;
+use App\Models\LopHoc;
+use App\Models\KhoaHoc;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -25,7 +25,7 @@ class AdminCourseScheduleService
         }, $days))));
     }
 
-    public function buildStructuredScheduleData(Course $course, Request $request): array
+    public function buildStructuredScheduleData(KhoaHoc $course, Request $request): array
     {
         $course->loadMissing(['subject', 'classRooms.room', 'classRooms.schedules']);
 
@@ -78,7 +78,7 @@ class AdminCourseScheduleService
         return 'Lịch này đang bị trùng ' . implode(', ', $conflictLabels) . '. Hãy chỉnh lại ngày hoặc giờ rồi kiểm tra lại ngay bên dưới.';
     }
 
-    public function buildConflictRedirectQuery(Course $course, array $courseData): array
+    public function buildConflictRedirectQuery(KhoaHoc $course, array $courseData): array
     {
         $currentClassRoom = $course->currentClassRoom();
 
@@ -131,7 +131,7 @@ class AdminCourseScheduleService
     {
         return collect($conflicts)
             ->values()
-            ->map(function (Course $course): array {
+            ->map(function (KhoaHoc $course): array {
                 $classRoom = $course->currentClassRoom();
 
                 return [
@@ -153,7 +153,7 @@ class AdminCourseScheduleService
     {
         return collect($conflicts)
             ->values()
-            ->map(function (ClassRoom $classRoom): array {
+            ->map(function (LopHoc $classRoom): array {
                 return [
                     'title' => $classRoom->displayName(),
                     'schedule' => $classRoom->scheduleSummary(),
@@ -197,7 +197,7 @@ class AdminCourseScheduleService
             ->all();
     }
 
-    public function resolveStartDate(Course $course, ?ClassRoom $classRoom, mixed $startDate): ?string
+    public function resolveStartDate(KhoaHoc $course, ?LopHoc $classRoom, mixed $startDate): ?string
     {
         if (is_string($startDate) && $startDate !== '') {
             return $startDate;
@@ -214,7 +214,7 @@ class AdminCourseScheduleService
         return null;
     }
 
-    public function resolveEndDate(Course $course, ?ClassRoom $classRoom, mixed $endDate, ?string $startDate): ?string
+    public function resolveEndDate(KhoaHoc $course, ?LopHoc $classRoom, mixed $endDate, ?string $startDate): ?string
     {
         if (is_string($endDate) && $endDate !== '') {
             return $endDate;
@@ -239,7 +239,7 @@ class AdminCourseScheduleService
 
         if ($meetingDays !== []) {
             $segments[] = implode(', ', array_map(function (string $day): string {
-                return Course::dayOptions()[$day] ?? $day;
+                return KhoaHoc::dayOptions()[$day] ?? $day;
             }, $meetingDays));
         }
 

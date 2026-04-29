@@ -45,7 +45,7 @@
                 <label class="text-sm font-medium text-slate-700">Trạng thái</label>
                 <select name="status" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:outline-none">
                     <option value="">Tất cả trạng thái</option>
-                    @foreach (\App\Models\ScheduleChangeRequest::filterableStatuses() as $status)
+                    @foreach (\App\Models\YeuCauDoiLich::filterableStatuses() as $status)
                         <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ \Illuminate\Support\Str::headline($status) }}</option>
                     @endforeach
                 </select>
@@ -61,8 +61,8 @@
         @forelse($requests as $scheduleChangeRequest)
             @php
                 $badgeClasses = match ($scheduleChangeRequest->status) {
-                    \App\Models\ScheduleChangeRequest::STATUS_APPROVED => 'bg-emerald-50 text-emerald-700',
-                    \App\Models\ScheduleChangeRequest::STATUS_REJECTED => 'bg-rose-50 text-rose-700',
+                    \App\Models\YeuCauDoiLich::STATUS_APPROVED => 'bg-emerald-50 text-emerald-700',
+                    \App\Models\YeuCauDoiLich::STATUS_REJECTED => 'bg-rose-50 text-rose-700',
                     default => 'bg-amber-50 text-amber-700',
                 };
             @endphp

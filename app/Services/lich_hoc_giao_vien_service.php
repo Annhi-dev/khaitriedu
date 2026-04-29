@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\ScheduleChangeRequest;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguoiDung;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class TeacherScheduleService
 {
-    public function dashboardData(User $teacher): array
+    public function dashboardData(NguoiDung $teacher): array
     {
         $classes = $this->assignedClasses($teacher);
         $weekSchedule = $this->weekSchedule($teacher);
@@ -27,12 +27,12 @@ class TeacherScheduleService
                 ->filter(fn (array $item) => $item['starts_at']->isSameDay($today))
                 ->values(),
             'weekSchedule' => $weekSchedule,
-            'notifications' => Notification::query()
+            'notifications' => ThongBao::query()
                 ->where('user_id', $teacher->id)
                 ->latest()
                 ->take(5)
                 ->get(),
-            'requestUpdates' => ScheduleChangeRequest::query()
+            'requestUpdates' => YeuCauDoiLich::query()
                 ->with(['classRoom.subject.category', 'classSchedule', 'course.subject.category', 'reviewer'])
                 ->where('teacher_id', $teacher->id)
                 ->latest()
@@ -42,23 +42,23 @@ class TeacherScheduleService
         ];
     }
 
-    public function assignedClasses(User $teacher): Collection
+    public function assignedClasses(NguoiDung $teacher): Collection
     {
-        return ClassRoom::query()
+        return LopHoc::query()
             ->where('teacher_id', $teacher->id)
             ->with(['subject.category', 'room', 'course', 'schedules.room'])
             ->withCount([
-                'enrollments as students_count' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments as students_count' => fn ($query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
             ])
             ->orderByDesc('id')
             ->get();
     }
 
-    public function weeklyEntries(User $teacher): Collection
+    public function weeklyEntries(NguoiDung $teacher): Collection
     {
         return $this->assignedClasses($teacher)
-            ->flatMap(function (ClassRoom $classRoom) {
-                return $classRoom->schedules->map(function (ClassSchedule $schedule) use ($classRoom) {
+            ->flatMap(function (LopHoc $classRoom) {
+                return $classRoom->schedules->map(function (LichHoc $schedule) use ($classRoom) {
                     $roomName = $schedule->room?->name ?? $classRoom->room?->name ?? 'Chua phan phong';
                     $studentsCount = (int) ($classRoom->students_count ?? 0);
 
@@ -83,12 +83,12 @@ class TeacherScheduleService
             ->values();
     }
 
-    public function weeklyTimetable(User $teacher, ?CarbonInterface $reference = null): array
+    public function weeklyTimetable(NguoiDung $teacher, ?CarbonInterface $reference = null): array
     {
         return app(WeeklyTimetableService::class)->build($this->weeklyEntries($teacher), $reference);
     }
 
-    public function weekSchedule(User $teacher, ?CarbonInterface $reference = null): Collection
+    public function weekSchedule(NguoiDung $teacher, ?CarbonInterface $reference = null): Collection
     {
         $reference = $reference
             ? CarbonImmutable::instance($reference->toImmutable())
@@ -99,14 +99,14 @@ class TeacherScheduleService
         return $this->scheduleForRange($teacher, $weekStart, $weekEnd);
     }
 
-    public function scheduleForRange(User $teacher, CarbonInterface $periodStart, CarbonInterface $periodEnd): Collection
+    public function scheduleForRange(NguoiDung $teacher, CarbonInterface $periodStart, CarbonInterface $periodEnd): Collection
     {
         $periodStartImmutable = CarbonImmutable::instance($periodStart->toImmutable())->startOfDay();
         $periodEndImmutable = CarbonImmutable::instance($periodEnd->toImmutable())->endOfDay();
 
         return $this->assignedClasses($teacher)
-            ->flatMap(function (ClassRoom $classRoom) use ($periodStartImmutable, $periodEndImmutable) {
-                return $classRoom->schedules->flatMap(function (ClassSchedule $schedule) use ($classRoom, $periodStartImmutable, $periodEndImmutable) {
+            ->flatMap(function (LopHoc $classRoom) use ($periodStartImmutable, $periodEndImmutable) {
+                return $classRoom->schedules->flatMap(function (LichHoc $schedule) use ($classRoom, $periodStartImmutable, $periodEndImmutable) {
                     return $this->scheduleOccurrencesWithin($schedule, $periodStartImmutable, $periodEndImmutable)
                         ->map(function (CarbonImmutable $occurrenceDate) use ($classRoom, $schedule) {
                             return [
@@ -129,11 +129,11 @@ class TeacherScheduleService
     }
 
     protected function scheduleOccurrencesWithin(
-        ClassSchedule $schedule,
+        LichHoc $schedule,
         CarbonImmutable $periodStart,
         CarbonImmutable $periodEnd
     ): Collection {
-        $dayIndex = array_search($schedule->day_of_week, array_keys(ClassSchedule::$dayOptions), true);
+        $dayIndex = array_search($schedule->day_of_week, array_keys(LichHoc::$dayOptions), true);
 
         if ($dayIndex === false) {
             return collect();

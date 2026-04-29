@@ -2,7 +2,7 @@
 @section('title', 'Chi tiết nhóm học')
 @section('content')
 @php
-    $statusClasses = $category->status === \App\Models\Category::STATUS_ACTIVE
+    $statusClasses = $category->status === \App\Models\NhomHoc::STATUS_ACTIVE
         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
         : 'border-amber-200 bg-amber-50 text-amber-700';
     $createCourseUrl = $category->defaultSubject
@@ -28,7 +28,7 @@
             <a href="{{ route('admin.categories') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Danh sách nhóm học</a>
             <a href="{{ $createCourseUrl }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Tạo khóa học mới</a>
             <a href="{{ route('admin.categories.edit', $category) }}" class="inline-flex items-center justify-center rounded-2xl border border-cyan-200 px-4 py-2.5 text-sm font-medium text-cyan-700 hover:bg-cyan-50">Sửa thông tin</a>
-            @if ($category->status === \App\Models\Category::STATUS_ACTIVE)
+            @if ($category->status === \App\Models\NhomHoc::STATUS_ACTIVE)
                 <form method="post" action="{{ route('admin.categories.deactivate', $category) }}" onsubmit="return confirm('Ngừng hoạt động nhóm học này?');">
                     @csrf
                     <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600">Ngừng hoạt động</button>

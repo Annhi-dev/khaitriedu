@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Subject;
+use App\Models\MonHoc;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::table('mon_hoc', function (Blueprint $table) {
             if (! Schema::hasColumn('mon_hoc', 'test_count')) {
                 $table->unsignedTinyInteger('test_count')
-                    ->default(Subject::DEFAULT_TEST_COUNT)
+                    ->default(MonHoc::DEFAULT_TEST_COUNT)
                     ->after('duration');
             }
         });

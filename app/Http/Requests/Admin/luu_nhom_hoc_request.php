@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Category;
+use App\Models\NhomHoc;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -25,7 +25,7 @@ class StoreStudyGroupRequest extends FormRequest
             'description' => $this->filled('description') ? trim((string) $this->input('description')) : null,
             'program' => $this->filled('program') ? trim((string) $this->input('program')) : null,
             'level' => $this->filled('level') ? trim((string) $this->input('level')) : null,
-            'status' => $this->input('status', Category::STATUS_ACTIVE),
+            'status' => $this->input('status', NhomHoc::STATUS_ACTIVE),
             'order' => $this->filled('order') ? (int) $this->input('order') : 0,
         ]);
     }
@@ -38,7 +38,7 @@ class StoreStudyGroupRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'program' => ['nullable', 'string', 'max:255'],
             'level' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', Rule::in([Category::STATUS_ACTIVE, Category::STATUS_INACTIVE])],
+            'status' => ['required', Rule::in([NhomHoc::STATUS_ACTIVE, NhomHoc::STATUS_INACTIVE])],
             'order' => ['nullable', 'integer', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
         ];

@@ -211,7 +211,7 @@
                                 <p class="font-semibold text-slate-900">{{ $slot->subject?->name ?? 'Khóa học chưa xác định' }}</p>
                                 <p class="text-sm text-slate-500">{{ $slot->subject?->category?->name ?? 'Chưa phân nhóm' }}</p>
                             </div>
-                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $slot->status === \App\Models\CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS ? 'bg-emerald-100 text-emerald-700' : 'bg-cyan-100 text-cyan-700' }}">
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $slot->status === \App\Models\KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS ? 'bg-emerald-100 text-emerald-700' : 'bg-cyan-100 text-cyan-700' }}">
                                 {{ $slot->statusLabel() }}
                             </span>
                         </div>

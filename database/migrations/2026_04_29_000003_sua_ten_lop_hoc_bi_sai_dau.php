@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\ClassRoom;
+use App\Models\LopHoc;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Schema;
 
@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        ClassRoom::query()
+        LopHoc::query()
             ->with('course')
             ->where('name', 'like', '%?%')
             ->chunkById(100, function ($classRooms): void {

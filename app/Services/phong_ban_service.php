@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Department;
-use App\Models\User;
+use App\Models\PhongBan;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -16,7 +16,7 @@ class AdminDepartmentService
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
 
-        return Department::query()
+        return PhongBan::query()
             ->withCount('teachers')
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
@@ -31,21 +31,21 @@ class AdminDepartmentService
             ->withQueryString();
     }
 
-    public function createDepartment(array $data): Department
+    public function createDepartment(array $data): PhongBan
     {
-        return Department::create($this->buildPayload($data));
+        return PhongBan::create($this->buildPayload($data));
     }
 
-    public function updateDepartment(Department $department, array $data): Department
+    public function updateDepartment(PhongBan $department, array $data): PhongBan
     {
         $department->update($this->buildPayload($data));
 
         return $department;
     }
 
-    public function deactivateDepartment(Department $department): string
+    public function deactivateDepartment(PhongBan $department): string
     {
-        $department->update(['status' => Department::STATUS_INACTIVE]);
+        $department->update(['status' => PhongBan::STATUS_INACTIVE]);
         $teacherCount = $department->teachers()->count();
 
         if ($teacherCount > 0) {
@@ -55,33 +55,33 @@ class AdminDepartmentService
         return 'Phòng ban đã được chuyển sang tạm ngưng.';
     }
 
-    public function activateDepartment(Department $department): void
+    public function activateDepartment(PhongBan $department): void
     {
-        $department->update(['status' => Department::STATUS_ACTIVE]);
+        $department->update(['status' => PhongBan::STATUS_ACTIVE]);
     }
 
     public function summary(): array
     {
         return [
-            'total' => Department::query()->count(),
-            'active' => Department::query()->where('status', Department::STATUS_ACTIVE)->count(),
-            'inactive' => Department::query()->where('status', Department::STATUS_INACTIVE)->count(),
-            'teachers' => Department::query()->withCount('teachers')->get()->sum('teachers_count'),
+            'total' => PhongBan::query()->count(),
+            'active' => PhongBan::query()->where('status', PhongBan::STATUS_ACTIVE)->count(),
+            'inactive' => PhongBan::query()->where('status', PhongBan::STATUS_INACTIVE)->count(),
+            'teachers' => PhongBan::query()->withCount('teachers')->get()->sum('teachers_count'),
         ];
     }
 
-    public function teachersInDepartment(Department $department): Collection
+    public function teachersInDepartment(PhongBan $department): Collection
     {
-        return User::query()
+        return NguoiDung::query()
             ->teachers()
             ->where('department_id', $department->id)
             ->orderBy('name')
             ->get();
     }
 
-    public function assignableTeachers(Department $department): Collection
+    public function assignableTeachers(PhongBan $department): Collection
     {
-        return User::query()
+        return NguoiDung::query()
             ->teachers()
             ->with('department')
             ->where(function (Builder $query) use ($department) {
@@ -92,7 +92,7 @@ class AdminDepartmentService
             ->get();
     }
 
-    public function assignTeacher(Department $department, User $teacher): string
+    public function assignTeacher(PhongBan $department, NguoiDung $teacher): string
     {
         $teacher->loadMissing('department');
 

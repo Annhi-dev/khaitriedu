@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Category;
+use App\Models\NhomHoc;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +14,7 @@ class AdminStudyGroupService
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
 
-        return Category::query()
+        return NhomHoc::query()
             ->with('defaultSubject')
             ->withCount(['subjects', 'courses'])
             ->when($search !== '', function (Builder $query) use ($search) {
@@ -33,19 +33,19 @@ class AdminStudyGroupService
             ->withQueryString();
     }
 
-    public function createStudyGroup(array $data, ?UploadedFile $image = null): Category
+    public function createStudyGroup(array $data, ?UploadedFile $image = null): NhomHoc
     {
-        return Category::create($this->buildPayload($data, $image));
+        return NhomHoc::create($this->buildPayload($data, $image));
     }
 
-    public function updateStudyGroup(Category $category, array $data, ?UploadedFile $image = null): Category
+    public function updateStudyGroup(NhomHoc $category, array $data, ?UploadedFile $image = null): NhomHoc
     {
         $category->update($this->buildPayload($data, $image, $category));
 
         return $category;
     }
 
-    public function getStudyGroupDetail(Category $category): array
+    public function getStudyGroupDetail(NhomHoc $category): array
     {
         $category->load(['defaultSubject'])->loadCount(['subjects', 'courses']);
         $subjects = $category->subjects()
@@ -65,22 +65,22 @@ class AdminStudyGroupService
         ];
     }
 
-    public function deactivateStudyGroup(Category $category): string
+    public function deactivateStudyGroup(NhomHoc $category): string
     {
         $hasDependencies = $category->subjects()->exists() || $category->courses()->exists();
-        $category->update(['status' => Category::STATUS_INACTIVE]);
+        $category->update(['status' => NhomHoc::STATUS_INACTIVE]);
 
         return $hasDependencies
             ? 'Nhóm học đang có khóa học liên kết nên đã được chuyển sang trạng thái ngừng hoạt động.'
             : 'Nhóm học đã được ngừng hoạt động.';
     }
 
-    public function activateStudyGroup(Category $category): void
+    public function activateStudyGroup(NhomHoc $category): void
     {
-        $category->update(['status' => Category::STATUS_ACTIVE]);
+        $category->update(['status' => NhomHoc::STATUS_ACTIVE]);
     }
 
-    protected function buildPayload(array $data, ?UploadedFile $image = null, ?Category $category = null): array
+    protected function buildPayload(array $data, ?UploadedFile $image = null, ?NhomHoc $category = null): array
     {
         $payload = [
             'name' => $data['name'],

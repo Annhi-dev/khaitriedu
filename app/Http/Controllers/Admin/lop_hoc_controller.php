@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreClassRoomRequest;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\TeacherClassroomService;
 use App\Services\AdminClassRoomService;
 use Illuminate\Database\QueryException;
@@ -19,12 +19,12 @@ class ClassRoomController extends Controller
 {
     public function index(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $query = ClassRoom::with(['subject', 'course', 'room', 'teacher', 'schedules'])
+        $query = LopHoc::with(['subject', 'course', 'room', 'teacher', 'schedules'])
             ->withCount('enrollments')
             ->latest();
 
@@ -46,33 +46,33 @@ class ClassRoomController extends Controller
             throw $e;
         }
 
-        $subjects = Subject::whereIn('status', [Subject::STATUS_OPEN, Subject::STATUS_DRAFT])->orderBy('name')->get();
+        $subjects = MonHoc::whereIn('status', [MonHoc::STATUS_OPEN, MonHoc::STATUS_DRAFT])->orderBy('name')->get();
 
         return view('quan_tri.lop_hoc.index', compact('current', 'classes', 'subjects'));
     }
 
     public function create()
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $subjects = Subject::with('category')->whereIn('status', [Subject::STATUS_OPEN, Subject::STATUS_DRAFT])->orderBy('name')->get();
-        $rooms = Room::where('status', Room::STATUS_ACTIVE)->orderBy('name')->get();
-        $teachers = User::teachers()->where('status', User::STATUS_ACTIVE)->orderBy('name')->get();
-        $courses = Course::query()
+        $subjects = MonHoc::with('category')->whereIn('status', [MonHoc::STATUS_OPEN, MonHoc::STATUS_DRAFT])->orderBy('name')->get();
+        $rooms = PhongHoc::where('status', PhongHoc::STATUS_ACTIVE)->orderBy('name')->get();
+        $teachers = NguoiDung::teachers()->where('status', NguoiDung::STATUS_ACTIVE)->orderBy('name')->get();
+        $courses = KhoaHoc::query()
             ->with('subject')
             ->orderBy('title')
             ->get();
-        $days = ClassSchedule::$dayOptions;
+        $days = LichHoc::$dayOptions;
 
         return view('quan_tri.lop_hoc.create', compact('current', 'subjects', 'rooms', 'teachers', 'courses', 'days'));
     }
 
     public function store(StoreClassRoomRequest $request, AdminClassRoomService $classRoomService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -83,9 +83,9 @@ class ClassRoomController extends Controller
             ->with('status', 'Lớp học đã được tạo thành công.');
     }
 
-    public function show(ClassRoom $class, TeacherClassroomService $gradeService)
+    public function show(LopHoc $class, TeacherClassroomService $gradeService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -97,9 +97,9 @@ class ClassRoomController extends Controller
         return view('quan_tri.lop_hoc.show', compact('current', 'class', 'gradeColumns', 'gradeWeightsSupported'));
     }
 
-    public function updateGradeWeights(Request $request, ClassRoom $class, TeacherClassroomService $gradeService)
+    public function updateGradeWeights(Request $request, LopHoc $class, TeacherClassroomService $gradeService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -114,9 +114,9 @@ class ClassRoomController extends Controller
         return redirect()->route('admin.classes.show', $class)->with('status', 'Đã cập nhật hệ số các lần kiểm tra.');
     }
 
-    public function destroy(ClassRoom $class)
+    public function destroy(LopHoc $class)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\CourseTimeSlot;
-use App\Models\Enrollment;
-use App\Models\Room;
-use App\Models\ScheduleChangeRequest;
-use App\Models\SlotRegistration;
-use App\Models\SlotRegistrationChoice;
-use App\Models\Subject;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\KhungGioKhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\PhongHoc;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguyenVongKhungGio;
+use App\Models\LuaChonNguyenVongKhungGio;
+use App\Models\MonHoc;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use App\Services\AdminScheduleConflictService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
@@ -32,27 +32,27 @@ class AdminDashboardService
         $slotRegistrationsReady = $infrastructureChecks['slot_registrations'];
         $slotChoicesReady = $infrastructureChecks['slot_registration_choices'];
 
-        $recentEnrollments = Enrollment::query()
+        $recentEnrollments = GhiDanh::query()
             ->with(['user', 'subject.category', 'course.subject'])
             ->latest('submitted_at')
             ->latest('id')
             ->limit(6)
             ->get();
 
-        $pendingTeacherApplicationsList = TeacherApplication::query()
-            ->where('status', TeacherApplication::STATUS_PENDING)
+        $pendingTeacherApplicationsList = DonUngTuyenGiaoVien::query()
+            ->where('status', DonUngTuyenGiaoVien::STATUS_PENDING)
             ->latest('created_at')
             ->limit(5)
             ->get();
 
-        $pendingScheduleRequestsList = ScheduleChangeRequest::query()
+        $pendingScheduleRequestsList = YeuCauDoiLich::query()
             ->with(['teacher', 'course.subject'])
-            ->where('status', ScheduleChangeRequest::STATUS_PENDING)
+            ->where('status', YeuCauDoiLich::STATUS_PENDING)
             ->latest('created_at')
             ->limit(5)
             ->get();
 
-        $recentCourses = Course::query()
+        $recentCourses = KhoaHoc::query()
             ->with(['subject.category', 'teacher'])
             ->latest('id')
             ->limit(5)
@@ -64,26 +64,26 @@ class AdminDashboardService
         [$studentConflictStudentCount, $studentConflictPairCount] = $this->studentConflictSummary();
 
         return [
-            'studentCount' => User::students()->count(),
-            'teacherCount' => User::teachers()->count(),
-            'pendingTeacherApplications' => TeacherApplication::where('status', TeacherApplication::STATUS_PENDING)->count(),
-            'subjectCount' => Subject::count(),
-            'groupCount' => Category::count(),
-            'roomCount' => $roomsReady ? Room::count() : 0,
-            'openTimeSlotCount' => $timeSlotsReady ? CourseTimeSlot::where('status', CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION)->count() : 0,
-            'pendingEnrollmentCount' => Enrollment::query()
-                ->where('status', Enrollment::STATUS_PENDING)
+            'studentCount' => NguoiDung::students()->count(),
+            'teacherCount' => NguoiDung::teachers()->count(),
+            'pendingTeacherApplications' => DonUngTuyenGiaoVien::where('status', DonUngTuyenGiaoVien::STATUS_PENDING)->count(),
+            'subjectCount' => MonHoc::count(),
+            'groupCount' => NhomHoc::count(),
+            'roomCount' => $roomsReady ? PhongHoc::count() : 0,
+            'openTimeSlotCount' => $timeSlotsReady ? KhungGioKhoaHoc::where('status', KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION)->count() : 0,
+            'pendingEnrollmentCount' => GhiDanh::query()
+                ->where('status', GhiDanh::STATUS_PENDING)
                 ->where('is_submitted', true)
                 ->whereNull('lop_hoc_id')
                 ->count(),
-            'pendingSlotRegistrationCount' => $slotRegistrationsReady ? SlotRegistration::where('status', SlotRegistration::STATUS_PENDING)->count() : 0,
-            'configuredTimeSlotCount' => $timeSlotsReady ? CourseTimeSlot::count() : 0,
-            'readyToOpenClassSlotCount' => $timeSlotsReady ? CourseTimeSlot::where('status', CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS)->count() : 0,
-            'recordedSlotRegistrationCount' => $slotRegistrationsReady ? SlotRegistration::where('status', SlotRegistration::STATUS_RECORDED)->count() : 0,
-            'slotChoiceCount' => $slotChoicesReady ? SlotRegistrationChoice::count() : 0,
-            'maintenanceRoomCount' => $roomsReady ? Room::where('status', Room::STATUS_MAINTENANCE)->count() : 0,
-            'activeClassCount' => Course::whereIn('status', Course::schedulingStatuses())->count(),
-            'pendingScheduleChangeRequests' => ScheduleChangeRequest::where('status', ScheduleChangeRequest::STATUS_PENDING)->count(),
+            'pendingSlotRegistrationCount' => $slotRegistrationsReady ? NguyenVongKhungGio::where('status', NguyenVongKhungGio::STATUS_PENDING)->count() : 0,
+            'configuredTimeSlotCount' => $timeSlotsReady ? KhungGioKhoaHoc::count() : 0,
+            'readyToOpenClassSlotCount' => $timeSlotsReady ? KhungGioKhoaHoc::where('status', KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS)->count() : 0,
+            'recordedSlotRegistrationCount' => $slotRegistrationsReady ? NguyenVongKhungGio::where('status', NguyenVongKhungGio::STATUS_RECORDED)->count() : 0,
+            'slotChoiceCount' => $slotChoicesReady ? LuaChonNguyenVongKhungGio::count() : 0,
+            'maintenanceRoomCount' => $roomsReady ? PhongHoc::where('status', PhongHoc::STATUS_MAINTENANCE)->count() : 0,
+            'activeClassCount' => KhoaHoc::whereIn('status', KhoaHoc::schedulingStatuses())->count(),
+            'pendingScheduleChangeRequests' => YeuCauDoiLich::where('status', YeuCauDoiLich::STATUS_PENDING)->count(),
             'recentEnrollments' => $recentEnrollments,
             'pendingTeacherApplicationsList' => $pendingTeacherApplicationsList,
             'pendingScheduleRequestsList' => $pendingScheduleRequestsList,
@@ -155,7 +155,7 @@ class AdminDashboardService
             return collect();
         }
 
-        $query = SlotRegistration::query()
+        $query = NguyenVongKhungGio::query()
             ->with(['student', 'subject'])
             ->pending()
             ->latest('created_at')
@@ -174,11 +174,11 @@ class AdminDashboardService
             return collect();
         }
 
-        $query = CourseTimeSlot::query()
+        $query = KhungGioKhoaHoc::query()
             ->with(['subject.category', 'teacher', 'room'])
             ->whereIn('status', [
-                CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
-                CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS,
+                KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION,
+                KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS,
             ])
             ->latest('id')
             ->limit(6);

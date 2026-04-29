@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,17 +20,17 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_can_view_schedule_queue(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         [, $subject] = $this->createCatalogSubject();
-        $student = User::factory()->student()->create([
+        $student = NguoiDung::factory()->student()->create([
             'name' => 'Hoc Vien Xep Lich',
             'email' => 'queue-student@example.com',
         ]);
         $pendingEnrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
         ]);
-        $this->createEnrollment(User::factory()->student()->create(), $subject, [
-            'status' => Enrollment::STATUS_REJECTED,
+        $this->createEnrollment(NguoiDung::factory()->student()->create(), $subject, [
+            'status' => GhiDanh::STATUS_REJECTED,
         ]);
 
         $response = $this
@@ -47,11 +47,11 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_can_open_schedule_screen_for_custom_schedule_request(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
         ]);
 
         $response = $this
@@ -67,7 +67,7 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_open_course_screen_only_shows_non_conflicting_rooms(): void
     {
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Room']);
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher PhongHoc']);
         [, $subject] = $this->createCatalogSubject('Thiết kế Web', 'thiet-ke-web');
         $course = $this->createInternalCourse($subject, $teacher, [
             'title' => 'KhaiTriEdu 2026 - Thiết kế Web',
@@ -77,13 +77,13 @@ class quan_ly_lich_hoc_test extends TestCase
             'end_time' => '20:15',
             'start_date' => '2026-04-01',
             'end_date' => '2026-06-01',
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
 
         $conflictRoom = $this->createRoom(['name' => 'Phong trung lich', 'code' => 'CL001']);
         $freeRoom = $this->createRoom(['name' => 'Phong trong', 'code' => 'FR001']);
 
-        $conflictClass = ClassRoom::create([
+        $conflictClass = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => 'Lop trung lich',
@@ -91,10 +91,10 @@ class quan_ly_lich_hoc_test extends TestCase
             'teacher_id' => $teacher->id,
             'start_date' => '2026-04-02',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $conflictClass->id,
             'teacher_id' => $teacher->id,
             'room_id' => $conflictRoom->id,
@@ -111,9 +111,9 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_can_view_and_filter_system_schedule_list(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacherA = User::factory()->teacher()->create(['name' => 'Teacher Alpha']);
-        $teacherB = User::factory()->teacher()->create(['name' => 'Teacher Beta']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacherA = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Alpha']);
+        $teacherB = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Beta']);
         [, $subject] = $this->createCatalogSubject();
 
         $courseA = $this->createInternalCourse($subject, $teacherA, [
@@ -125,7 +125,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'schedule' => 'Thu 2, 18:00 - 20:00 | Tu 01/04/2026 den 01/05/2026',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
         $courseB = $this->createInternalCourse($subject, $teacherB, [
             'title' => 'Lop Teacher Beta',
@@ -136,7 +136,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '08:00',
             'end_time' => '10:00',
             'schedule' => 'Thu 3, 08:00 - 10:00 | Tu 02/04/2026 den 02/05/2026',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
         $response = $this
@@ -156,16 +156,16 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_can_view_active_seed_courses_on_schedule_overview(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Active']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Active']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         $room = $this->createRoom();
         $course = $this->createInternalCourse($subject, $teacher, [
             'title' => 'Khóa 26 - ANH VĂN KHUNG 6 BẬC',
             'schedule' => 'Tối T2-T4-T6, 18:00 - 20:15',
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $course->title,
@@ -173,10 +173,10 @@ class quan_ly_lich_hoc_test extends TestCase
             'teacher_id' => $teacher->id,
             'start_date' => '2026-04-01',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -202,10 +202,10 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_can_view_schedule_detail_page_with_classroom_sessions_and_students(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Detail']);
-        $student = User::factory()->student()->create(['name' => 'Student Detail']);
-        $studentSecond = User::factory()->student()->create(['name' => 'Student Synced']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Detail']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Student Detail']);
+        $studentSecond = NguoiDung::factory()->student()->create(['name' => 'Student Synced']);
         $room = $this->createRoom(['name' => 'Phong 201', 'code' => 'P201']);
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
 
@@ -218,10 +218,10 @@ class quan_ly_lich_hoc_test extends TestCase
             'end_date' => '2026-04-23',
             'start_time' => '18:00',
             'end_time' => '20:15',
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $course->title,
@@ -229,10 +229,10 @@ class quan_ly_lich_hoc_test extends TestCase
             'teacher_id' => $teacher->id,
             'start_date' => '2026-03-23',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -241,7 +241,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'end_time' => '20:15',
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -254,7 +254,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'status' => GhiDanh::STATUS_SCHEDULED,
             'schedule' => $course->schedule,
         ]);
 
@@ -262,7 +262,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'schedule' => $course->schedule,
         ]);
 
@@ -287,12 +287,12 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_custom_schedule_request_cannot_use_existing_open_class_in_phase_9(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createInternalCourse($subject, $teacher, [
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
             'day_of_week' => 'Monday',
             'meeting_days' => ['Monday'],
             'start_date' => '2026-04-01',
@@ -301,7 +301,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'end_time' => '20:00',
         ]);
         $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
         ]);
 
         $response = $this
@@ -321,18 +321,18 @@ class quan_ly_lich_hoc_test extends TestCase
         $response->assertSessionHasErrors('course_id');
 
         $enrollment->refresh();
-        $this->assertSame(Enrollment::STATUS_APPROVED, $enrollment->status);
+        $this->assertSame(GhiDanh::STATUS_APPROVED, $enrollment->status);
         $this->assertNull($enrollment->course_id);
     }
 
     public function test_admin_can_save_custom_request_into_waiting_class_and_notify_student(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject('Tieng Anh giao tiep', 'tieng-anh-giao-tiep');
         $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
         ]);
 
         $response = $this
@@ -351,13 +351,13 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.schedules.index'));
 
-        $course = Course::where('subject_id', $subject->id)->latest('id')->first();
+        $course = KhoaHoc::where('subject_id', $subject->id)->latest('id')->first();
 
         $this->assertNotNull($course);
         $this->assertSame($subject->id, $course->subject_id);
         $this->assertSame('Tieng Anh giao tiep - Khóa học 1', $course->title);
         $this->assertSame($teacher->id, $course->teacher_id);
-        $this->assertSame(Course::STATUS_PENDING_OPEN, $course->status);
+        $this->assertSame(KhoaHoc::STATUS_PENDING_OPEN, $course->status);
         $this->assertSame(15, $course->capacity);
         $this->assertSame(['Wednesday', 'Friday'], $course->meeting_days);
         $this->assertNull($course->start_date);
@@ -365,10 +365,10 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $enrollment->refresh();
         $this->assertSame($course->id, $enrollment->course_id);
-        $this->assertSame(Enrollment::STATUS_SCHEDULED, $enrollment->status);
+        $this->assertSame(GhiDanh::STATUS_SCHEDULED, $enrollment->status);
         $this->assertSame($teacher->id, $enrollment->assigned_teacher_id);
 
-        $this->assertSame(1, Notification::query()->where('user_id', $student->id)->count());
+        $this->assertSame(1, ThongBao::query()->where('user_id', $student->id)->count());
         $this->assertDatabaseHas('thong_bao', [
             'user_id' => $student->id,
             'type' => 'info',
@@ -378,10 +378,10 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_custom_schedule_request_can_join_existing_waiting_class(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $studentA = User::factory()->student()->create();
-        $studentB = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $studentA = NguoiDung::factory()->student()->create();
+        $studentB = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
 
         $waitingCourse = $this->createInternalCourse($subject, $teacher, [
@@ -391,18 +391,18 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '18:30',
             'end_time' => '20:30',
             'capacity' => 12,
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
             'schedule' => 'Thu 5, 18:30 - 20:30 | Cho du 5 hoc vien de mo lop',
         ]);
         $this->createEnrollment($studentA, $subject, [
             'course_id' => $waitingCourse->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'status' => GhiDanh::STATUS_SCHEDULED,
             'schedule' => $waitingCourse->schedule,
         ]);
 
         $enrollment = $this->createEnrollment($studentB, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
         ]);
 
         $response = $this
@@ -414,23 +414,23 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.schedules.index'));
 
-        $this->assertSame(1, Course::query()->count());
+        $this->assertSame(1, KhoaHoc::query()->count());
         $this->assertSame($waitingCourse->id, $enrollment->fresh()->course_id);
-        $this->assertSame(2, $waitingCourse->fresh()->enrollments()->whereIn('status', Enrollment::courseAccessStatuses())->count());
-        $this->assertSame(1, Notification::query()->where('user_id', $studentB->id)->count());
+        $this->assertSame(2, $waitingCourse->fresh()->enrollments()->whereIn('status', GhiDanh::courseAccessStatuses())->count());
+        $this->assertSame(1, ThongBao::query()->where('user_id', $studentB->id)->count());
     }
 
     public function test_generated_course_title_increments_for_same_subject(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $this->createInternalCourse($subject, null, [
             'title' => 'Tin hoc van phong - Khóa học 1',
         ]);
         $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
         ]);
 
         $this->withSession(['user_id' => $admin->id])
@@ -454,8 +454,8 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_can_open_waiting_class_once_it_has_enough_students_and_notify_students(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
@@ -466,19 +466,19 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'capacity' => 10,
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
             'schedule' => 'Thu 2, Thu 4, 18:00 - 20:00 | Cho du 5 hoc vien de mo lop',
         ]);
 
-        foreach (range(1, Course::minimumStudentsToOpen()) as $index) {
-            $student = User::factory()->student()->create([
+        foreach (range(1, KhoaHoc::minimumStudentsToOpen()) as $index) {
+            $student = NguoiDung::factory()->student()->create([
                 'name' => 'Hoc Vien ' . $index,
             ]);
 
             $this->createEnrollment($student, $subject, [
                 'course_id' => $waitingCourse->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_SCHEDULED,
+                'status' => GhiDanh::STATUS_SCHEDULED,
                 'schedule' => $waitingCourse->schedule,
             ]);
         }
@@ -494,12 +494,12 @@ class quan_ly_lich_hoc_test extends TestCase
         $response->assertRedirect(route('admin.schedules.index'));
 
         $waitingCourse->refresh();
-        $this->assertSame(Course::STATUS_SCHEDULED, $waitingCourse->status);
+        $this->assertSame(KhoaHoc::STATUS_SCHEDULED, $waitingCourse->status);
         $this->assertSame('2026-04-20', $waitingCourse->start_date?->format('Y-m-d'));
         $this->assertSame('2026-06-20', $waitingCourse->end_date?->format('Y-m-d'));
         $this->assertStringContainsString('20/04/2026', $waitingCourse->schedule);
 
-        $classRoom = ClassRoom::query()->where('course_id', $waitingCourse->id)->first();
+        $classRoom = LopHoc::query()->where('course_id', $waitingCourse->id)->first();
         $this->assertNotNull($classRoom);
         $this->assertSame($room->id, $classRoom->room_id);
         $this->assertSame($teacher->id, $classRoom->teacher_id);
@@ -518,7 +518,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'assigned_teacher_id' => $teacher->id,
         ]);
 
-        $this->assertSame(Course::minimumStudentsToOpen(), Notification::query()->where('type', 'success')->count());
+        $this->assertSame(KhoaHoc::minimumStudentsToOpen(), ThongBao::query()->where('type', 'success')->count());
         $this->assertDatabaseHas('thong_bao', [
             'type' => 'success',
             'link' => route('student.schedule'),
@@ -527,8 +527,8 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_cannot_open_waiting_class_before_minimum_students(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
@@ -537,18 +537,18 @@ class quan_ly_lich_hoc_test extends TestCase
             'meeting_days' => ['Monday'],
             'start_time' => '18:00',
             'end_time' => '20:00',
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
 
-        foreach (range(1, Course::minimumStudentsToOpen() - 1) as $index) {
-            $student = User::factory()->student()->create([
+        foreach (range(1, KhoaHoc::minimumStudentsToOpen() - 1) as $index) {
+            $student = NguoiDung::factory()->student()->create([
                 'name' => 'Hoc Vien Cho ' . $index,
             ]);
 
             $this->createEnrollment($student, $subject, [
                 'course_id' => $waitingCourse->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_SCHEDULED,
+                'status' => GhiDanh::STATUS_SCHEDULED,
             ]);
         }
 
@@ -563,13 +563,13 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
         $response->assertSessionHasErrors('course');
-        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+        $this->assertSame(KhoaHoc::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
     }
 
     public function test_admin_cannot_open_waiting_class_when_teacher_has_conflicting_time_slot(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
@@ -582,7 +582,7 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'schedule' => 'Thu 2, 18:00 - 20:00 | Tu 01/04/2026 den 01/05/2026',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
         $waitingCourse = $this->createInternalCourse($subject, $teacher, [
@@ -591,16 +591,16 @@ class quan_ly_lich_hoc_test extends TestCase
             'meeting_days' => ['Monday'],
             'start_time' => '19:00',
             'end_time' => '21:00',
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
 
-        foreach (range(1, Course::minimumStudentsToOpen()) as $index) {
-            $student = User::factory()->student()->create();
+        foreach (range(1, KhoaHoc::minimumStudentsToOpen()) as $index) {
+            $student = NguoiDung::factory()->student()->create();
 
             $this->createEnrollment($student, $subject, [
                 'course_id' => $waitingCourse->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_SCHEDULED,
+                'status' => GhiDanh::STATUS_SCHEDULED,
             ]);
         }
 
@@ -615,14 +615,14 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
         $response->assertSessionHasErrors('teacher_id');
-        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+        $this->assertSame(KhoaHoc::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
     }
 
     public function test_admin_cannot_open_waiting_class_when_room_has_conflicting_time_slot(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacherA = User::factory()->teacher()->create();
-        $teacherB = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacherA = NguoiDung::factory()->teacher()->create();
+        $teacherB = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
 
@@ -634,20 +634,20 @@ class quan_ly_lich_hoc_test extends TestCase
             'end_date' => '2026-05-01',
             'start_time' => '18:00',
             'end_time' => '20:00',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        $existingClass = ClassRoom::create([
+        $existingClass = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $existingCourse->id,
             'room_id' => $room->id,
             'teacher_id' => $teacherA->id,
             'start_date' => '2026-04-01',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $existingClass->id,
             'teacher_id' => $teacherA->id,
             'room_id' => $room->id,
@@ -662,16 +662,16 @@ class quan_ly_lich_hoc_test extends TestCase
             'meeting_days' => ['Wednesday'],
             'start_time' => '19:00',
             'end_time' => '21:00',
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
 
-        foreach (range(1, Course::minimumStudentsToOpen()) as $index) {
-            $student = User::factory()->student()->create();
+        foreach (range(1, KhoaHoc::minimumStudentsToOpen()) as $index) {
+            $student = NguoiDung::factory()->student()->create();
 
             $this->createEnrollment($student, $subject, [
                 'course_id' => $waitingCourse->id,
                 'assigned_teacher_id' => $teacherB->id,
-                'status' => Enrollment::STATUS_SCHEDULED,
+                'status' => GhiDanh::STATUS_SCHEDULED,
             ]);
         }
 
@@ -686,16 +686,16 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
         $response->assertSessionHasErrors('room_id');
-        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+        $this->assertSame(KhoaHoc::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
     }
 
     public function test_admin_cannot_open_waiting_class_when_student_has_conflicting_time_slot(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacherA = User::factory()->teacher()->create();
-        $teacherB = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacherA = NguoiDung::factory()->teacher()->create();
+        $teacherB = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
 
         $existingCourse = $this->createInternalCourse($subject, $teacherA, [
@@ -707,12 +707,12 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'schedule' => 'Thu 3, 18:00 - 20:00 | Tu 02/04/2026 den 02/05/2026',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
         $this->createEnrollment($student, $subject, [
             'course_id' => $existingCourse->id,
             'assigned_teacher_id' => $teacherA->id,
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'status' => GhiDanh::STATUS_SCHEDULED,
             'schedule' => $existingCourse->schedule,
         ]);
 
@@ -722,22 +722,22 @@ class quan_ly_lich_hoc_test extends TestCase
             'meeting_days' => ['Tuesday'],
             'start_time' => '19:00',
             'end_time' => '21:00',
-            'status' => Course::STATUS_PENDING_OPEN,
+            'status' => KhoaHoc::STATUS_PENDING_OPEN,
         ]);
 
         $this->createEnrollment($student, $subject, [
             'course_id' => $waitingCourse->id,
             'assigned_teacher_id' => $teacherB->id,
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'status' => GhiDanh::STATUS_SCHEDULED,
         ]);
 
-        foreach (range(1, Course::minimumStudentsToOpen() - 1) as $index) {
-            $otherStudent = User::factory()->student()->create();
+        foreach (range(1, KhoaHoc::minimumStudentsToOpen() - 1) as $index) {
+            $otherStudent = NguoiDung::factory()->student()->create();
 
             $this->createEnrollment($otherStudent, $subject, [
                 'course_id' => $waitingCourse->id,
                 'assigned_teacher_id' => $teacherB->id,
-                'status' => Enrollment::STATUS_SCHEDULED,
+                'status' => GhiDanh::STATUS_SCHEDULED,
             ]);
         }
 
@@ -752,17 +752,17 @@ class quan_ly_lich_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.schedules.courses.open', $waitingCourse));
         $response->assertSessionHasErrors('start_date');
-        $this->assertSame(Course::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
+        $this->assertSame(KhoaHoc::STATUS_PENDING_OPEN, $waitingCourse->fresh()->status);
     }
 
     public function test_teacher_can_see_waiting_class_after_admin_saves_it(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Giang Vien Lich Day']);
-        $student = User::factory()->student()->create(['name' => 'Hoc Vien Da Xep']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang Vien Lich Day']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc Vien Da Xep']);
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
         ]);
 
         $this->withSession(['user_id' => $admin->id])
@@ -790,12 +790,12 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_student_can_see_waiting_class_after_admin_saves_it(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Schedule']);
-        $student = User::factory()->student()->create(['name' => 'Student Schedule']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Schedule']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Student Schedule']);
         [, $subject] = $this->createCatalogSubject();
         $enrollment = $this->createEnrollment($student, $subject, [
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
         ]);
 
         $this->withSession(['user_id' => $admin->id])
@@ -825,9 +825,9 @@ class quan_ly_lich_hoc_test extends TestCase
 
     public function test_admin_course_teacher_update_syncs_teacher_schedule_pages(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacherA = User::factory()->teacher()->create(['name' => 'Teacher Alpha']);
-        $teacherB = User::factory()->teacher()->create(['name' => 'Teacher Beta']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacherA = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Alpha']);
+        $teacherB = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Beta']);
         [, $subject] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
 
         $course = $this->createInternalCourse($subject, $teacherA, [
@@ -839,19 +839,19 @@ class quan_ly_lich_hoc_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'schedule' => 'Thu 2, 18:00 - 20:00 | Tu 01/04/2026 den 01/05/2026',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'teacher_id' => $teacherA->id,
             'start_date' => '2026-04-01',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        $schedule = ClassSchedule::create([
+        $schedule = LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacherA->id,
             'day_of_week' => 'Monday',
@@ -912,21 +912,21 @@ class quan_ly_lich_hoc_test extends TestCase
     {
         config(['session.driver' => 'array']);
 
-        $admin = User::factory()->admin()->create()->load('role');
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create()->load('role');
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong');
 
         $course = $this->createInternalCourse($subject, $teacher, [
             'title' => 'Lop co the xoa',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => 'Lop co the xoa',
             'teacher_id' => $teacher->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
         $matchedRoute = app('router')->getRoutes()->match(
@@ -945,16 +945,16 @@ class quan_ly_lich_hoc_test extends TestCase
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong'): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-hoc-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $subjectName,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
             'duration' => 24,
         ]);
@@ -962,12 +962,12 @@ class quan_ly_lich_hoc_test extends TestCase
         return [$category, $subject];
     }
 
-    private function createEnrollment(User $student, Subject $subject, array $overrides = []): Enrollment
+    private function createEnrollment(NguoiDung $student, MonHoc $subject, array $overrides = []): GhiDanh
     {
-        return Enrollment::create(array_merge([
+        return GhiDanh::create(array_merge([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'start_time' => '18:00',
             'end_time' => '20:00',
             'preferred_days' => json_encode(['Monday', 'Wednesday', 'Friday']),
@@ -976,29 +976,29 @@ class quan_ly_lich_hoc_test extends TestCase
         ], $overrides));
     }
 
-    private function createInternalCourse(Subject $subject, ?User $teacher = null, array $overrides = []): Course
+    private function createInternalCourse(MonHoc $subject, ?NguoiDung $teacher = null, array $overrides = []): KhoaHoc
     {
-        return Course::create(array_merge([
+        return KhoaHoc::create(array_merge([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop noi bo',
             'description' => 'Lop hoc noi bo danh cho hoc vien da duoc admin xep lich.',
             'teacher_id' => $teacher?->id,
             'capacity' => 20,
-            'status' => Course::STATUS_DRAFT,
+            'status' => KhoaHoc::STATUS_DRAFT,
         ], $overrides));
     }
 
-    private function createRoom(array $overrides = []): Room
+    private function createRoom(array $overrides = []): PhongHoc
     {
         $code = $overrides['code'] ?? 'P' . fake()->unique()->numberBetween(100, 999);
 
-        return Room::create(array_merge([
+        return PhongHoc::create(array_merge([
             'code' => $code,
             'name' => 'Phong ' . $code,
             'type' => 'offline',
             'location' => 'Tang 2',
             'capacity' => 25,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ], $overrides));
     }
 }

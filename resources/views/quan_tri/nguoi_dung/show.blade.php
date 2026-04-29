@@ -3,15 +3,15 @@
 @section('content')
 @php
     $roleBadge = match ($target->getRoleName()) {
-        \App\Models\User::ROLE_ADMIN => ['type' => 'danger', 'text' => 'Admin'],
-        \App\Models\User::ROLE_TEACHER => ['type' => 'info', 'text' => 'Giảng viên'],
-        \App\Models\User::ROLE_STUDENT => ['type' => 'success', 'text' => 'Học viên'],
+        \App\Models\NguoiDung::ROLE_ADMIN => ['type' => 'danger', 'text' => 'Admin'],
+        \App\Models\NguoiDung::ROLE_TEACHER => ['type' => 'info', 'text' => 'Giảng viên'],
+        \App\Models\NguoiDung::ROLE_STUDENT => ['type' => 'success', 'text' => 'Học viên'],
         default => ['type' => 'default', 'text' => $target->roleLabel()],
     };
     $statusBadge = match ($target->status) {
-        \App\Models\User::STATUS_ACTIVE => ['type' => 'success', 'text' => 'Hoạt động'],
-        \App\Models\User::STATUS_LOCKED => ['type' => 'danger', 'text' => 'Đã khóa'],
-        \App\Models\User::STATUS_INACTIVE => ['type' => 'warning', 'text' => 'Tạm dừng'],
+        \App\Models\NguoiDung::STATUS_ACTIVE => ['type' => 'success', 'text' => 'Hoạt động'],
+        \App\Models\NguoiDung::STATUS_LOCKED => ['type' => 'danger', 'text' => 'Đã khóa'],
+        \App\Models\NguoiDung::STATUS_INACTIVE => ['type' => 'warning', 'text' => 'Tạm dừng'],
         default => ['type' => 'default', 'text' => $target->statusLabel()],
     };
     $initial = mb_strtoupper(mb_substr((string) $target->name, 0, 1));

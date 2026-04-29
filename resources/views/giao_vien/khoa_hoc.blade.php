@@ -77,10 +77,10 @@
               ];
               $displayStatus = $enrollment->displayStatus();
               $statusClasses = match ($displayStatus) {
-                \App\Models\Enrollment::STATUS_SCHEDULED => 'bg-green-100 text-green-800',
-                \App\Models\Enrollment::STATUS_ACTIVE => 'bg-violet-100 text-violet-800',
-                \App\Models\Enrollment::STATUS_COMPLETED => 'bg-slate-100 text-slate-800',
-                \App\Models\Enrollment::STATUS_REJECTED => 'bg-red-100 text-red-800',
+                \App\Models\GhiDanh::STATUS_SCHEDULED => 'bg-green-100 text-green-800',
+                \App\Models\GhiDanh::STATUS_ACTIVE => 'bg-violet-100 text-violet-800',
+                \App\Models\GhiDanh::STATUS_COMPLETED => 'bg-slate-100 text-slate-800',
+                \App\Models\GhiDanh::STATUS_REJECTED => 'bg-red-100 text-red-800',
                 default => 'bg-yellow-100 text-yellow-800',
               };
             @endphp

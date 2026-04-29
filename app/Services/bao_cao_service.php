@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Review;
-use App\Models\ScheduleChangeRequest;
-use App\Models\Subject;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\DanhGia;
+use App\Models\YeuCauDoiLich;
+use App\Models\MonHoc;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,29 +48,29 @@ class AdminReportService
     protected function summary(Carbon $startDate, Carbon $endDate): array
     {
         return [
-            'totalStudents' => User::query()->students()->count(),
-            'studentsInPeriod' => User::query()->students()->whereBetween('created_at', [$startDate, $endDate])->count(),
-            'totalTeachers' => User::query()->teachers()->count(),
-            'teachersInPeriod' => User::query()->teachers()->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'totalStudents' => NguoiDung::query()->students()->count(),
+            'studentsInPeriod' => NguoiDung::query()->students()->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'totalTeachers' => NguoiDung::query()->teachers()->count(),
+            'teachersInPeriod' => NguoiDung::query()->teachers()->whereBetween('created_at', [$startDate, $endDate])->count(),
             'newEnrollments' => $this->enrollmentPeriodQuery($startDate, $endDate)->count(),
-            'totalTeacherApplications' => TeacherApplication::query()->count(),
-            'teacherApplicationsInPeriod' => TeacherApplication::query()->whereBetween('created_at', [$startDate, $endDate])->count(),
-            'activeClasses' => Course::query()->whereIn('status', Course::schedulingStatuses())->count(),
-            'pendingEnrollments' => Enrollment::query()->where('status', Enrollment::STATUS_PENDING)->where('is_submitted', true)->count(),
-            'pendingScheduleChanges' => ScheduleChangeRequest::query()->pending()->count(),
-            'publicSubjects' => Subject::query()->count(),
+            'totalTeacherApplications' => DonUngTuyenGiaoVien::query()->count(),
+            'teacherApplicationsInPeriod' => DonUngTuyenGiaoVien::query()->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'activeClasses' => KhoaHoc::query()->whereIn('status', KhoaHoc::schedulingStatuses())->count(),
+            'pendingEnrollments' => GhiDanh::query()->where('status', GhiDanh::STATUS_PENDING)->where('is_submitted', true)->count(),
+            'pendingScheduleChanges' => YeuCauDoiLich::query()->pending()->count(),
+            'publicSubjects' => MonHoc::query()->count(),
         ];
     }
 
     protected function quality(Carbon $startDate, Carbon $endDate): array
     {
-        $gradeQuery = Grade::query()->whereBetween('created_at', [$startDate, $endDate])->whereNotNull('score');
+        $gradeQuery = DiemSo::query()->whereBetween('created_at', [$startDate, $endDate])->whereNotNull('score');
         $totalGrades = (clone $gradeQuery)->count();
         $passedGrades = (clone $gradeQuery)->where('score', '>=', 50)->count();
 
-        $reviewQuery = Review::query()->whereBetween('created_at', [$startDate, $endDate]);
+        $reviewQuery = DanhGia::query()->whereBetween('created_at', [$startDate, $endDate]);
         $courseReviewCount = (clone $reviewQuery)->count();
-        $teacherReviewCount = Review::query()
+        $teacherReviewCount = DanhGia::query()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->whereHas('course', fn (Builder $query) => $query->whereNotNull('teacher_id'))
             ->count();
@@ -80,13 +80,13 @@ class AdminReportService
             'passRate' => $totalGrades > 0 ? round(($passedGrades / $totalGrades) * 100, 1) : null,
             'gradeCount' => $totalGrades,
             'averageCourseRating' => $courseReviewCount > 0 ? round((float) ((clone $reviewQuery)->avg('rating')), 2) : null,
-            'averageTeacherRating' => $teacherReviewCount > 0 ? round((float) (Review::query()
+            'averageTeacherRating' => $teacherReviewCount > 0 ? round((float) (DanhGia::query()
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->whereHas('course', fn (Builder $query) => $query->whereNotNull('teacher_id'))
                 ->avg('rating')), 2) : null,
             'courseReviewCount' => $courseReviewCount,
             'teacherReviewCount' => $teacherReviewCount,
-            'reviewedCourseCount' => Review::query()->whereBetween('created_at', [$startDate, $endDate])->distinct('course_id')->count('course_id'),
+            'reviewedCourseCount' => DanhGia::query()->whereBetween('created_at', [$startDate, $endDate])->distinct('course_id')->count('course_id'),
         ];
     }
 
@@ -126,16 +126,16 @@ class AdminReportService
             $labels[$key] = $useDaily ? $bucket->format('d/m') : $bucket->format('m/Y');
         }
 
-        $students = $this->fillTrendSeries($keys, User::query()->students()->whereBetween('created_at', [$startDate, $endDate])->pluck('created_at'), $useDaily);
+        $students = $this->fillTrendSeries($keys, NguoiDung::query()->students()->whereBetween('created_at', [$startDate, $endDate])->pluck('created_at'), $useDaily);
         $enrollments = $this->fillTrendSeries(
             $keys,
             $this->enrollmentPeriodQuery($startDate, $endDate)
                 ->get(['submitted_at', 'created_at'])
-                ->map(fn (Enrollment $enrollment) => $enrollment->submitted_at ?? $enrollment->created_at),
+                ->map(fn (GhiDanh $enrollment) => $enrollment->submitted_at ?? $enrollment->created_at),
             $useDaily
         );
-        $applications = $this->fillTrendSeries($keys, TeacherApplication::query()->whereBetween('created_at', [$startDate, $endDate])->pluck('created_at'), $useDaily);
-        $reviews = $this->fillTrendSeries($keys, Review::query()->whereBetween('created_at', [$startDate, $endDate])->pluck('created_at'), $useDaily);
+        $applications = $this->fillTrendSeries($keys, DonUngTuyenGiaoVien::query()->whereBetween('created_at', [$startDate, $endDate])->pluck('created_at'), $useDaily);
+        $reviews = $this->fillTrendSeries($keys, DanhGia::query()->whereBetween('created_at', [$startDate, $endDate])->pluck('created_at'), $useDaily);
 
         $maxValue = max(array_merge($students, $enrollments, $applications, $reviews, [1]));
 
@@ -152,7 +152,7 @@ class AdminReportService
 
     protected function topCourses(Carbon $startDate, Carbon $endDate): Collection
     {
-        return Subject::query()
+        return MonHoc::query()
             ->with('category')
             ->withCount([
                 'enrollments as enrollments_in_period' => function (Builder $query) use ($startDate, $endDate) {
@@ -169,11 +169,11 @@ class AdminReportService
 
     protected function topTeachers(Carbon $startDate, Carbon $endDate): Collection
     {
-        return User::query()
+        return NguoiDung::query()
             ->teachers()
             ->with(['taughtCourses.reviews' => fn ($query) => $query->whereBetween('created_at', [$startDate, $endDate])])
             ->get()
-            ->map(function (User $teacher) {
+            ->map(function (NguoiDung $teacher) {
                 $reviews = $teacher->taughtCourses->flatMap->reviews;
 
                 return [
@@ -211,7 +211,7 @@ class AdminReportService
 
     protected function enrollmentPeriodQuery(Carbon $startDate, Carbon $endDate)
     {
-        return Enrollment::query()->where(function (Builder $query) use ($startDate, $endDate) {
+        return GhiDanh::query()->where(function (Builder $query) use ($startDate, $endDate) {
             $query->whereBetween('submitted_at', [$startDate, $endDate])
                 ->orWhere(function (Builder $builder) use ($startDate, $endDate) {
                     $builder->whereNull('submitted_at')->whereBetween('created_at', [$startDate, $endDate]);

@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\ClassRoom;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Lesson;
-use App\Models\Option;
-use App\Models\Question;
-use App\Models\Quiz;
-use App\Models\QuizAnswer;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\BaiHoc;
+use App\Models\LuaChon;
+use App\Models\CauHoi;
+use App\Models\BaiKiemTra;
+use App\Models\TraLoiBaiKiemTra;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherTestService
 {
-    public function getDashboardSummary(User $teacher, array $filters = []): array
+    public function getDashboardSummary(NguoiDung $teacher, array $filters = []): array
     {
         $tests = $this->getTeacherTests($teacher, $filters);
 
@@ -29,19 +29,19 @@ class TeacherTestService
             'tests' => $tests,
             'summary' => [
                 'total' => $tests->count(),
-                'published' => $tests->where('status', Quiz::STATUS_PUBLISHED)->count(),
-                'draft' => $tests->where('status', Quiz::STATUS_DRAFT)->count(),
+                'published' => $tests->where('status', BaiKiemTra::STATUS_PUBLISHED)->count(),
+                'draft' => $tests->where('status', BaiKiemTra::STATUS_DRAFT)->count(),
                 'questions' => (int) $tests->sum('questions_count'),
             ],
         ];
     }
 
-    public function getTeacherTests(User $teacher, array $filters = []): Collection
+    public function getTeacherTests(NguoiDung $teacher, array $filters = []): Collection
     {
         $status = trim((string) ($filters['status'] ?? 'all'));
         $search = trim((string) ($filters['search'] ?? ''));
 
-        return Quiz::query()
+        return BaiKiemTra::query()
             ->ownedByTeacher($teacher)
             ->with([
                 'teacher',
@@ -52,16 +52,16 @@ class TeacherTestService
             ])
             ->withCount(['questions', 'answers'])
             ->when(
-                $status === Quiz::STATUS_DRAFT && Schema::hasColumn((new Quiz())->getTable(), 'status'),
-                fn (Builder $query) => $query->where('status', Quiz::STATUS_DRAFT)
+                $status === BaiKiemTra::STATUS_DRAFT && Schema::hasColumn((new BaiKiemTra())->getTable(), 'status'),
+                fn (Builder $query) => $query->where('status', BaiKiemTra::STATUS_DRAFT)
             )
             ->when(
-                $status === Quiz::STATUS_PUBLISHED,
+                $status === BaiKiemTra::STATUS_PUBLISHED,
                 fn (Builder $query) => $query->published()
             )
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
-                    $quizTable = (new Quiz())->getTable();
+                    $quizTable = (new BaiKiemTra())->getTable();
 
                     $builder->where('title', 'like', '%' . $search . '%')
                         ->orWhere('description', 'like', '%' . $search . '%');
@@ -85,31 +85,31 @@ class TeacherTestService
             })
             ->orderByDesc('id')
             ->get()
-            ->sortByDesc(fn (Quiz $quiz) => $quiz->published_at?->timestamp ?? $quiz->created_at?->timestamp ?? 0)
+            ->sortByDesc(fn (BaiKiemTra $quiz) => $quiz->published_at?->timestamp ?? $quiz->created_at?->timestamp ?? 0)
             ->values();
     }
 
-    public function getFormOptions(User $teacher): array
+    public function getFormOptions(NguoiDung $teacher): array
     {
-        $courses = Course::query()
+        $courses = KhoaHoc::query()
             ->where('teacher_id', $teacher->id)
             ->with(['subject', 'modules.lessons'])
             ->orderByDesc('id')
             ->get();
 
-        $classRooms = ClassRoom::query()
+        $classRooms = LopHoc::query()
             ->where('teacher_id', $teacher->id)
             ->with(['course.subject'])
             ->orderByDesc('id')
             ->get();
 
-        $subjects = Subject::query()
+        $subjects = MonHoc::query()
             ->whereHas('courses', fn (Builder $query) => $query->where('teacher_id', $teacher->id))
             ->with('category')
             ->orderBy('name')
             ->get();
 
-        $lessonOptions = $courses->flatMap(function (Course $course): Collection {
+        $lessonOptions = $courses->flatMap(function (KhoaHoc $course): Collection {
             return $course->modules->flatMap(function ($module) use ($course): Collection {
                 return $module->lessons->map(function ($lesson) use ($course, $module): array {
                     return [
@@ -124,7 +124,7 @@ class TeacherTestService
         return compact('courses', 'classRooms', 'subjects', 'lessonOptions');
     }
 
-    public function getQuizFormRows(?Quiz $quiz = null): array
+    public function getQuizFormRows(?BaiKiemTra $quiz = null): array
     {
         if (! $quiz) {
             return [
@@ -146,8 +146,8 @@ class TeacherTestService
 
         $quiz->loadMissing('questions.options');
 
-        return $quiz->questions->map(function (Question $question): array {
-            $options = $question->options->keyBy(fn (Option $option) => $this->optionLetter($option->order));
+        return $quiz->questions->map(function (CauHoi $question): array {
+            $options = $question->options->keyBy(fn (LuaChon $option) => $this->optionLetter($option->order));
             $correctOption = $question->options->firstWhere('is_correct', true);
 
             return [
@@ -172,9 +172,9 @@ class TeacherTestService
         })->values()->all();
     }
 
-    public function resolveOwnedQuiz(User $teacher, Quiz $quiz): Quiz
+    public function resolveOwnedQuiz(NguoiDung $teacher, BaiKiemTra $quiz): BaiKiemTra
     {
-        $ownedQuiz = Quiz::query()
+        $ownedQuiz = BaiKiemTra::query()
             ->ownedByTeacher($teacher)
             ->with([
                 'teacher',
@@ -195,12 +195,12 @@ class TeacherTestService
         return $ownedQuiz;
     }
 
-    public function saveQuiz(User $teacher, ?Quiz $quiz, array $data): Quiz
+    public function saveQuiz(NguoiDung $teacher, ?BaiKiemTra $quiz, array $data): BaiKiemTra
     {
         $data = $this->normalizeQuizPayload($data);
         $this->validateQuizPayload($data);
 
-        return DB::transaction(function () use ($teacher, $quiz, $data): Quiz {
+        return DB::transaction(function () use ($teacher, $quiz, $data): BaiKiemTra {
             $target = $this->resolveTarget($teacher, $data);
 
             $payload = $this->buildQuizPayload($teacher, $quiz, $target, $data);
@@ -208,7 +208,7 @@ class TeacherTestService
             if ($quiz) {
                 $quiz->fill($payload)->save();
             } else {
-                $quiz = Quiz::create($payload);
+                $quiz = BaiKiemTra::create($payload);
             }
 
             $this->syncQuestions($quiz, $data['questions'] ?? []);
@@ -217,11 +217,11 @@ class TeacherTestService
         });
     }
 
-    public function deleteQuiz(User $teacher, Quiz $quiz): void
+    public function deleteQuiz(NguoiDung $teacher, BaiKiemTra $quiz): void
     {
         $ownedQuiz = $this->resolveOwnedQuiz($teacher, $quiz);
 
-        if (QuizAnswer::query()->where('quiz_id', $ownedQuiz->id)->exists()) {
+        if (TraLoiBaiKiemTra::query()->where('quiz_id', $ownedQuiz->id)->exists()) {
             throw ValidationException::withMessages([
                 'quiz' => 'Bài kiểm tra đã có học viên làm nên không thể xóa.',
             ]);
@@ -230,14 +230,14 @@ class TeacherTestService
         DB::transaction(fn () => $ownedQuiz->delete());
     }
 
-    protected function resolveTarget(User $teacher, array $data): array
+    protected function resolveTarget(NguoiDung $teacher, array $data): array
     {
         $course = null;
         $classRoom = null;
         $subject = null;
 
         if (! empty($data['lop_hoc_id'])) {
-            $classRoom = ClassRoom::query()
+            $classRoom = LopHoc::query()
                 ->where('teacher_id', $teacher->id)
                 ->with(['course.subject', 'course.modules.lessons', 'subject'])
                 ->find((int) $data['lop_hoc_id']);
@@ -252,7 +252,7 @@ class TeacherTestService
         }
 
         if (! $course && ! empty($data['course_id'])) {
-            $course = Course::query()
+            $course = KhoaHoc::query()
                 ->where('teacher_id', $teacher->id)
                 ->with(['subject', 'modules.lessons'])
                 ->find((int) $data['course_id']);
@@ -265,7 +265,7 @@ class TeacherTestService
         }
 
         if (! $course && ! empty($data['subject_id'])) {
-            $subject = Subject::query()
+            $subject = MonHoc::query()
                 ->whereHas('courses', fn (Builder $query) => $query->where('teacher_id', $teacher->id))
                 ->with(['courses.modules.lessons'])
                 ->find((int) $data['subject_id']);
@@ -278,7 +278,7 @@ class TeacherTestService
 
             $course = $subject->courses
                 ->sortByDesc('id')
-                ->first(fn (Course $course) => (int) $course->teacher_id === (int) $teacher->id)
+                ->first(fn (KhoaHoc $course) => (int) $course->teacher_id === (int) $teacher->id)
                 ?? $subject->courses->sortByDesc('id')->first();
 
             if (! $course) {
@@ -317,12 +317,12 @@ class TeacherTestService
         return compact('course', 'classRoom', 'lesson');
     }
 
-    protected function resolveLessonForCourse(Course $course, mixed $lessonId = null): ?Lesson
+    protected function resolveLessonForCourse(KhoaHoc $course, mixed $lessonId = null): ?BaiHoc
     {
         $course->loadMissing(['modules.lessons']);
 
         if ($lessonId) {
-            $lesson = Lesson::query()
+            $lesson = BaiHoc::query()
                 ->whereHas('module', fn (Builder $query) => $query->where('course_id', $course->id))
                 ->find((int) $lessonId);
 
@@ -343,7 +343,7 @@ class TeacherTestService
             'description' => ['nullable', 'string', 'max:2000'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:480'],
             'total_score' => ['nullable', 'numeric', 'min:1', 'max:1000'],
-            'status' => ['required', 'in:' . implode(',', [Quiz::STATUS_DRAFT, Quiz::STATUS_PUBLISHED])],
+            'status' => ['required', 'in:' . implode(',', [BaiKiemTra::STATUS_DRAFT, BaiKiemTra::STATUS_PUBLISHED])],
             'course_id' => ['nullable', 'integer'],
             'subject_id' => ['nullable', 'integer'],
             'lop_hoc_id' => ['nullable', 'integer'],
@@ -385,10 +385,10 @@ class TeacherTestService
 
     protected function quizPayloadKey(string $column): ?string
     {
-        return Schema::hasColumn((new Quiz())->getTable(), $column) ? $column : null;
+        return Schema::hasColumn((new BaiKiemTra())->getTable(), $column) ? $column : null;
     }
 
-    protected function buildQuizPayload(User $teacher, ?Quiz $quiz, array $target, array $data): array
+    protected function buildQuizPayload(NguoiDung $teacher, ?BaiKiemTra $quiz, array $target, array $data): array
     {
         $source = [
             'teacher_id' => $teacher->id,
@@ -401,7 +401,7 @@ class TeacherTestService
             'duration_minutes' => $data['duration_minutes'] ?? 15,
             'total_score' => $data['total_score'] ?? 10,
             'status' => $data['status'],
-            'published_at' => $data['status'] === Quiz::STATUS_PUBLISHED ? ($quiz?->published_at ?? now()) : null,
+            'published_at' => $data['status'] === BaiKiemTra::STATUS_PUBLISHED ? ($quiz?->published_at ?? now()) : null,
             'passing_score' => $data['passing_score'] ?? 70,
             'is_required' => true,
             'max_attempts' => $data['max_attempts'] ?? 3,
@@ -424,7 +424,7 @@ class TeacherTestService
         return $payload;
     }
 
-    protected function syncQuestions(Quiz $quiz, array $questions): void
+    protected function syncQuestions(BaiKiemTra $quiz, array $questions): void
     {
         if ($questions === []) {
             throw ValidationException::withMessages([
@@ -443,7 +443,7 @@ class TeacherTestService
             }
 
             if (! $question) {
-                $question = new Question(['quiz_id' => $quiz->id]);
+                $question = new CauHoi(['quiz_id' => $quiz->id]);
             }
 
             $question->fill([
@@ -465,7 +465,7 @@ class TeacherTestService
                 $option = $optionId > 0 ? $existingOptions->get($optionId) : null;
 
                 if (! $option) {
-                    $option = new Option(['question_id' => $question->id]);
+                    $option = new LuaChon(['question_id' => $question->id]);
                 }
 
                 $option->fill([
@@ -496,7 +496,7 @@ class TeacherTestService
             $removedOptions = $question->options()->whereNotIn('id', $keptOptionIds)->get();
 
             foreach ($removedOptions as $removedOption) {
-                if (QuizAnswer::query()->where('option_id', $removedOption->id)->exists()) {
+                if (TraLoiBaiKiemTra::query()->where('option_id', $removedOption->id)->exists()) {
                     throw ValidationException::withMessages([
                         'questions' => 'Không thể xóa lựa chọn đã có học viên sử dụng.',
                     ]);
@@ -509,7 +509,7 @@ class TeacherTestService
         $removedQuestions = $quiz->questions()->whereNotIn('id', $keptQuestionIds)->get();
 
         foreach ($removedQuestions as $removedQuestion) {
-            if (QuizAnswer::query()->where('question_id', $removedQuestion->id)->exists()) {
+            if (TraLoiBaiKiemTra::query()->where('question_id', $removedQuestion->id)->exists()) {
                 throw ValidationException::withMessages([
                     'questions' => 'Không thể xóa câu hỏi đã có học viên làm.',
                 ]);

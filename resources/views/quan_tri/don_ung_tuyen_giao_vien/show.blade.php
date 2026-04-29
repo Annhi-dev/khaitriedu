@@ -3,9 +3,9 @@
 @section('content')
 @php
     $statusClasses = match ($application->status) {
-        \App\Models\TeacherApplication::STATUS_APPROVED => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        \App\Models\TeacherApplication::STATUS_REJECTED => 'border-rose-200 bg-rose-50 text-rose-700',
-        \App\Models\TeacherApplication::STATUS_NEEDS_REVISION => 'border-amber-200 bg-amber-50 text-amber-700',
+        \App\Models\DonUngTuyenGiaoVien::STATUS_APPROVED => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        \App\Models\DonUngTuyenGiaoVien::STATUS_REJECTED => 'border-rose-200 bg-rose-50 text-rose-700',
+        \App\Models\DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION => 'border-amber-200 bg-amber-50 text-amber-700',
         default => 'border-slate-200 bg-slate-100 text-slate-700',
     };
 @endphp
@@ -92,10 +92,10 @@
             <h2 class="text-lg font-semibold text-slate-900">Duyệt hồ sơ</h2>
             <form method="post" action="{{ route('admin.teacher-applications.review', $application) }}" class="mt-5 space-y-4">
                 @csrf
-                <input type="hidden" name="action" value="{{ \App\Models\TeacherApplication::STATUS_APPROVED }}" />
+                <input type="hidden" name="action" value="{{ \App\Models\DonUngTuyenGiaoVien::STATUS_APPROVED }}" />
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Ghi chú gửi ứng viên</label>
-                    <textarea name="admin_note" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Ghi chú">{{ old('action') === \App\Models\TeacherApplication::STATUS_APPROVED ? old('admin_note') : '' }}</textarea>
+                    <textarea name="admin_note" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Ghi chú">{{ old('action') === \App\Models\DonUngTuyenGiaoVien::STATUS_APPROVED ? old('admin_note') : '' }}</textarea>
                 </div>
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">Duyệt và kích hoạt giảng viên</button>
             </form>
@@ -105,10 +105,10 @@
             <h2 class="text-lg font-semibold text-slate-900">Yêu cầu bổ sung hồ sơ</h2>
             <form method="post" action="{{ route('admin.teacher-applications.review', $application) }}" class="mt-5 space-y-4">
                 @csrf
-                <input type="hidden" name="action" value="{{ \App\Models\TeacherApplication::STATUS_NEEDS_REVISION }}" />
+                <input type="hidden" name="action" value="{{ \App\Models\DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION }}" />
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Nội dung cần bổ sung</label>
-                    <textarea name="admin_note" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100" placeholder="Nội dung cần bổ sung">{{ old('action') === \App\Models\TeacherApplication::STATUS_NEEDS_REVISION ? old('admin_note') : '' }}</textarea>
+                    <textarea name="admin_note" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100" placeholder="Nội dung cần bổ sung">{{ old('action') === \App\Models\DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION ? old('admin_note') : '' }}</textarea>
                     @error('admin_note')
                         <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                     @enderror
@@ -121,10 +121,10 @@
             <h2 class="text-lg font-semibold text-slate-900">Từ chối hồ sơ</h2>
             <form method="post" action="{{ route('admin.teacher-applications.review', $application) }}" class="mt-5 space-y-4">
                 @csrf
-                <input type="hidden" name="action" value="{{ \App\Models\TeacherApplication::STATUS_REJECTED }}" />
+                <input type="hidden" name="action" value="{{ \App\Models\DonUngTuyenGiaoVien::STATUS_REJECTED }}" />
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Lý do từ chối</label>
-                    <textarea name="rejection_reason" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100" placeholder="Lý do từ chối">{{ old('action') === \App\Models\TeacherApplication::STATUS_REJECTED ? old('rejection_reason') : '' }}</textarea>
+                    <textarea name="rejection_reason" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100" placeholder="Lý do từ chối">{{ old('action') === \App\Models\DonUngTuyenGiaoVien::STATUS_REJECTED ? old('rejection_reason') : '' }}</textarea>
                     @error('rejection_reason')
                         <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                     @enderror

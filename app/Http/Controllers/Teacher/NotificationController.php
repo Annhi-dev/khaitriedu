@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
-use App\Models\User;
+use App\Models\ThongBao;
+use App\Models\NguoiDung;
 
 class NotificationController extends Controller
 {
     public function poll()
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -21,7 +21,7 @@ class NotificationController extends Controller
 
     public function index()
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -47,12 +47,16 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function show(Notification $notification)
+    public function show($notification)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
+        }
+
+        if (! $notification instanceof ThongBao) {
+            $notification = ThongBao::findOrFail($notification);
         }
 
         if ((int) $notification->user_id !== (int) $current->id) {
@@ -78,14 +82,14 @@ class NotificationController extends Controller
         ]);
     }
 
-    private function notificationPayload(User $user): array
+    private function notificationPayload(NguoiDung $user): array
     {
         $notifications = $user->notifications()->latest('id')->take(5)->get();
 
         return [
             'unread_count' => $user->notifications()->where('is_read', false)->count(),
             'total_count' => $user->notifications()->count(),
-            'notifications' => $notifications->map(fn (Notification $notification) => [
+            'notifications' => $notifications->map(fn (ThongBao $notification) => [
                 'id' => $notification->id,
                 'title' => $notification->title,
                 'message' => $notification->message,

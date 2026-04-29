@@ -13,7 +13,7 @@
     $selectedClassRoomId = (int) ($filters['class_room_id'] ?? ($candidate['classRoom']?->id ?? 0));
     $selectedTeacherId = (int) ($candidate['teacher_id'] ?? ($filters['teacher_id'] ?? 0));
     $selectedRoomId = (int) ($candidate['room_id'] ?? ($filters['room_id'] ?? 0));
-    $previewCourse = $candidate['previewCourse'] ?? new \App\Models\Course();
+    $previewCourse = $candidate['previewCourse'] ?? new \App\Models\KhoaHoc();
     $sourceLabel = $candidate['source_label'] ?? 'Nhập tay';
     $scheduleLabel = $candidate['schedule_label'] ?? $previewCourse->formattedSchedule();
     $teacherName = $candidate['teacher']?->name ?? 'Chưa chọn';
@@ -171,6 +171,9 @@
                     </div>
                     <div class="mt-4 space-y-3">
                         @forelse($teacherConflicts->take(3) as $conflictCourse)
+                            @php
+                                $conflictClassRoom = $conflictCourse->currentClassRoom();
+                            @endphp
                             <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-rose-100">
                                 <p class="text-sm font-semibold text-slate-900">{{ $conflictCourse->title }}</p>
                                 <p class="mt-1 text-xs text-slate-500">{{ $conflictCourse->formattedSchedule() }}</p>
@@ -323,7 +326,7 @@
                                     <a href="{{ route('admin.course.show', $conflictCourse) }}" class="inline-flex items-center justify-center rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">Sửa nhanh</a>
                                     @if($conflictClassRoom)
                                     <a href="{{ route('admin.classes.show', $conflictClassRoom) }}" class="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Mở lớp</a>
-                                    @if($conflictClassRoom && $conflictClassRoom->enrolledCount() === 0)
+                                    @if($conflictClassRoom->enrolledCount() === 0)
                                         <form method="POST" action="{{ route('admin.classes.delete', $conflictClassRoom) }}" onsubmit="return confirm('Xóa lớp này?')">
                                             @csrf
                                             <button type="submit" class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100">Xóa lớp</button>
@@ -361,9 +364,9 @@
                                         <p class="mt-1 text-sm text-slate-600">{{ $classRoom->scheduleSummary() }}</p>
                                     </div>
                                     <x-quan_tri.huy_hieu :type="match($classRoom->status) {
-                                        \App\Models\ClassRoom::STATUS_OPEN => 'success',
-                                        \App\Models\ClassRoom::STATUS_FULL => 'warning',
-                                        \App\Models\ClassRoom::STATUS_COMPLETED => 'info',
+                                        \App\Models\LopHoc::STATUS_OPEN => 'success',
+                                        \App\Models\LopHoc::STATUS_FULL => 'warning',
+                                        \App\Models\LopHoc::STATUS_COMPLETED => 'info',
                                         default => 'default',
                                     }" :text="$classRoom->statusLabel()" />
                                 </div>

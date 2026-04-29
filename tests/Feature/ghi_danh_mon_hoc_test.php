@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Lesson;
-use App\Models\Module;
-use App\Models\Role;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\BaiHoc;
+use App\Models\HocPhan;
+use App\Models\VaiTro;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,8 +19,8 @@ class ghi_danh_mon_hoc_test extends TestCase
 
     public function test_subject_show_page_loads_for_students(): void
     {
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
 
         [$category, $subject] = $this->createCatalogSubject();
@@ -36,8 +36,8 @@ class ghi_danh_mon_hoc_test extends TestCase
 
     public function test_student_can_submit_subject_enrollment_without_preassigned_course(): void
     {
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
@@ -57,14 +57,14 @@ class ghi_danh_mon_hoc_test extends TestCase
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => null,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
         ]);
     }
 
     public function test_student_without_scheduled_class_is_redirected_from_internal_class_page(): void
     {
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
@@ -80,31 +80,31 @@ class ghi_danh_mon_hoc_test extends TestCase
 
     public function test_scheduled_student_can_open_internal_class_page(): void
     {
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createInternalCourse($subject);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
-            'status' => Enrollment::STATUS_SCHEDULED,
+            'status' => GhiDanh::STATUS_SCHEDULED,
             'is_submitted' => true,
         ]);
 
-        $module = Module::create([
+        $module = HocPhan::create([
             'course_id' => $course->id,
             'title' => 'Listening',
             'content' => 'Nghe hội thoại cơ bản và bắt ý chính.',
             'session_count' => 5,
             'position' => 1,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
         ]);
 
-        Lesson::create([
+        BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Buổi 1',
             'description' => 'Làm quen với chủ đề và từ khóa.',
@@ -113,7 +113,7 @@ class ghi_danh_mon_hoc_test extends TestCase
             'duration' => 45,
         ]);
 
-        Lesson::create([
+        BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Buổi 2',
             'description' => 'Luyện nghe chi tiết.',
@@ -136,19 +136,19 @@ class ghi_danh_mon_hoc_test extends TestCase
 
     public function test_admin_must_use_phase_9_to_schedule_custom_request(): void
     {
-        $admin = User::factory()->create([
-            'role_id' => Role::idByName('admin'),
+        $admin = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('admin'),
         ]);
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'is_submitted' => true,
         ]);
 
@@ -168,30 +168,30 @@ class ghi_danh_mon_hoc_test extends TestCase
 
         $this->assertDatabaseHas('dang_ky', [
             'id' => $enrollment->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'course_id' => null,
         ]);
     }
 
     public function test_admin_cannot_pick_existing_class_from_phase_8_for_custom_request(): void
     {
-        $admin = User::factory()->create([
-            'role_id' => Role::idByName('admin'),
+        $admin = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('admin'),
         ]);
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
-        $teacher = User::factory()->create([
-            'role_id' => Role::idByName('teacher'),
+        $teacher = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('teacher'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createInternalCourse($subject, $teacher, 'T2-T4-T6, 18:00-20:15');
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'is_submitted' => true,
         ]);
 
@@ -214,25 +214,25 @@ class ghi_danh_mon_hoc_test extends TestCase
             'subject_id' => $subject->id,
             'course_id' => null,
             'assigned_teacher_id' => null,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
         ]);
     }
 
     public function test_subject_enrollment_update_keeps_approved_status(): void
     {
-        $student = User::factory()->create([
-            'role_id' => Role::idByName('student'),
+        $student = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('student'),
         ]);
-        $admin = User::factory()->create([
-            'role_id' => Role::idByName('admin'),
+        $admin = NguoiDung::factory()->create([
+            'role_id' => VaiTro::idByName('admin'),
         ]);
 
         [, $subject] = $this->createCatalogSubject();
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
             'start_time' => '17:30',
             'end_time' => '19:30',
             'preferred_days' => ['Monday', 'Wednesday'],
@@ -255,7 +255,7 @@ class ghi_danh_mon_hoc_test extends TestCase
         $response->assertSessionHas('status');
 
         $updatedEnrollment = $enrollment->fresh();
-        $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
+        $this->assertSame(GhiDanh::STATUS_APPROVED, $updatedEnrollment->status);
         $this->assertSame('18:00', $updatedEnrollment->start_time);
         $this->assertSame('20:15', $updatedEnrollment->end_time);
         $this->assertSame(['Tuesday', 'Thursday'], $updatedEnrollment->preferred_days);
@@ -266,26 +266,26 @@ class ghi_danh_mon_hoc_test extends TestCase
 
     private function createCatalogSubject(): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Ngoại ngữ - Tin học',
             'slug' => 'ngoai-ngu-tin-hoc',
             'order' => 1,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tin học văn phòng',
             'category_id' => $category->id,
             'price' => 1500000,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
         ]);
 
         return [$category, $subject];
     }
 
-    private function createInternalCourse(Subject $subject, ?User $teacher = null, ?string $schedule = null): Course
+    private function createInternalCourse(MonHoc $subject, ?NguoiDung $teacher = null, ?string $schedule = null): KhoaHoc
     {
-        return Course::create([
+        return KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Ca tối',
             'description' => 'Lớp học nội bộ dành cho học viên đã được admin xếp lớp.',

@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Helpers\ScheduleHelper;
-use App\Models\ClassSchedule;
+use App\Models\LichHoc;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -55,7 +55,7 @@ class CheckScheduleConflictRequest extends FormRequest
             'exclude_course_id' => ['nullable', 'integer', 'exists:khoa_hoc,id'],
             'exclude_class_room_id' => ['nullable', 'integer', 'exists:lop_hoc,id'],
             'day_of_week' => ['nullable', 'array'],
-            'day_of_week.*' => ['string', Rule::in(array_keys(ClassSchedule::$dayOptions))],
+            'day_of_week.*' => ['string', Rule::in(array_keys(LichHoc::$dayOptions))],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'start_time' => ['nullable', 'date_format:H:i'],

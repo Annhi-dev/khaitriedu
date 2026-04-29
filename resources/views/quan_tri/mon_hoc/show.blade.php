@@ -3,10 +3,10 @@
 @section('content')
 @php
     $statusClasses = match ($subject->status) {
-        \App\Models\Subject::STATUS_OPEN => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        \App\Models\Subject::STATUS_DRAFT => 'border-slate-200 bg-slate-100 text-slate-700',
-        \App\Models\Subject::STATUS_CLOSED => 'border-amber-200 bg-amber-50 text-amber-700',
-        \App\Models\Subject::STATUS_ARCHIVED => 'border-rose-200 bg-rose-50 text-rose-700',
+        \App\Models\MonHoc::STATUS_OPEN => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        \App\Models\MonHoc::STATUS_DRAFT => 'border-slate-200 bg-slate-100 text-slate-700',
+        \App\Models\MonHoc::STATUS_CLOSED => 'border-amber-200 bg-amber-50 text-amber-700',
+        \App\Models\MonHoc::STATUS_ARCHIVED => 'border-rose-200 bg-rose-50 text-rose-700',
         default => 'border-slate-200 bg-slate-100 text-slate-700',
     };
 @endphp
@@ -27,7 +27,7 @@
         <div class="flex flex-wrap items-center gap-3">
             <a href="{{ route('admin.subjects') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Danh sách khóa học</a>
             <a href="{{ route('admin.subjects.edit', $subject) }}" class="inline-flex items-center justify-center rounded-2xl border border-cyan-200 px-4 py-2.5 text-sm font-medium text-cyan-700 hover:bg-cyan-50">Sửa thông tin</a>
-            @if ($subject->status === \App\Models\Subject::STATUS_ARCHIVED)
+            @if ($subject->status === \App\Models\MonHoc::STATUS_ARCHIVED)
                 <form method="post" action="{{ route('admin.subjects.reopen', $subject) }}">
                     @csrf
                     <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">Mở lại khóa học</button>

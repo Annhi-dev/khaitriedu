@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\Enrollment;
-use App\Models\User;
+use App\Models\GhiDanh;
+use App\Models\NguoiDung;
 use App\Services\StudentClassService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ class StudentClassController extends Controller
 {
     public function index(Request $request, StudentClassService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -25,8 +25,8 @@ class StudentClassController extends Controller
         $statusFilter = (string) $request->string('status', 'all');
 
         $filteredEnrollments = $this->filterEnrollments($enrollments, $search, $statusFilter);
-        $ongoingEnrollments = $filteredEnrollments->filter(fn (Enrollment $enrollment) => $this->classGroupStatus($enrollment) === 'ongoing')->values();
-        $completedEnrollments = $filteredEnrollments->filter(fn (Enrollment $enrollment) => $this->classGroupStatus($enrollment) === 'completed')->values();
+        $ongoingEnrollments = $filteredEnrollments->filter(fn (GhiDanh $enrollment) => $this->classGroupStatus($enrollment) === 'ongoing')->values();
+        $completedEnrollments = $filteredEnrollments->filter(fn (GhiDanh $enrollment) => $this->classGroupStatus($enrollment) === 'completed')->values();
         $summary = $this->buildSummary($enrollments);
 
         return view('hoc_vien.lop_hoc.index', [
@@ -40,9 +40,9 @@ class StudentClassController extends Controller
         ]);
     }
 
-    public function show(Request $request, Enrollment $enrollment, StudentClassService $service)
+    public function show(Request $request, GhiDanh $enrollment, StudentClassService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -52,7 +52,7 @@ class StudentClassController extends Controller
             abort(403);
         }
 
-        if (in_array($enrollment->normalizedStatus(), [Enrollment::STATUS_PENDING, Enrollment::STATUS_REJECTED], true)) {
+        if (in_array($enrollment->normalizedStatus(), [GhiDanh::STATUS_PENDING, GhiDanh::STATUS_REJECTED], true)) {
             return redirect()
                 ->route('student.classes.index')
                 ->with('error', 'Lớp học này đang chờ duyệt hoặc đã bị từ chối nên chưa thể xem chi tiết.');
@@ -61,9 +61,9 @@ class StudentClassController extends Controller
         return $this->renderDetail($current, $enrollment, $service, (string) $request->string('tab', 'overview'));
     }
 
-    public function evaluation(Enrollment $enrollment, StudentClassService $service)
+    public function evaluation(GhiDanh $enrollment, StudentClassService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -73,7 +73,7 @@ class StudentClassController extends Controller
             abort(403);
         }
 
-        if (in_array($enrollment->normalizedStatus(), [Enrollment::STATUS_PENDING, Enrollment::STATUS_REJECTED], true)) {
+        if (in_array($enrollment->normalizedStatus(), [GhiDanh::STATUS_PENDING, GhiDanh::STATUS_REJECTED], true)) {
             return redirect()
                 ->route('student.classes.index')
                 ->with('error', 'Lớp học này đang chờ duyệt hoặc đã bị từ chối nên chưa thể đánh giá.');
@@ -88,9 +88,9 @@ class StudentClassController extends Controller
         return $this->renderDetail($current, $enrollment, $service, 'evaluation');
     }
 
-    public function storeEvaluation(Request $request, Enrollment $enrollment, StudentClassService $service): RedirectResponse
+    public function storeEvaluation(Request $request, GhiDanh $enrollment, StudentClassService $service): RedirectResponse
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
 
         if ($redirect) {
             return $redirect;
@@ -100,7 +100,7 @@ class StudentClassController extends Controller
             abort(403);
         }
 
-        if (in_array($enrollment->normalizedStatus(), [Enrollment::STATUS_PENDING, Enrollment::STATUS_REJECTED], true)) {
+        if (in_array($enrollment->normalizedStatus(), [GhiDanh::STATUS_PENDING, GhiDanh::STATUS_REJECTED], true)) {
             return redirect()
                 ->route('student.classes.index')
                 ->with('error', 'Lớp học này đang chờ duyệt hoặc đã bị từ chối nên chưa thể đánh giá.');
@@ -124,7 +124,7 @@ class StudentClassController extends Controller
             ->with('status', 'Đánh giá của bạn đã được lưu.');
     }
 
-    protected function renderDetail(User $student, Enrollment $enrollment, StudentClassService $service, string $tab)
+    protected function renderDetail(NguoiDung $student, GhiDanh $enrollment, StudentClassService $service, string $tab)
     {
         $detail = $service->getStudentClassDetail($student, $enrollment);
 
@@ -140,7 +140,7 @@ class StudentClassController extends Controller
         $statusFilter = in_array($statusFilter, ['all', 'ongoing', 'completed'], true) ? $statusFilter : 'all';
 
         return $enrollments
-            ->filter(function (Enrollment $enrollment) use ($search, $statusFilter): bool {
+            ->filter(function (GhiDanh $enrollment) use ($search, $statusFilter): bool {
                 $status = $this->classGroupStatus($enrollment);
 
                 if ($statusFilter === 'ongoing' && $status !== 'ongoing') {
@@ -173,7 +173,7 @@ class StudentClassController extends Controller
 
                 return false;
             })
-            ->sortBy(function (Enrollment $enrollment): string {
+            ->sortBy(function (GhiDanh $enrollment): string {
                 $groupWeight = $this->classGroupStatus($enrollment) === 'ongoing' ? '0' : '1';
                 $dateWeight = $enrollment->classRoom?->start_date?->format('Y-m-d') ?? '9999-12-31';
 
@@ -184,9 +184,9 @@ class StudentClassController extends Controller
 
     protected function buildSummary($enrollments): array
     {
-        $ongoing = $enrollments->filter(fn (Enrollment $enrollment) => $this->classGroupStatus($enrollment) === 'ongoing');
-        $completed = $enrollments->filter(fn (Enrollment $enrollment) => $this->classGroupStatus($enrollment) === 'completed');
-        $grades = $enrollments->flatMap(fn (Enrollment $enrollment) => $enrollment->grades)
+        $ongoing = $enrollments->filter(fn (GhiDanh $enrollment) => $this->classGroupStatus($enrollment) === 'ongoing');
+        $completed = $enrollments->filter(fn (GhiDanh $enrollment) => $this->classGroupStatus($enrollment) === 'completed');
+        $grades = $enrollments->flatMap(fn (GhiDanh $enrollment) => $enrollment->grades)
             ->filter(fn ($grade) => $grade->score !== null);
 
         return [
@@ -197,10 +197,10 @@ class StudentClassController extends Controller
         ];
     }
 
-    protected function classGroupStatus(Enrollment $enrollment): string
+    protected function classGroupStatus(GhiDanh $enrollment): string
     {
-        return in_array($enrollment->normalizedStatus(), [Enrollment::STATUS_COMPLETED], true)
-            || in_array($enrollment->classRoom?->status, [\App\Models\ClassRoom::STATUS_COMPLETED, \App\Models\ClassRoom::STATUS_CLOSED], true)
+        return in_array($enrollment->normalizedStatus(), [GhiDanh::STATUS_COMPLETED], true)
+            || in_array($enrollment->classRoom?->status, [\App\Models\LopHoc::STATUS_COMPLETED, \App\Models\LopHoc::STATUS_CLOSED], true)
             ? 'completed'
             : 'ongoing';
     }

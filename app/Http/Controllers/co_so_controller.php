@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\User;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Database\QueryException;
@@ -15,13 +15,13 @@ abstract class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
-    protected function sessionUser(): ?User
+    protected function sessionUser(): ?NguoiDung
     {
         $user = Auth::user();
         $sessionUserId = session('user_id');
 
         if ($sessionUserId && (! $user || (int) $user->id !== (int) $sessionUserId)) {
-            $user = User::with('role')->find($sessionUserId);
+            $user = NguoiDung::with('role')->find($sessionUserId);
 
             if ($user) {
                 Auth::setUser($user);
@@ -29,7 +29,7 @@ abstract class Controller extends BaseController
         }
 
         if ($user && ! $user->relationLoaded('role')) {
-            $reloadedUser = User::with('role')->find($user->id);
+            $reloadedUser = NguoiDung::with('role')->find($user->id);
 
             if ($reloadedUser) {
                 $user = $reloadedUser;
@@ -51,9 +51,9 @@ abstract class Controller extends BaseController
         return [$user, null];
     }
 
-    protected function findSubjectEnrollment(int $userId, int $subjectId, array $with = []): ?Enrollment
+    protected function findSubjectEnrollment(int $userId, int $subjectId, array $with = []): ?GhiDanh
     {
-        return Enrollment::query()
+        return GhiDanh::query()
             ->with($with)
             ->forUserSubject($userId, $subjectId)
             ->latest('id')
@@ -83,9 +83,9 @@ abstract class Controller extends BaseController
         return false;
     }
 
-    protected function resolveInternalClassAccess(int $courseId, ?User $user, array $with = []): array
+    protected function resolveInternalClassAccess(int $courseId, ?NguoiDung $user, array $with = []): array
     {
-        $course = Course::with($with)->find($courseId);
+        $course = KhoaHoc::with($with)->find($courseId);
 
         if (! $course) {
             return [null, null, redirect()->route('courses.index')->with('error', 'Lớp học không tồn tại.')];
@@ -108,10 +108,10 @@ abstract class Controller extends BaseController
         }
 
         if ($user->isStudent()) {
-            $enrollment = Enrollment::with('assignedTeacher')
+            $enrollment = GhiDanh::with('assignedTeacher')
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->latest('id')
                 ->first();
 

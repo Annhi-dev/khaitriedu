@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CheckScheduleConflictRequest;
 use App\Http\Requests\Admin\OpenPendingCourseRequest;
 use App\Http\Requests\Admin\ScheduleEnrollmentRequest;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\User;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\NguoiDung;
 use App\Services\AdminScheduleConflictService;
 use App\Services\AdminScheduleService;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class ScheduleController extends Controller
 {
     public function index(Request $request, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -33,7 +33,7 @@ class ScheduleController extends Controller
 
     public function conflicts(CheckScheduleConflictRequest $request, AdminScheduleService $scheduleService, AdminScheduleConflictService $conflictService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -53,14 +53,14 @@ class ScheduleController extends Controller
                 'rooms' => $scheduleService->roomOptions(),
                 'courses' => $scheduleService->courseOptions(),
                 'classRooms' => $scheduleService->classRoomOptions(),
-                'dayOptions' => \App\Models\ClassSchedule::$dayOptions,
+                'dayOptions' => \App\Models\LichHoc::$dayOptions,
             ],
         ));
     }
 
     public function queue(Request $request, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -71,9 +71,9 @@ class ScheduleController extends Controller
         return view('quan_tri.lich_hoc.hang_cho', compact('current', 'filters', 'enrollments'));
     }
 
-    public function showEnrollment(Enrollment $enrollment, AdminScheduleService $scheduleService)
+    public function showEnrollment(GhiDanh $enrollment, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -84,9 +84,9 @@ class ScheduleController extends Controller
         ));
     }
 
-    public function showCourse(Course $course, AdminScheduleService $scheduleService)
+    public function showCourse(KhoaHoc $course, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -97,9 +97,9 @@ class ScheduleController extends Controller
         ));
     }
 
-    public function storeEnrollment(ScheduleEnrollmentRequest $request, Enrollment $enrollment, AdminScheduleService $scheduleService)
+    public function storeEnrollment(ScheduleEnrollmentRequest $request, GhiDanh $enrollment, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -109,9 +109,9 @@ class ScheduleController extends Controller
         return redirect()->route('admin.schedules.index')->with('status', $message);
     }
 
-    public function showOpenCourse(Course $course, AdminScheduleService $scheduleService)
+    public function showOpenCourse(KhoaHoc $course, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -122,9 +122,9 @@ class ScheduleController extends Controller
         ));
     }
 
-    public function openCourse(OpenPendingCourseRequest $request, Course $course, AdminScheduleService $scheduleService)
+    public function openCourse(OpenPendingCourseRequest $request, KhoaHoc $course, AdminScheduleService $scheduleService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

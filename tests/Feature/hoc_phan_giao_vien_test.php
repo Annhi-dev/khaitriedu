@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Models\AttendanceRecord;
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\Room;
-use App\Models\ScheduleChangeRequest;
-use App\Models\Subject;
-use App\Models\TeacherEvaluation;
-use App\Models\User;
+use App\Models\DiemDanh;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\PhongHoc;
+use App\Models\YeuCauDoiLich;
+use App\Models\MonHoc;
+use App\Models\DanhGiaGiaoVien;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,12 +24,12 @@ class hoc_phan_giao_vien_test extends TestCase
 
     public function test_teacher_dashboard_displays_current_schedule_and_notifications(): void
     {
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Dashboard']);
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Dashboard']);
         ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createClassroomBundle($teacher, [
             'day' => now()->englishDayOfWeek,
         ]);
 
-        Notification::create([
+        ThongBao::create([
             'user_id' => $teacher->id,
             'title' => 'Yêu cầu dạy bù đã được duyệt',
             'message' => 'Admin đã cập nhật lịch giảng mới cho lớp của bạn.',
@@ -51,9 +51,9 @@ class hoc_phan_giao_vien_test extends TestCase
 
     public function test_student_dashboard_displays_notifications(): void
     {
-        $student = User::factory()->student()->create(['name' => 'Student Dashboard']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Student Dashboard']);
 
-        Notification::create([
+        ThongBao::create([
             'user_id' => $student->id,
             'title' => 'Lịch học đã thay đổi',
             'message' => 'Lịch học của bạn đã được cập nhật. Vui lòng kiểm tra lại thời khóa biểu của bạn.',
@@ -73,9 +73,9 @@ class hoc_phan_giao_vien_test extends TestCase
 
     public function test_teacher_can_manage_attendance_grades_and_evaluations_for_assigned_class(): void
     {
-        $teacher = User::factory()->teacher()->create();
-        $studentA = User::factory()->student()->create(['name' => 'Hoc vien A']);
-        $studentB = User::factory()->student()->create(['name' => 'Hoc vien B']);
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $studentA = NguoiDung::factory()->student()->create(['name' => 'Hoc vien A']);
+        $studentB = NguoiDung::factory()->student()->create(['name' => 'Hoc vien B']);
 
         [
             'subject' => $subject,
@@ -84,25 +84,25 @@ class hoc_phan_giao_vien_test extends TestCase
             'schedule' => $schedule,
         ] = $this->createClassroomBundle($teacher);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $studentA->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $schedule->label(),
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $studentB->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'schedule' => $schedule->label(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -125,8 +125,8 @@ class hoc_phan_giao_vien_test extends TestCase
                 'class_schedule_id' => $schedule->id,
                 'attendance_date' => now()->toDateString(),
                 'attendance' => [
-                    $studentA->id => ['status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'On time'],
-                    $studentB->id => ['status' => AttendanceRecord::STATUS_LATE, 'note' => 'Traffic'],
+                    $studentA->id => ['status' => DiemDanh::STATUS_PRESENT, 'note' => 'On time'],
+                    $studentB->id => ['status' => DiemDanh::STATUS_LATE, 'note' => 'Traffic'],
                 ],
             ]);
 
@@ -141,7 +141,7 @@ class hoc_phan_giao_vien_test extends TestCase
             'class_room_id' => $classRoom->id,
             'class_schedule_id' => $schedule->id,
             'student_id' => $studentA->id,
-            'status' => AttendanceRecord::STATUS_PRESENT,
+            'status' => DiemDanh::STATUS_PRESENT,
         ]);
 
         $gradeResponse = $this
@@ -212,8 +212,8 @@ class hoc_phan_giao_vien_test extends TestCase
 
     public function test_admin_can_update_grade_weights_on_class(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         ['classRoom' => $classRoom] = $this->createClassroomBundle($teacher);
 
         $response = $this
@@ -239,23 +239,23 @@ class hoc_phan_giao_vien_test extends TestCase
 
     public function test_teacher_can_edit_historical_evaluation_even_when_student_not_in_active_enrollment(): void
     {
-        $teacher = User::factory()->teacher()->create();
-        $student = User::factory()->student()->create(['name' => 'Hoc vien cu']);
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien cu']);
         ['classRoom' => $classRoom] = $this->createClassroomBundle($teacher);
 
         // Simulate an old enrollment that is no longer in the active status list.
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $classRoom->subject_id,
             'course_id' => $classRoom->course_id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_REJECTED,
+            'status' => GhiDanh::STATUS_REJECTED,
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        TeacherEvaluation::create([
+        DanhGiaGiaoVien::create([
             'class_room_id' => $classRoom->id,
             'student_id' => $student->id,
             'teacher_id' => $teacher->id,
@@ -288,7 +288,7 @@ class hoc_phan_giao_vien_test extends TestCase
 
     public function test_teacher_can_submit_schedule_change_request_from_schedule_slot(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $currentRoom = $this->createRoom(['name' => 'Phong hien tai']);
         $requestedRoom = $this->createRoom(['name' => 'Phong de xuat']);
         ['classRoom' => $classRoom, 'schedule' => $schedule] = $this->createClassroomBundle($teacher, [
@@ -314,16 +314,16 @@ class hoc_phan_giao_vien_test extends TestCase
             'class_room_id' => $classRoom->id,
             'class_schedule_id' => $schedule->id,
             'requested_room_id' => $requestedRoom->id,
-            'status' => ScheduleChangeRequest::STATUS_PENDING,
+            'status' => YeuCauDoiLich::STATUS_PENDING,
             'requested_day_of_week' => 'Friday',
         ]);
     }
 
     public function test_admin_can_approve_class_schedule_change_request_and_notify_teacher_and_students(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
         $currentRoom = $this->createRoom(['name' => 'Phong 1']);
         $requestedRoom = $this->createRoom(['name' => 'Phong 2']);
 
@@ -334,19 +334,19 @@ class hoc_phan_giao_vien_test extends TestCase
             'room_id' => $currentRoom->id,
         ]);
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $course->schedule,
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        $request = ScheduleChangeRequest::create([
+        $request = YeuCauDoiLich::create([
             'teacher_id' => $teacher->id,
             'course_id' => $course->id,
             'class_room_id' => $classRoom->id,
@@ -359,7 +359,7 @@ class hoc_phan_giao_vien_test extends TestCase
             'requested_start_time' => '19:00',
             'requested_end_time' => '21:00',
             'reason' => 'De phu hop lich cong tac moi.',
-            'status' => ScheduleChangeRequest::STATUS_PENDING,
+            'status' => YeuCauDoiLich::STATUS_PENDING,
         ]);
 
         $response = $this
@@ -403,8 +403,8 @@ class hoc_phan_giao_vien_test extends TestCase
             'link' => route('student.schedule'),
         ]);
 
-        $teacherNotification = Notification::query()->where('user_id', $teacher->id)->firstOrFail();
-        $studentNotification = Notification::query()->where('user_id', $student->id)->firstOrFail();
+        $teacherNotification = ThongBao::query()->where('user_id', $teacher->id)->firstOrFail();
+        $studentNotification = ThongBao::query()->where('user_id', $student->id)->firstOrFail();
 
         $this->assertStringContainsString($request->targetTitle(), $teacherNotification->message);
         $this->assertStringContainsString($request->currentScheduleLabel(), $teacherNotification->message);
@@ -417,28 +417,28 @@ class hoc_phan_giao_vien_test extends TestCase
         $this->assertStringContainsString('Vui lòng kiểm tra lại thời khóa biểu của bạn.', $studentNotification->message);
     }
 
-    private function createClassroomBundle(User $teacher, array $overrides = []): array
+    private function createClassroomBundle(NguoiDung $teacher, array $overrides = []): array
     {
         $slug = 'lop-' . str()->random(6);
 
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tin hoc ung dung ' . $slug,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1800000,
             'duration' => 3,
         ]);
 
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Lop hoc noi bo ' . $slug,
-            'description' => 'Course phuc vu test teacher module.',
+            'description' => 'KhoaHoc phuc vu test teacher module.',
             'teacher_id' => $teacher->id,
             'day_of_week' => $overrides['day'] ?? 'Tuesday',
             'start_date' => now()->toDateString(),
@@ -446,22 +446,22 @@ class hoc_phan_giao_vien_test extends TestCase
             'start_time' => $overrides['start_time'] ?? '18:00',
             'end_time' => $overrides['end_time'] ?? '20:00',
             'capacity' => 25,
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
             'schedule' => 'Lich test',
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $overrides['course_id'] ?? $course->id,
             'teacher_id' => $teacher->id,
             'room_id' => $overrides['room_id'] ?? null,
             'start_date' => now()->toDateString(),
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
             'note' => 'Lop hoc noi bo phuc vu test.',
         ]);
 
-        $schedule = ClassSchedule::create([
+        $schedule = LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'room_id' => $overrides['schedule_room_id'] ?? ($overrides['room_id'] ?? null),
             'day_of_week' => $overrides['day'] ?? 'Tuesday',
@@ -472,17 +472,17 @@ class hoc_phan_giao_vien_test extends TestCase
         return compact('category', 'subject', 'course', 'classRoom', 'schedule');
     }
 
-    private function createRoom(array $overrides = []): Room
+    private function createRoom(array $overrides = []): PhongHoc
     {
         $code = $overrides['code'] ?? 'PH-' . strtoupper(str()->random(6));
 
-        return Room::create(array_merge([
+        return PhongHoc::create(array_merge([
             'code' => $code,
             'name' => 'Phong ' . $code,
             'type' => 'theory',
             'location' => 'Tang 1',
             'capacity' => 30,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ], $overrides));
     }
 }

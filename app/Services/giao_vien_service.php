@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Course;
-use App\Models\Department;
-use App\Models\Enrollment;
-use App\Models\ScheduleChangeRequest;
-use App\Models\TeacherApplication;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\KhoaHoc;
+use App\Models\PhongBan;
+use App\Models\GhiDanh;
+use App\Models\YeuCauDoiLich;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\VaiTro;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
@@ -22,7 +22,7 @@ class AdminTeacherService
         $status = trim((string) ($filters['status'] ?? ''));
         $departmentId = (int) ($filters['department_id'] ?? 0);
 
-        return User::query()
+        return NguoiDung::query()
             ->teachers()
             ->with(['department'])
             ->withCount(['scheduleChangeRequests'])
@@ -45,29 +45,29 @@ class AdminTeacherService
     public function summary(): array
     {
         return [
-            'total' => User::query()->teachers()->count(),
-            'active' => User::query()->teachers()->where('status', User::STATUS_ACTIVE)->count(),
-            'locked' => User::query()->teachers()->where('status', User::STATUS_LOCKED)->count(),
-            'assigned' => User::query()->teachers()->whereNotNull('department_id')->count(),
+            'total' => NguoiDung::query()->teachers()->count(),
+            'active' => NguoiDung::query()->teachers()->where('status', NguoiDung::STATUS_ACTIVE)->count(),
+            'locked' => NguoiDung::query()->teachers()->where('status', NguoiDung::STATUS_LOCKED)->count(),
+            'assigned' => NguoiDung::query()->teachers()->whereNotNull('department_id')->count(),
         ];
     }
 
-    public function createTeacher(array $data): User
+    public function createTeacher(array $data): NguoiDung
     {
-        return User::create([
+        return NguoiDung::create([
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?: null,
             'password' => Hash::make($data['password']),
-            'role_id' => Role::idByName(User::ROLE_TEACHER),
+            'role_id' => VaiTro::idByName(NguoiDung::ROLE_TEACHER),
             'department_id' => $data['department_id'],
             'status' => $data['status'],
             'email_verified_at' => now(),
         ]);
     }
 
-    public function updateTeacher(User $teacher, array $data): User
+    public function updateTeacher(NguoiDung $teacher, array $data): NguoiDung
     {
         $teacher->fill([
             'name' => $data['name'],
@@ -82,33 +82,33 @@ class AdminTeacherService
             $teacher->password = Hash::make($data['password']);
         }
 
-        $teacher->role_id = Role::idByName(User::ROLE_TEACHER);
+        $teacher->role_id = VaiTro::idByName(NguoiDung::ROLE_TEACHER);
         $teacher->save();
 
         return $teacher;
     }
 
-    public function lockTeacher(User $teacher): void
+    public function lockTeacher(NguoiDung $teacher): void
     {
-        $teacher->update(['status' => User::STATUS_LOCKED]);
+        $teacher->update(['status' => NguoiDung::STATUS_LOCKED]);
     }
 
-    public function unlockTeacher(User $teacher): void
+    public function unlockTeacher(NguoiDung $teacher): void
     {
-        $teacher->update(['status' => User::STATUS_ACTIVE]);
+        $teacher->update(['status' => NguoiDung::STATUS_ACTIVE]);
     }
 
-    public function getTeacherDetail(User $teacher): array
+    public function getTeacherDetail(NguoiDung $teacher): array
     {
         $teacher->loadMissing('department')->loadCount(['scheduleChangeRequests']);
 
-        $courses = Course::with(['subject.category'])
+        $courses = KhoaHoc::with(['subject.category'])
             ->withCount('enrollments')
             ->where('teacher_id', $teacher->id)
             ->latest('id')
             ->get();
 
-        $enrollments = Enrollment::with(['user', 'course.subject'])
+        $enrollments = GhiDanh::with(['user', 'course.subject'])
             ->whereHas('course', fn (Builder $query) => $query->where('teacher_id', $teacher->id))
             ->latest('id')
             ->get();
@@ -116,8 +116,8 @@ class AdminTeacherService
         $studentCount = $enrollments->pluck('user_id')->filter()->unique()->count();
 
         $scheduleChangeRequests = collect();
-        if (Schema::hasTable((new ScheduleChangeRequest())->getTable())) {
-            $scheduleChangeRequests = ScheduleChangeRequest::with(['course.subject', 'reviewer'])
+        if (Schema::hasTable((new YeuCauDoiLich())->getTable())) {
+            $scheduleChangeRequests = YeuCauDoiLich::with(['course.subject', 'reviewer'])
                 ->where('teacher_id', $teacher->id)
                 ->latest('id')
                 ->take(5)
@@ -125,8 +125,8 @@ class AdminTeacherService
         }
 
         $application = null;
-        if (Schema::hasTable((new TeacherApplication())->getTable())) {
-            $application = TeacherApplication::where('email', $teacher->email)
+        if (Schema::hasTable((new DonUngTuyenGiaoVien())->getTable())) {
+            $application = DonUngTuyenGiaoVien::where('email', $teacher->email)
                 ->latest('id')
                 ->first();
         }
@@ -143,7 +143,7 @@ class AdminTeacherService
 
     public function departmentOptions()
     {
-        return Department::query()
+        return PhongBan::query()
             ->orderBy('name')
             ->get();
     }

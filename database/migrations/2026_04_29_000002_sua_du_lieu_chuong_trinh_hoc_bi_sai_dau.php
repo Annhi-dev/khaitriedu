@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Course;
+use App\Models\KhoaHoc;
 use App\Services\CourseCurriculumService;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +14,7 @@ return new class extends Migration
             return;
         }
 
-        $brokenCourses = Course::query()
+        $brokenCourses = KhoaHoc::query()
             ->with(['subject.category'])
             ->where('title', 'like', '%?%')
             ->get();

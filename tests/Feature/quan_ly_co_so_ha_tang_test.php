@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\CourseTimeSlot;
-use App\Models\Room;
-use App\Models\SlotRegistration;
-use App\Models\SlotRegistrationChoice;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\KhungGioKhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\NguyenVongKhungGio;
+use App\Models\LuaChonNguyenVongKhungGio;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,11 +20,11 @@ class quan_ly_co_so_ha_tang_test extends TestCase
     public function test_admin_can_access_infrastructure_management_pages(): void
     {
         [$admin, $subject, $teacher, $room, $slotRegistration] = $this->seedInfrastructureData();
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Tin hoc van phong toi 2-4-6',
             'teacher_id' => $teacher->id,
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
 
         $responses = [
@@ -44,7 +44,7 @@ class quan_ly_co_so_ha_tang_test extends TestCase
 
     public function test_admin_can_create_and_update_room(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
 
         $createResponse = $this
             ->withSession(['user_id' => $admin->id])
@@ -53,11 +53,11 @@ class quan_ly_co_so_ha_tang_test extends TestCase
                 'name' => 'Phong 203',
                 'location' => 'Tang 2',
                 'capacity' => 32,
-                'status' => Room::STATUS_ACTIVE,
+                'status' => PhongHoc::STATUS_ACTIVE,
                 'note' => 'Phong hoc may lanh',
             ]);
 
-        $room = Room::where('code', 'P203')->first();
+        $room = PhongHoc::where('code', 'P203')->first();
 
         $createResponse->assertRedirect(route('admin.rooms.index'));
         $this->assertNotNull($room);
@@ -74,7 +74,7 @@ class quan_ly_co_so_ha_tang_test extends TestCase
                 'name' => 'Phong 203 da sua',
                 'location' => 'Tang 3',
                 'capacity' => 28,
-                'status' => Room::STATUS_MAINTENANCE,
+                'status' => PhongHoc::STATUS_MAINTENANCE,
                 'note' => 'Tam khoa de bao tri',
             ]);
 
@@ -84,29 +84,29 @@ class quan_ly_co_so_ha_tang_test extends TestCase
             'name' => 'Phong 203 da sua',
             'location' => 'Tang 3',
             'capacity' => 28,
-            'status' => Room::STATUS_MAINTENANCE,
+            'status' => PhongHoc::STATUS_MAINTENANCE,
         ]);
     }
 
     public function test_admin_can_create_and_update_course_time_slot(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tin hoc van phong',
             'price' => 1500000,
             'category_id' => $category->id,
         ]);
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'P101',
             'name' => 'Phong 101',
             'capacity' => 25,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
         $createResponse = $this
@@ -122,11 +122,11 @@ class quan_ly_co_so_ha_tang_test extends TestCase
                 'registration_close_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
                 'min_students' => 10,
                 'max_students' => 20,
-                'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
+                'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION,
                 'note' => 'Ca toi thu 2',
             ]);
 
-        $timeSlot = CourseTimeSlot::first();
+        $timeSlot = KhungGioKhoaHoc::first();
 
         $createResponse->assertRedirect(route('admin.course-time-slots.index'));
         $this->assertNotNull($timeSlot);
@@ -135,7 +135,7 @@ class quan_ly_co_so_ha_tang_test extends TestCase
             'subject_id' => $subject->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
-            'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
+            'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION,
         ]);
 
         $updateResponse = $this
@@ -151,14 +151,14 @@ class quan_ly_co_so_ha_tang_test extends TestCase
                 'registration_close_at' => now()->addDays(5)->format('Y-m-d H:i:s'),
                 'min_students' => 8,
                 'max_students' => 18,
-                'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS,
+                'status' => KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS,
                 'note' => 'Da du nhu cau',
             ]);
 
         $updateResponse->assertRedirect(route('admin.course-time-slots.index'));
         $this->assertDatabaseHas('course_time_slots', [
             'id' => $timeSlot->id,
-            'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS,
+            'status' => KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS,
             'start_time' => '17:30',
             'end_time' => '19:45',
             'min_students' => 8,
@@ -168,23 +168,23 @@ class quan_ly_co_so_ha_tang_test extends TestCase
 
     public function test_admin_time_slot_validation_messages_are_in_vietnamese(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc-viet-hoa',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tieng Anh giao tiep',
             'price' => 1800000,
             'category_id' => $category->id,
         ]);
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'P102',
             'name' => 'Phong 102',
             'capacity' => 25,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
         $response = $this
@@ -200,7 +200,7 @@ class quan_ly_co_so_ha_tang_test extends TestCase
                 'registration_close_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
                 'min_students' => 10,
                 'max_students' => 20,
-                'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
+                'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION,
             ]);
 
         $response->assertRedirect();
@@ -212,7 +212,7 @@ class quan_ly_co_so_ha_tang_test extends TestCase
 
     public function test_teacher_is_blocked_from_room_management(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $response = $this
             ->withSession(['user_id' => $teacher->id])
@@ -224,26 +224,26 @@ class quan_ly_co_so_ha_tang_test extends TestCase
 
     private function seedInfrastructureData(): array
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $student = User::factory()->student()->create();
-        $category = Category::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $category = NhomHoc::create([
             'name' => 'Ngoai ngu - Tin hoc',
             'slug' => 'ngoai-ngu-tin-hoc',
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tin hoc van phong',
             'price' => 1500000,
             'category_id' => $category->id,
         ]);
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'P101',
             'name' => 'Phong 101',
             'capacity' => 30,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
-        $timeSlot = CourseTimeSlot::create([
+        $timeSlot = KhungGioKhoaHoc::create([
             'subject_id' => $subject->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -252,15 +252,15 @@ class quan_ly_co_so_ha_tang_test extends TestCase
             'end_time' => '20:15',
             'min_students' => 10,
             'max_students' => 20,
-            'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION,
+            'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION,
         ]);
-        $slotRegistration = SlotRegistration::create([
+        $slotRegistration = NguyenVongKhungGio::create([
             'student_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => SlotRegistration::STATUS_PENDING,
+            'status' => NguyenVongKhungGio::STATUS_PENDING,
         ]);
 
-        SlotRegistrationChoice::create([
+        LuaChonNguyenVongKhungGio::create([
             'slot_registration_id' => $slotRegistration->id,
             'course_time_slot_id' => $timeSlot->id,
             'priority' => 1,

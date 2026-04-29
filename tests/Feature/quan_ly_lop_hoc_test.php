@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
@@ -31,8 +31,8 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_admin_can_create_class_with_required_course_teacher_room_and_schedule(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createCourse($subject, $teacher, [
@@ -60,7 +60,7 @@ class quan_ly_lop_hoc_test extends TestCase
         $response->assertRedirect(route('admin.classes.index'));
         $response->assertSessionHas('status');
 
-        $classRoom = ClassRoom::query()->first();
+        $classRoom = LopHoc::query()->first();
 
         $this->assertNotNull($classRoom);
         $this->assertDatabaseHas('lop_hoc', [
@@ -69,7 +69,7 @@ class quan_ly_lop_hoc_test extends TestCase
             'course_id' => $course->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
         $this->assertDatabaseHas('lich_hoc', [
@@ -84,7 +84,7 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_class_creation_requires_course_teacher_room_and_schedule(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         [, $subject] = $this->createCatalogSubject();
 
         $response = $this
@@ -104,8 +104,8 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_admin_cannot_create_class_when_course_does_not_belong_to_subject(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subjectA] = $this->createCatalogSubject('Tin hoc A', 'tin-hoc-a');
         [, $subjectB] = $this->createCatalogSubject('Tin hoc B', 'tin-hoc-b');
@@ -135,12 +135,12 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_admin_cannot_create_class_with_inactive_room(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createCourse($subject, $teacher);
         $room = $this->createRoom([
-            'status' => Room::STATUS_MAINTENANCE,
+            'status' => PhongHoc::STATUS_MAINTENANCE,
         ]);
 
         $response = $this
@@ -167,8 +167,8 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_admin_cannot_create_class_with_non_teacher_account(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createCourse($subject, null);
         $room = $this->createRoom();
@@ -197,22 +197,22 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_admin_cannot_create_class_when_teacher_has_schedule_conflict(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $course = $this->createCourse($subject, $teacher, ['title' => 'Khóa mới']);
         $roomA = $this->createRoom(['code' => 'PA01']);
         $roomB = $this->createRoom(['code' => 'PB01']);
 
-        $existingClass = ClassRoom::create([
+        $existingClass = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $this->createCourse($subject, $teacher, ['title' => 'Khóa hiện hữu'])->id,
             'room_id' => $roomA->id,
             'teacher_id' => $teacher->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $existingClass->id,
             'teacher_id' => $teacher->id,
             'room_id' => $roomA->id,
@@ -245,24 +245,24 @@ class quan_ly_lop_hoc_test extends TestCase
 
     public function test_admin_can_create_class_when_weekly_slot_matches_but_date_ranges_do_not_overlap(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $room = $this->createRoom();
         [, $subject] = $this->createCatalogSubject('Tin hoc van phong', 'tin-hoc-van-phong', 1);
         $firstCourse = $this->createCourse($subject, $teacher, ['title' => 'Khóa hiện hữu']);
         $secondCourse = $this->createCourse($subject, $teacher, ['title' => 'Khóa kế tiếp']);
 
-        $existingClassRoom = ClassRoom::create([
+        $existingClassRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $firstCourse->id,
             'room_id' => $room->id,
             'teacher_id' => $teacher->id,
             'start_date' => '2026-05-01',
             'duration' => 1,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $existingClassRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -296,16 +296,16 @@ class quan_ly_lop_hoc_test extends TestCase
 
     private function createCatalogSubject(string $subjectName = 'Tin hoc van phong', string $slug = 'tin-hoc-van-phong', int $duration = 24): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-hoc-' . $slug . '-' . fake()->unique()->numberBetween(100, 999),
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $subjectName,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
             'duration' => $duration,
         ]);
@@ -313,28 +313,28 @@ class quan_ly_lop_hoc_test extends TestCase
         return [$category, $subject];
     }
 
-    private function createCourse(Subject $subject, ?User $teacher, array $overrides = []): Course
+    private function createCourse(MonHoc $subject, ?NguoiDung $teacher, array $overrides = []): KhoaHoc
     {
-        return Course::create(array_merge([
+        return KhoaHoc::create(array_merge([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Khóa học',
             'description' => 'Khóa học phục vụ test tạo lớp.',
             'teacher_id' => $teacher?->id,
-            'status' => Course::STATUS_DRAFT,
+            'status' => KhoaHoc::STATUS_DRAFT,
         ], $overrides));
     }
 
-    private function createRoom(array $overrides = []): Room
+    private function createRoom(array $overrides = []): PhongHoc
     {
         $code = $overrides['code'] ?? 'P' . fake()->unique()->numberBetween(100, 999);
 
-        return Room::create(array_merge([
+        return PhongHoc::create(array_merge([
             'code' => $code,
             'name' => 'Phong ' . $code,
             'type' => 'offline',
             'location' => 'Tang 2',
             'capacity' => 20,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ], $overrides));
     }
 }

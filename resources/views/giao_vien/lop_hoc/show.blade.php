@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $attendanceStatuses = \App\Models\AttendanceRecord::statusOptions();
+    $attendanceStatuses = \App\Models\DiemDanh::statusOptions();
     $timeRanges = $classRoom->schedules
         ->map(fn ($schedule) => substr((string) $schedule->start_time, 0, 5) . ' - ' . substr((string) $schedule->end_time, 0, 5))
         ->unique()
@@ -152,7 +152,7 @@
                                     <td class="px-4 py-4">
                                         <select name="attendance[{{ $enrollment->user_id }}][status]" class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none">
                                             @foreach ($attendanceStatuses as $status => $label)
-                                                <option value="{{ $status }}" @selected(($record->status ?? \App\Models\AttendanceRecord::STATUS_PRESENT) === $status)>{{ $label }}</option>
+                                                <option value="{{ $status }}" @selected(($record->status ?? \App\Models\DiemDanh::STATUS_PRESENT) === $status)>{{ $label }}</option>
                                             @endforeach
                                         </select>
                                     </td>

@@ -3,15 +3,15 @@
 namespace Tests\Feature;
 
 use App\Exceptions\EnrollmentOperationException;
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Helpers\ScheduleHelper;
 use App\Services\AdminScheduleService;
 use Carbon\Carbon;
@@ -25,9 +25,9 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_can_submit_custom_schedule_request_without_waiting_for_an_open_class(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
         [, $subject] = $this->createCatalogSubject();
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
 
         $message = app(\App\Services\StudentEnrollmentService::class)->submitCustomScheduleRequest($student, $subject, [
             'start_time' => '18:00',
@@ -41,13 +41,13 @@ class ghi_danh_hoc_vien_test extends TestCase
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'lop_hoc_id' => null,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'start_time' => '18:00',
             'end_time' => '20:15',
             'preferred_schedule' => 'Ưu tiên ca tối trong tuần.',
         ]);
 
-        $enrollment = Enrollment::where('user_id', $student->id)->where('subject_id', $subject->id)->firstOrFail();
+        $enrollment = GhiDanh::where('user_id', $student->id)->where('subject_id', $subject->id)->firstOrFail();
         $this->assertSame(['Monday', 'Wednesday', 'Friday'], $enrollment->preferred_days);
         $this->assertDatabaseHas('thong_bao', [
             'user_id' => $admin->id,
@@ -61,10 +61,10 @@ class ghi_danh_hoc_vien_test extends TestCase
     {
         $service = app(AdminScheduleService::class);
 
-        $matchingTeacher = User::factory()->teacher()->create([
+        $matchingTeacher = NguoiDung::factory()->teacher()->create([
             'name' => 'Bui Anh Dung (Ngoai ngu)',
         ]);
-        $otherTeacher = User::factory()->teacher()->create([
+        $otherTeacher = NguoiDung::factory()->teacher()->create([
             'name' => 'Huynh Bao Chau (Tin hoc)',
         ]);
 
@@ -84,10 +84,10 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_can_directly_enroll_into_an_open_fixed_class(): void
     {
-        $student = User::factory()->student()->create();
-        $adminOne = User::factory()->admin()->create(['name' => 'Admin 1']);
-        $adminTwo = User::factory()->admin()->create(['name' => 'Admin 2']);
-        $teacher = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $adminOne = NguoiDung::factory()->admin()->create(['name' => 'Admin 1']);
+        $adminTwo = NguoiDung::factory()->admin()->create(['name' => 'Admin 2']);
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $classRoom = $this->createOpenClassRoom($subject, $teacher);
 
@@ -100,10 +100,10 @@ class ghi_danh_hoc_vien_test extends TestCase
             'course_id' => $classRoom->course_id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
         ]);
 
-        $enrollment = Enrollment::where('user_id', $student->id)->where('subject_id', $subject->id)->firstOrFail();
+        $enrollment = GhiDanh::where('user_id', $student->id)->where('subject_id', $subject->id)->firstOrFail();
         $this->assertDatabaseCount('thong_bao', 2);
         $this->assertDatabaseHas('thong_bao', [
             'user_id' => $adminOne->id,
@@ -121,20 +121,20 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_legacy_confirmed_enrollment_blocks_enrolling_into_a_different_fixed_class(): void
     {
-        $student = User::factory()->student()->create();
-        $teacherOne = User::factory()->teacher()->create();
-        $teacherTwo = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
+        $teacherTwo = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject('Ke toan thuc hanh', 'Ke toan');
         $classRoomOne = $this->createOpenClassRoom($subject, $teacherOne);
         $classRoomTwo = $this->createOpenClassRoom($subject, $teacherTwo, 'Wednesday', '18:00', '20:00');
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $classRoomOne->course_id,
             'lop_hoc_id' => $classRoomOne->id,
             'assigned_teacher_id' => $teacherOne->id,
-            'status' => Enrollment::LEGACY_STATUS_CONFIRMED,
+            'status' => GhiDanh::LEGACY_STATUS_CONFIRMED,
             'schedule' => $classRoomOne->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -150,26 +150,26 @@ class ghi_danh_hoc_vien_test extends TestCase
         $response->assertRedirect(route('student.enroll.select', $subject));
         $response->assertSessionHas('error', 'Bạn đã có lớp cho khóa học này. Nếu muốn đổi lớp, vui lòng liên hệ admin.');
 
-        $this->assertSame(1, Enrollment::count());
+        $this->assertSame(1, GhiDanh::count());
         $this->assertDatabaseHas('dang_ky', [
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'lop_hoc_id' => $classRoomOne->id,
-            'status' => Enrollment::LEGACY_STATUS_CONFIRMED,
+            'status' => GhiDanh::LEGACY_STATUS_CONFIRMED,
         ]);
     }
 
     public function test_student_can_switch_from_custom_request_to_fixed_class_without_creating_duplicate_enrollments(): void
     {
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $classRoom = $this->createOpenClassRoom($subject, $teacher);
 
-        $pendingEnrollment = Enrollment::create([
+        $pendingEnrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'start_time' => '17:30',
             'end_time' => '19:30',
             'preferred_days' => ['Tuesday', 'Thursday'],
@@ -193,7 +193,7 @@ class ghi_danh_hoc_vien_test extends TestCase
             'subject_id' => $subject->id,
             'course_id' => $classRoom->course_id,
             'lop_hoc_id' => $classRoom->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'start_time' => null,
             'end_time' => null,
             'preferred_schedule' => null,
@@ -205,19 +205,19 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_cannot_submit_custom_schedule_request_that_overlaps_an_existing_active_class(): void
     {
-        $student = User::factory()->student()->create();
-        $teacherOne = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
         [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
         [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
         $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne, 'Monday', '18:00', '20:15');
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectOne->id,
             'course_id' => $classRoomOne->course_id,
             'lop_hoc_id' => $classRoomOne->id,
             'assigned_teacher_id' => $teacherOne->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $classRoomOne->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -241,16 +241,16 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_fixed_class_enrollment_reuses_existing_record_for_same_class(): void
     {
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $classRoom = $this->createOpenClassRoom($subject, $teacher);
 
-        $pendingEnrollment = Enrollment::create([
+        $pendingEnrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'lop_hoc_id' => $classRoom->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'start_time' => '17:30',
             'end_time' => '19:30',
             'preferred_days' => ['Tuesday', 'Thursday'],
@@ -276,7 +276,7 @@ class ghi_danh_hoc_vien_test extends TestCase
             'course_id' => $classRoom->course_id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'start_time' => null,
             'end_time' => null,
             'preferred_schedule' => null,
@@ -287,9 +287,9 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_cannot_enroll_into_two_classes_with_overlapping_schedule(): void
     {
-        $student = User::factory()->student()->create();
-        $teacherOne = User::factory()->teacher()->create();
-        $teacherTwo = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
+        $teacherTwo = NguoiDung::factory()->teacher()->create();
         [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
         [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
         $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne);
@@ -317,12 +317,12 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_completed_class_without_class_room_id_still_blocks_overlapping_new_enrollment_when_schedule_matches_stored_data(): void
     {
-        $student = User::factory()->student()->create();
-        $teacherOne = User::factory()->teacher()->create();
-        $teacherTwo = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
+        $teacherTwo = NguoiDung::factory()->teacher()->create();
         [, $subjectOne] = $this->createCatalogSubject('Lich lop da ket thuc');
         [, $subjectTwo] = $this->createCatalogSubject('Lop moi trung lich', 'Tin hoc');
-        $courseOne = Course::create([
+        $courseOne = KhoaHoc::create([
             'subject_id' => $subjectOne->id,
             'title' => $subjectOne->name . ' - Lop co dinh',
             'description' => 'Lop co dinh da ket thuc.',
@@ -336,36 +336,36 @@ class ghi_danh_hoc_vien_test extends TestCase
             'schedule' => 'Thứ 2 | 18:00 - 20:00',
         ]);
 
-        $completedRoom = Room::create([
+        $completedRoom = PhongHoc::create([
             'code' => 'C' . fake()->unique()->numberBetween(100, 999),
             'name' => 'Phong hoc ' . fake()->unique()->numberBetween(1, 99),
             'type' => 'offline',
             'location' => 'Tang 3',
             'capacity' => 20,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
-        $currentRoom = Room::create([
+        $currentRoom = PhongHoc::create([
             'code' => 'D' . fake()->unique()->numberBetween(100, 999),
             'name' => 'Phong hoc ' . fake()->unique()->numberBetween(1, 99),
             'type' => 'offline',
             'location' => 'Tang 4',
             'capacity' => 20,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
-        $classRoomOne = ClassRoom::create([
+        $classRoomOne = LopHoc::create([
             'subject_id' => $subjectOne->id,
             'course_id' => $courseOne->id,
             'name' => $subjectOne->name . ' - Lop da ket thuc',
             'room_id' => $completedRoom->id,
             'teacher_id' => $teacherOne->id,
-            'status' => ClassRoom::STATUS_COMPLETED,
+            'status' => LopHoc::STATUS_COMPLETED,
             'duration' => 3,
             'start_date' => '2026-03-01',
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoomOne->id,
             'teacher_id' => $teacherOne->id,
             'room_id' => $completedRoom->id,
@@ -374,18 +374,18 @@ class ghi_danh_hoc_vien_test extends TestCase
             'end_time' => '20:00',
         ]);
 
-        $classRoomTwo = ClassRoom::create([
+        $classRoomTwo = LopHoc::create([
             'subject_id' => $subjectOne->id,
             'course_id' => $courseOne->id,
             'name' => $subjectOne->name . ' - Lop hien tai',
             'room_id' => $currentRoom->id,
             'teacher_id' => $teacherOne->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
             'duration' => 3,
             'start_date' => '2026-05-01',
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoomTwo->id,
             'teacher_id' => $teacherOne->id,
             'room_id' => $currentRoom->id,
@@ -394,19 +394,19 @@ class ghi_danh_hoc_vien_test extends TestCase
             'end_time' => '20:00',
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectOne->id,
             'course_id' => $courseOne->id,
             'lop_hoc_id' => null,
             'assigned_teacher_id' => $teacherOne->id,
-            'status' => Enrollment::STATUS_COMPLETED,
+            'status' => GhiDanh::STATUS_COMPLETED,
             'schedule' => $classRoomOne->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        $completedEnrollment = Enrollment::firstOrFail();
+        $completedEnrollment = GhiDanh::firstOrFail();
         $this->assertSame($classRoomOne->id, $completedEnrollment->currentClassRoom()?->id);
 
         try {
@@ -429,8 +429,8 @@ class ghi_danh_hoc_vien_test extends TestCase
         Carbon::setTestNow('2026-04-17 10:00:00');
 
         try {
-            $student = User::factory()->student()->create();
-            $teacher = User::factory()->teacher()->create();
+            $student = NguoiDung::factory()->student()->create();
+            $teacher = NguoiDung::factory()->teacher()->create();
             [, $subject] = $this->createCatalogSubject('Tin hoc ung dung');
             $classRoom = $this->createOpenClassRoom($subject, $teacher, 'Monday', '18:00', '20:00', [
                 'start_date' => '2026-04-10',
@@ -460,8 +460,8 @@ class ghi_danh_hoc_vien_test extends TestCase
         Carbon::setTestNow('2026-04-17 10:00:00');
 
         try {
-            $student = User::factory()->student()->create();
-            $teacher = User::factory()->teacher()->create();
+            $student = NguoiDung::factory()->student()->create();
+            $teacher = NguoiDung::factory()->teacher()->create();
             [, $subject] = $this->createCatalogSubject('Ke toan thuc hanh');
             $classRoom = $this->createOpenClassRoom($subject, $teacher, 'Tuesday', '18:00', '20:00', [
                 'start_date' => '2026-03-01',
@@ -492,8 +492,8 @@ class ghi_danh_hoc_vien_test extends TestCase
         Carbon::setTestNow('2026-04-17 10:00:00');
 
         try {
-            $student = User::factory()->student()->create();
-            $teacher = User::factory()->teacher()->create();
+            $student = NguoiDung::factory()->student()->create();
+            $teacher = NguoiDung::factory()->teacher()->create();
             [, $subject] = $this->createCatalogSubject('Marketing digital');
             $classRoom = $this->createOpenClassRoom($subject, $teacher, 'Thursday', '18:00', '20:00', [
                 'start_date' => '2026-04-25',
@@ -514,7 +514,7 @@ class ghi_danh_hoc_vien_test extends TestCase
                 'course_id' => $classRoom->course_id,
                 'lop_hoc_id' => $classRoom->id,
                 'assigned_teacher_id' => $teacher->id,
-                'status' => Enrollment::STATUS_ENROLLED,
+                'status' => GhiDanh::STATUS_ENROLLED,
             ]);
         } finally {
             Carbon::setTestNow();
@@ -526,8 +526,8 @@ class ghi_danh_hoc_vien_test extends TestCase
         Carbon::setTestNow('2026-04-17 10:00:00');
 
         try {
-            $student = User::factory()->student()->create();
-            $teacher = User::factory()->teacher()->create();
+            $student = NguoiDung::factory()->student()->create();
+            $teacher = NguoiDung::factory()->teacher()->create();
             [, $subject] = $this->createCatalogSubject('Ky nang ban hang');
             $this->createOpenClassRoom($subject, $teacher, 'Monday', '18:00', '20:00', [
                 'start_date' => '2026-04-01',
@@ -553,21 +553,21 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_select_class_screen_shows_schedule_conflict_warning(): void
     {
-        $student = User::factory()->student()->create();
-        $teacherOne = User::factory()->teacher()->create();
-        $teacherTwo = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
+        $teacherTwo = NguoiDung::factory()->teacher()->create();
         [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
         [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
         $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne, 'Wednesday', '18:00', '22:15');
         $classRoomTwo = $this->createOpenClassRoom($subjectTwo, $teacherTwo, 'Wednesday', '18:30', '20:45');
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectOne->id,
             'course_id' => $classRoomOne->course_id,
             'lop_hoc_id' => $classRoomOne->id,
             'assigned_teacher_id' => $teacherOne->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $classRoomOne->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -587,21 +587,21 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_select_class_screen_keeps_non_conflicting_class_available(): void
     {
-        $student = User::factory()->student()->create();
-        $teacherOne = User::factory()->teacher()->create();
-        $teacherTwo = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacherOne = NguoiDung::factory()->teacher()->create();
+        $teacherTwo = NguoiDung::factory()->teacher()->create();
         [, $subjectOne] = $this->createCatalogSubject('Tieng Anh giao tiep');
         [, $subjectTwo] = $this->createCatalogSubject('Lap trinh Python co ban', 'Tin hoc');
         $classRoomOne = $this->createOpenClassRoom($subjectOne, $teacherOne, 'Wednesday', '18:00', '20:15');
         $classRoomTwo = $this->createOpenClassRoom($subjectTwo, $teacherTwo, 'Wednesday', '20:15', '22:00');
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectOne->id,
             'course_id' => $classRoomOne->course_id,
             'lop_hoc_id' => $classRoomOne->id,
             'assigned_teacher_id' => $teacherOne->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $classRoomOne->scheduleSummary(),
             'is_submitted' => true,
             'submitted_at' => now(),
@@ -620,14 +620,14 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_student_portal_keeps_approved_status_when_updating_custom_schedule_request(): void
     {
-        $student = User::factory()->student()->create();
-        $admin = User::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         [, $subject] = $this->createCatalogSubject();
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
-            'status' => Enrollment::STATUS_APPROVED,
+            'status' => GhiDanh::STATUS_APPROVED,
             'start_time' => '17:00',
             'end_time' => '19:00',
             'preferred_days' => ['Monday', 'Wednesday'],
@@ -652,7 +652,7 @@ class ghi_danh_hoc_vien_test extends TestCase
         $response->assertSessionHas('status');
 
         $updatedEnrollment = $enrollment->fresh();
-        $this->assertSame(Enrollment::STATUS_APPROVED, $updatedEnrollment->status);
+        $this->assertSame(GhiDanh::STATUS_APPROVED, $updatedEnrollment->status);
         $this->assertSame('18:30', $updatedEnrollment->start_time);
         $this->assertSame('20:45', $updatedEnrollment->end_time);
         $this->assertSame(['Tuesday', 'Thursday'], $updatedEnrollment->preferred_days);
@@ -664,31 +664,31 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     public function test_database_prevents_duplicate_enrollment_for_same_student_and_class(): void
     {
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         [, $subject] = $this->createCatalogSubject();
         $classRoom = $this->createOpenClassRoom($subject, $teacher);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $classRoom->course_id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
         $this->expectException(QueryException::class);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $classRoom->course_id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ENROLLED,
+            'status' => GhiDanh::STATUS_ENROLLED,
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
@@ -696,16 +696,16 @@ class ghi_danh_hoc_vien_test extends TestCase
 
     private function createCatalogSubject(string $name = 'Tieng Anh giao tiep', string $categoryName = 'Ngoai ngu'): array
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => $categoryName,
             'slug' => 'ngoai-ngu-' . str()->slug($name) . '-' . fake()->unique()->numberBetween(100, 999),
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $name,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 2500000,
         ]);
 
@@ -713,18 +713,18 @@ class ghi_danh_hoc_vien_test extends TestCase
     }
 
     private function createOpenClassRoom(
-        Subject $subject,
-        User $teacher,
+        MonHoc $subject,
+        NguoiDung $teacher,
         string $dayOfWeek = 'Monday',
         string $startTime = '18:00',
         string $endTime = '20:00',
         array $overrides = []
-    ): ClassRoom
+    ): LopHoc
     {
         $startDate = $overrides['start_date'] ?? null;
         $endDate = $overrides['end_date'] ?? null;
 
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop co dinh',
             'description' => 'Lop co dinh do admin mo.',
@@ -738,27 +738,27 @@ class ghi_danh_hoc_vien_test extends TestCase
             'schedule' => 'T2-T4-T6, ' . $startTime . ' - ' . $endTime,
         ]);
 
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'A' . fake()->unique()->numberBetween(100, 999),
             'name' => 'Phong hoc ' . fake()->unique()->numberBetween(1, 99),
             'type' => 'offline',
             'location' => 'Tang 2',
             'capacity' => 20,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $subject->name . ' - Lop toi',
             'room_id' => $room->id,
             'teacher_id' => $teacher->id,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
             'duration' => $overrides['duration'] ?? 3,
             'start_date' => $startDate,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,

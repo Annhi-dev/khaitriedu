@@ -186,9 +186,9 @@ Route::prefix('schedule-change-requests')->name('schedule-change-requests.')->gr
 });
 
 Route::get('/api/subjects/{id}', function ($id) {
-    $subject = \App\Models\Subject::findOrFail($id);
+    $subject = \App\Models\MonHoc::findOrFail($id);
     
-    $courses = \App\Models\Course::where('subject_id', $id)->get(['title']);
+    $courses = \App\Models\KhoaHoc::where('subject_id', $id)->get(['title']);
     $maxBatch = (int) date('y') - 1; // start slightly before current year e.g. 25 in 2026
     
     foreach ($courses as $c) {
@@ -213,7 +213,7 @@ Route::get('/api/subjects/{id}', function ($id) {
 })->name('api.subjects.show');
 
 Route::get('/api/categories/{id}/subjects', function ($id) {
-    $subjects = \App\Models\Subject::where('category_id', $id)
+    $subjects = \App\Models\MonHoc::where('category_id', $id)
         ->orderBy('name')
         ->get(['id', 'name', 'description', 'price', 'duration', 'category_id']);
     return response()->json($subjects);

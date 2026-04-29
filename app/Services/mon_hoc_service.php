@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Category;
-use App\Models\Subject;
+use App\Models\NhomHoc;
+use App\Models\MonHoc;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
@@ -19,7 +19,7 @@ class AdminSubjectService
 
         $dummyNames = ['Ngoại ngữ - Tin học', 'Bồi dưỡng ngắn hạn', 'Đào tạo nghề', 'Đào tạo dài hạn'];
 
-        return Subject::query()
+        return MonHoc::query()
             ->with('category')
             ->withCount(['courses', 'enrollments', 'modules'])
             ->whereNotIn('name', $dummyNames)
@@ -38,15 +38,15 @@ class AdminSubjectService
 
     public function getCategories(): Collection
     {
-        return Category::query()->orderBy('order')->orderBy('name')->get();
+        return NhomHoc::query()->orderBy('order')->orderBy('name')->get();
     }
 
-    public function createSubject(array $data, ?UploadedFile $image = null): Subject
+    public function createSubject(array $data, ?UploadedFile $image = null): MonHoc
     {
-        return Subject::create($this->buildPayload($data, $image));
+        return MonHoc::create($this->buildPayload($data, $image));
     }
 
-    public function updateSubject(Subject $subject, array $data, ?UploadedFile $image = null): Subject
+    public function updateSubject(MonHoc $subject, array $data, ?UploadedFile $image = null): MonHoc
     {
         $previous = [
             'name' => (string) $subject->name,
@@ -60,7 +60,7 @@ class AdminSubjectService
         return $subject;
     }
 
-    public function getSubjectDetail(Subject $subject): array
+    public function getSubjectDetail(MonHoc $subject): array
     {
         $subject->load('category');
         $subject->loadCount(['courses', 'enrollments', 'modules']);
@@ -77,29 +77,29 @@ class AdminSubjectService
         ];
     }
 
-    public function archiveSubject(Subject $subject): string
+    public function archiveSubject(MonHoc $subject): string
     {
         $hasDependencies = $subject->courses()->exists() || $subject->enrollments()->exists();
-        $subject->update(['status' => Subject::STATUS_ARCHIVED]);
+        $subject->update(['status' => MonHoc::STATUS_ARCHIVED]);
 
         return $hasDependencies
             ? 'Khóa học đang có lớp học hoặc đăng ký liên kết nên đã được chuyển sang trạng thái lưu trữ.'
             : 'Khóa học đã được chuyển sang trạng thái lưu trữ.';
     }
 
-    public function reopenSubject(Subject $subject): void
+    public function reopenSubject(MonHoc $subject): void
     {
-        $subject->update(['status' => Subject::STATUS_OPEN]);
+        $subject->update(['status' => MonHoc::STATUS_OPEN]);
     }
 
-    protected function buildPayload(array $data, ?UploadedFile $image = null, ?Subject $subject = null): array
+    protected function buildPayload(array $data, ?UploadedFile $image = null, ?MonHoc $subject = null): array
     {
         $payload = [
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'price' => $data['price'] ?? 0,
             'duration' => $data['duration'] ?? null,
-            'test_count' => $data['test_count'] ?? Subject::DEFAULT_TEST_COUNT,
+            'test_count' => $data['test_count'] ?? MonHoc::DEFAULT_TEST_COUNT,
             'status' => $data['status'],
             'category_id' => $data['category_id'] ?? null,
         ];
@@ -113,7 +113,7 @@ class AdminSubjectService
         return $payload;
     }
 
-    protected function syncRelatedCourses(Subject $subject, array $previous): void
+    protected function syncRelatedCourses(MonHoc $subject, array $previous): void
     {
         $subject->loadMissing('courses');
 

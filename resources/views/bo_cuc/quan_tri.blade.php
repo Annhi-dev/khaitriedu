@@ -13,7 +13,8 @@
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800">
 @php
-    $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag();
+    $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\NguoiDung::find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
     $sidebarBadges = $adminSidebarBadges ?? [];
     $adminNotificationItems = $adminUser ? $adminUser->notifications()->latest('id')->take(5)->get() : collect();

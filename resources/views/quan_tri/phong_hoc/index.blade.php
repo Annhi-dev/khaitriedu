@@ -19,7 +19,7 @@
         <x-quan_tri.the_thong_ke label="Tổng sức chứa" :value="$summary['capacity']" icon="fas fa-users" color="slate" />
     </div>
 
-    <x-quan_tri.thanh_loc :route="route('admin.rooms.index')" searchPlaceholder="Mã phòng, tên phòng hoặc vị trí..." :statuses="\App\Models\Room::statusOptions()" />
+    <x-quan_tri.thanh_loc :route="route('admin.rooms.index')" searchPlaceholder="Mã phòng, tên phòng hoặc vị trí..." :statuses="\App\Models\PhongHoc::statusOptions()" />
 
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
@@ -60,8 +60,8 @@
                             <td class="px-6 py-4">
                                 @php
                                     $type = match ($room->status) {
-                                        \App\Models\Room::STATUS_ACTIVE => 'success',
-                                        \App\Models\Room::STATUS_MAINTENANCE => 'warning',
+                                        \App\Models\PhongHoc::STATUS_ACTIVE => 'success',
+                                        \App\Models\PhongHoc::STATUS_MAINTENANCE => 'warning',
                                         default => 'default',
                                     };
                                 @endphp

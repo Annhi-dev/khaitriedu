@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\EnrollmentOperationException;
 use App\Http\Requests\Student\StoreStudentScheduleRequest;
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Lesson;
-use App\Models\LessonProgress;
-use App\Models\Module;
-use App\Models\Quiz;
-use App\Models\Review;
-use App\Models\Subject;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\BaiHoc;
+use App\Models\TienDoBaiHoc;
+use App\Models\HocPhan;
+use App\Models\BaiKiemTra;
+use App\Models\DanhGia;
+use App\Models\MonHoc;
 use App\Services\CourseQuizService;
 use App\Services\StudentEnrollmentService;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class CourseController extends Controller
     {
         $user = $this->sessionUser();
         $categorySlug = $request->query('category');
-        $query = Subject::with('category')
+        $query = MonHoc::with('category')
             ->withCount(['courses', 'enrollments'])
             ->visibleOnCatalog()
             ->orderBy('id', 'desc');
@@ -35,7 +35,7 @@ class CourseController extends Controller
         }
 
         $courses = $query->paginate(12)->withQueryString();
-        $categories = Category::active()->orderBy('order')->get();
+        $categories = NhomHoc::active()->orderBy('order')->get();
 
         return view('trang_tinh.khoa_hoc', compact('courses', 'user', 'categories'));
     }
@@ -51,7 +51,7 @@ class CourseController extends Controller
 
         $course->setRelation(
             'modules',
-            $course->modules->where('status', Module::STATUS_PUBLISHED)->values()
+            $course->modules->where('status', HocPhan::STATUS_PUBLISHED)->values()
         );
 
         $reviews = $course->reviews->sortByDesc('created_at')->values();
@@ -68,7 +68,7 @@ class CourseController extends Controller
                 ->values();
 
             if ($lessonIds->isNotEmpty()) {
-                $completedLessonIds = LessonProgress::query()
+                $completedLessonIds = TienDoBaiHoc::query()
                     ->where('user_id', $user->id)
                     ->whereIn('lesson_id', $lessonIds)
                     ->where('is_completed', true)
@@ -127,16 +127,16 @@ class CourseController extends Controller
             return $redirect;
         }
 
-        $module = Module::with('lessons')
+        $module = HocPhan::with('lessons')
             ->where('course_id', $course->id)
-            ->where('status', Module::STATUS_PUBLISHED)
+            ->where('status', HocPhan::STATUS_PUBLISHED)
             ->find($module);
 
         if (! $module) {
             return redirect()->route('courses.show', $course->id)->with('error', 'Bai hoc khong ton tai.');
         }
 
-        $lesson = Lesson::with('quiz')->where('module_id', $module->id)->find($lesson);
+        $lesson = BaiHoc::with('quiz')->where('module_id', $module->id)->find($lesson);
 
         if (! $lesson) {
             return redirect()->route('courses.show', $course->id)->with('error', 'Bai hoc khong ton tai.');
@@ -145,7 +145,7 @@ class CourseController extends Controller
         $lessonProgress = null;
 
         if ($user && $user->isStudent() && $enrollment) {
-            $lessonProgress = LessonProgress::firstOrNew([
+            $lessonProgress = TienDoBaiHoc::firstOrNew([
                 'user_id' => $user->id,
                 'lesson_id' => $lesson->id,
             ]);
@@ -175,7 +175,7 @@ class CourseController extends Controller
         $quiz = $this->findQuizForCourse($course, (int) $quiz);
 
         if (! $quiz) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Quiz khong ton tai.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'BaiKiemTra khong ton tai.');
         }
 
         $quizProgress = $user && $user->isStudent()
@@ -205,7 +205,7 @@ class CourseController extends Controller
         $quiz = $this->findQuizForCourse($course, (int) $quiz);
 
         if (! $quiz) {
-            return redirect()->route('courses.show', $course->id)->with('error', 'Quiz khong ton tai.');
+            return redirect()->route('courses.show', $course->id)->with('error', 'BaiKiemTra khong ton tai.');
         }
 
         $answers = $request->input('answers', []);
@@ -220,7 +220,7 @@ class CourseController extends Controller
 
     public function redirectEnroll($id)
     {
-        $course = Course::find($id);
+        $course = KhoaHoc::find($id);
 
         if (! $course) {
             return redirect()->route('courses.index')->with('error', 'Lớp học không tồn tại.');
@@ -237,9 +237,9 @@ class CourseController extends Controller
             return redirect()->route('login');
         }
 
-        $enrollment = Enrollment::where('user_id', $user->id)
+        $enrollment = GhiDanh::where('user_id', $user->id)
             ->where('course_id', $id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->first();
 
         if (! $enrollment) {
@@ -251,7 +251,7 @@ class CourseController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        Review::updateOrCreate(
+        DanhGia::updateOrCreate(
             ['user_id' => $user->id, 'course_id' => $id],
             $data
         );
@@ -262,7 +262,7 @@ class CourseController extends Controller
     public function showSubject($id)
     {
         $user = $this->sessionUser();
-        $subject = Subject::with(['category', 'courses.teacher'])->find($id);
+        $subject = MonHoc::with(['category', 'courses.teacher'])->find($id);
 
         if (! $subject || ($subject->category && ! $subject->category->isActive())) {
             return redirect()->route('courses.index')->with('error', 'Khóa học không tồn tại hoặc đang tạm ẩn.');
@@ -283,7 +283,7 @@ class CourseController extends Controller
             return redirect()->route('login')->with('error', 'Vui long dang nhap bang tai khoan hoc vien.');
         }
 
-        $subject = Subject::find($id);
+        $subject = MonHoc::find($id);
 
         if (! $subject) {
             return back()->with('error', 'Khóa học không tồn tại.');
@@ -308,9 +308,9 @@ class CourseController extends Controller
         return redirect()->route('khoa-hoc.show', $id);
     }
 
-    private function findQuizForCourse(Course $course, int $quizId): ?Quiz
+    private function findQuizForCourse(KhoaHoc $course, int $quizId): ?BaiKiemTra
     {
-        $quiz = Quiz::with(['questions.options', 'lesson.module.course', 'classRoom'])
+        $quiz = BaiKiemTra::with(['questions.options', 'lesson.module.course', 'classRoom'])
             ->published()
             ->find($quizId);
 

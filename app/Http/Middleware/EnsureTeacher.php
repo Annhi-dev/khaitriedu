@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
+use App\Models\NguoiDung;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +16,7 @@ class EnsureTeacher
         $sessionUserId = $request->session()->get('user_id');
 
         if ($sessionUserId && (! $user || (int) $user->id !== (int) $sessionUserId)) {
-            $user = User::with('role')->find($sessionUserId);
+            $user = NguoiDung::with('role')->find($sessionUserId);
 
             if ($user) {
                 Auth::setUser($user);
@@ -24,7 +24,7 @@ class EnsureTeacher
         }
 
         if ($user && ! $user->relationLoaded('role')) {
-            $reloadedUser = User::with('role')->find($user->id);
+            $reloadedUser = NguoiDung::with('role')->find($user->id);
 
             if ($reloadedUser) {
                 $user = $reloadedUser;
@@ -36,7 +36,7 @@ class EnsureTeacher
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập khu vực giảng viên.');
         }
 
-        if (isset($user->status) && $user->status !== User::STATUS_ACTIVE) {
+        if (isset($user->status) && $user->status !== NguoiDung::STATUS_ACTIVE) {
             Auth::logout();
             $request->session()->invalidate();
 

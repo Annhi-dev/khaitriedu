@@ -1,6 +1,6 @@
 @php
     $category = $category ?? null;
-    $statusValue = old('status', $category->status ?? \App\Models\Category::STATUS_ACTIVE);
+    $statusValue = old('status', $category->status ?? \App\Models\NhomHoc::STATUS_ACTIVE);
 @endphp
 <div class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
     <div class="space-y-6">
@@ -47,8 +47,8 @@
                 <div>
                     <label for="status" class="mb-2 block text-sm font-medium text-slate-700">Trạng thái</label>
                     <select id="status" name="status" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                        <option value="{{ \App\Models\Category::STATUS_ACTIVE }}" @selected($statusValue === \App\Models\Category::STATUS_ACTIVE)>Hoạt động</option>
-                        <option value="{{ \App\Models\Category::STATUS_INACTIVE }}" @selected($statusValue === \App\Models\Category::STATUS_INACTIVE)>Ngừng hoạt động</option>
+                        <option value="{{ \App\Models\NhomHoc::STATUS_ACTIVE }}" @selected($statusValue === \App\Models\NhomHoc::STATUS_ACTIVE)>Hoạt động</option>
+                        <option value="{{ \App\Models\NhomHoc::STATUS_INACTIVE }}" @selected($statusValue === \App\Models\NhomHoc::STATUS_INACTIVE)>Ngừng hoạt động</option>
                     </select>
                     @error('status')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>

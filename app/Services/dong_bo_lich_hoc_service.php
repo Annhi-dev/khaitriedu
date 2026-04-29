@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Helpers\ScheduleHelper;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Room;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\PhongHoc;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -32,17 +32,17 @@ class CourseScheduleSyncService
             return $report;
         }
 
-        $rooms = Room::query()
-            ->where('status', Room::STATUS_ACTIVE)
+        $rooms = PhongHoc::query()
+            ->where('status', PhongHoc::STATUS_ACTIVE)
             ->orderBy('id')
             ->get();
 
         foreach ($courses as $index => $courseItem) {
-            $course = $courseItem instanceof Course
+            $course = $courseItem instanceof KhoaHoc
                 ? $courseItem->loadMissing(['subject.category', 'classRooms.schedules'])
-                : Course::query()->with(['subject.category', 'classRooms.schedules'])->findOrFail($courseItem);
+                : KhoaHoc::query()->with(['subject.category', 'classRooms.schedules'])->findOrFail($courseItem);
 
-            if (! $course instanceof Course) {
+            if (! $course instanceof KhoaHoc) {
                 continue;
             }
 
@@ -56,11 +56,11 @@ class CourseScheduleSyncService
         return $report;
     }
 
-    protected function syncCourse(Course $course, Collection $rooms, int $index): array
+    protected function syncCourse(KhoaHoc $course, Collection $rooms, int $index): array
     {
         $courseUpdated = false;
         $classRoom = $course->classRooms()
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->orderByDesc('id')
             ->first();
 
@@ -94,7 +94,7 @@ class CourseScheduleSyncService
             'teacher_id' => $course->teacher_id,
             'start_date' => $startDate->toDateString(),
             'duration' => $course->subject?->duration,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ];
 
         if (! $classRoom) {
@@ -128,7 +128,7 @@ class CourseScheduleSyncService
     }
 
     protected function syncClassSchedules(
-        ClassRoom $classRoom,
+        LopHoc $classRoom,
         array $days,
         string $startTime,
         string $endTime,
@@ -164,7 +164,7 @@ class CourseScheduleSyncService
                 continue;
             }
 
-            ClassSchedule::query()->create([
+            LichHoc::query()->create([
                 'lop_hoc_id' => $classRoom->id,
                 'teacher_id' => $teacherId,
                 'room_id' => $roomId,
@@ -183,7 +183,7 @@ class CourseScheduleSyncService
         return [$schedulesCreated, $schedulesUpdated];
     }
 
-    protected function resolvePlacement(Course $course, Collection $rooms, int $index, ?int $excludeClassRoomId = null): array
+    protected function resolvePlacement(KhoaHoc $course, Collection $rooms, int $index, ?int $excludeClassRoomId = null): array
     {
         $templateCandidates = $this->resolveTemplateCandidates($course);
         $roomCandidates = $this->resolveRoomCandidates($rooms, $course, $index);
@@ -232,7 +232,7 @@ class CourseScheduleSyncService
         ];
     }
 
-    protected function resolveTemplateCandidates(Course $course): array
+    protected function resolveTemplateCandidates(KhoaHoc $course): array
     {
         $templates = array_merge(
             [$this->resolveTemplate($course)],
@@ -311,7 +311,7 @@ class CourseScheduleSyncService
         ];
     }
 
-    protected function resolveRoomCandidates(Collection $rooms, Course $course, int $index): Collection
+    protected function resolveRoomCandidates(Collection $rooms, KhoaHoc $course, int $index): Collection
     {
         if ($rooms->isEmpty()) {
             return collect([null]);
@@ -344,7 +344,7 @@ class CourseScheduleSyncService
     }
 
     protected function placementHasConflict(
-        Course $course,
+        KhoaHoc $course,
         array $days,
         string $startTime,
         string $endTime,
@@ -355,7 +355,7 @@ class CourseScheduleSyncService
     ): bool {
         $teacherId = $course->teacher_id ? (int) $course->teacher_id : null;
 
-        if ($teacherId && ClassRoom::teacherHasConflict(
+        if ($teacherId && LopHoc::teacherHasConflict(
             $teacherId,
             $days,
             $startTime,
@@ -367,7 +367,7 @@ class CourseScheduleSyncService
             return true;
         }
 
-        if ($roomId && ClassRoom::roomHasConflict(
+        if ($roomId && LopHoc::roomHasConflict(
             $roomId,
             $days,
             $startTime,
@@ -382,7 +382,7 @@ class CourseScheduleSyncService
         return false;
     }
 
-    protected function resolveRoom(Collection $rooms, Course $course, int $index): ?Room
+    protected function resolveRoom(Collection $rooms, KhoaHoc $course, int $index): ?PhongHoc
     {
         if ($course->classRooms->isNotEmpty()) {
             $existingRoomId = $course->classRooms->first()?->room_id;
@@ -402,9 +402,9 @@ class CourseScheduleSyncService
         return $rooms->values()->get($index % $rooms->count());
     }
 
-    protected function resolveDateRange(Course $course, array $template, int $index, int $weekOffset = 0): array
+    protected function resolveDateRange(KhoaHoc $course, array $template, int $index, int $weekOffset = 0): array
     {
-        $firstDayIndex = array_search($template['days'][0], array_keys(ClassSchedule::$dayOptions), true);
+        $firstDayIndex = array_search($template['days'][0], array_keys(LichHoc::$dayOptions), true);
         $baseStart = Carbon::now()->startOfWeek(CarbonInterface::MONDAY)->subWeeks(2 + intdiv($index, 4));
         $baseStart = $baseStart->addWeeks($weekOffset);
 
@@ -421,7 +421,7 @@ class CourseScheduleSyncService
     protected function buildScheduleLabel(array $template, Carbon $startDate, Carbon $endDate): string
     {
         $dayLabels = collect($template['days'])
-            ->map(fn (string $day) => ClassSchedule::$dayOptions[$day] ?? $day)
+            ->map(fn (string $day) => LichHoc::$dayOptions[$day] ?? $day)
             ->implode(', ');
 
         return trim(
@@ -433,7 +433,7 @@ class CourseScheduleSyncService
         );
     }
 
-    protected function resolveTemplate(Course $course): array
+    protected function resolveTemplate(KhoaHoc $course): array
     {
         $title = Str::upper((string) $course->title);
         $categoryName = Str::upper((string) ($course->subject?->category?->name ?? ''));

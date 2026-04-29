@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\ScheduleHelper;
-use App\Models\ClassSchedule;
+use App\Models\LichHoc;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -31,7 +31,7 @@ class WeeklyTimetableService
         $weekStart = $reference->startOfWeek(CarbonInterface::MONDAY);
         $weekEnd = $reference->endOfWeek(CarbonInterface::SUNDAY);
         $days = $this->buildDays($weekStart);
-        $dayKeys = array_keys(ClassSchedule::$dayOptions);
+        $dayKeys = array_keys(LichHoc::$dayOptions);
         $slots = $this->buildSlots($entries);
 
         if ($slots->isEmpty()) {
@@ -104,7 +104,7 @@ class WeeklyTimetableService
         return [
             'id' => $entry['id'] ?? 'slot-' . $index,
             'day_of_week' => (string) $entry['day_of_week'],
-            'day_label' => (string) ($entry['day_label'] ?? (ClassSchedule::$dayOptions[$entry['day_of_week']] ?? $entry['day_of_week'])),
+            'day_label' => (string) ($entry['day_label'] ?? (LichHoc::$dayOptions[$entry['day_of_week']] ?? $entry['day_of_week'])),
             'start_time' => $startTime,
             'end_time' => $endTime,
             'status' => (string) ($entry['status'] ?? ''),
@@ -129,12 +129,12 @@ class WeeklyTimetableService
     {
         $days = [];
 
-        foreach (array_keys(ClassSchedule::$dayOptions) as $index => $dayKey) {
+        foreach (array_keys(LichHoc::$dayOptions) as $index => $dayKey) {
             $date = $weekStart->addDays($index);
 
             $days[] = [
                 'key' => $dayKey,
-                'label' => ClassSchedule::$dayOptions[$dayKey] ?? $dayKey,
+                'label' => LichHoc::$dayOptions[$dayKey] ?? $dayKey,
                 'date' => $date,
                 'date_label' => $date->format('d/m'),
                 'long_label' => $date->format('d/m/Y'),

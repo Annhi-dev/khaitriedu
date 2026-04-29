@@ -6,8 +6,8 @@ use App\Exceptions\EnrollmentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\StoreStudentClassEnrollmentRequest;
 use App\Http\Requests\Student\StoreStudentScheduleRequest;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\StudentEnrollmentService;
 use Illuminate\Database\QueryException;
 
@@ -15,7 +15,7 @@ class ClassEnrollController extends Controller
 {
     public function index(StudentEnrollmentService $enrollmentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
         if ($redirect) {
             return $redirect;
         }
@@ -33,9 +33,9 @@ class ClassEnrollController extends Controller
         return view('hoc_vien.ghi_danh.index', compact('current', 'subjects'));
     }
 
-    public function selectClass(Subject $subject, StudentEnrollmentService $enrollmentService)
+    public function selectClass(MonHoc $subject, StudentEnrollmentService $enrollmentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
         if ($redirect) {
             return $redirect;
         }
@@ -49,9 +49,9 @@ class ClassEnrollController extends Controller
         return view('hoc_vien.ghi_danh.chon_lop', ['current' => $current] + $viewData);
     }
 
-    public function requestForm(Subject $subject, StudentEnrollmentService $enrollmentService)
+    public function requestForm(MonHoc $subject, StudentEnrollmentService $enrollmentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
         if ($redirect) {
             return $redirect;
         }
@@ -67,10 +67,10 @@ class ClassEnrollController extends Controller
 
     public function store(
         StoreStudentClassEnrollmentRequest $request,
-        Subject $subject,
+        MonHoc $subject,
         StudentEnrollmentService $enrollmentService
     ) {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
         if ($redirect) {
             return $redirect;
         }
@@ -86,10 +86,10 @@ class ClassEnrollController extends Controller
 
     public function storeCustomRequest(
         StoreStudentScheduleRequest $request,
-        Subject $subject,
+        MonHoc $subject,
         StudentEnrollmentService $enrollmentService
     ) {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
         if ($redirect) {
             return $redirect;
         }
@@ -105,7 +105,7 @@ class ClassEnrollController extends Controller
 
     public function myClasses(StudentEnrollmentService $enrollmentService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_STUDENT);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_STUDENT);
         if ($redirect) {
             return $redirect;
         }

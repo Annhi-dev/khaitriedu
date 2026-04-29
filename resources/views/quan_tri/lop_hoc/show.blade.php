@@ -125,7 +125,7 @@
             @forelse($class->schedules as $s)
                 <div class="mb-2 flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5 text-sm">
                     <i class="fas fa-clock text-slate-400"></i>
-                    <span class="font-medium">{{ \App\Models\ClassSchedule::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}</span>
+                    <span class="font-medium">{{ \App\Models\LichHoc::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}</span>
                     <span class="text-slate-500">{{ $s->start_time }} – {{ $s->end_time }}</span>
                 </div>
             @empty

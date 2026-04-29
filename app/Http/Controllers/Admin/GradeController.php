@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClassRoom;
-use App\Models\Course;
-use App\Models\Grade;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\KhoaHoc;
+use App\Models\DiemSo;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -15,7 +15,7 @@ class GradeController extends Controller
 {
     public function index(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
 
         if ($redirect) {
             return $redirect;
@@ -29,7 +29,7 @@ class GradeController extends Controller
             'class_room_id' => $request->integer('class_room_id') ?: null,
         ];
 
-        $gradesQuery = Grade::query()
+        $gradesQuery = DiemSo::query()
             ->with([
                 'student',
                 'teacher',
@@ -90,21 +90,21 @@ class GradeController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $students = User::query()
+        $students = NguoiDung::query()
             ->students()
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        $subjects = Subject::query()
+        $subjects = MonHoc::query()
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $courses = Course::query()
+        $courses = KhoaHoc::query()
             ->with('subject')
             ->orderBy('title')
             ->get(['id', 'title', 'subject_id']);
 
-        $classRooms = ClassRoom::query()
+        $classRooms = LopHoc::query()
             ->with(['subject', 'course'])
             ->orderByDesc('id')
             ->limit(200)

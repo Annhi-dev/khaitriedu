@@ -88,7 +88,7 @@
     <x-quan_tri.thanh_loc
         :route="route('admin.departments.index')"
         searchPlaceholder="Mã phòng ban, tên phòng ban, mô tả..."
-        :statuses="\App\Models\Department::statusOptions()"
+        :statuses="\App\Models\PhongBan::statusOptions()"
     />
 
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -148,7 +148,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                <x-quan_tri.huy_hieu :type="$department->status === \App\Models\Department::STATUS_ACTIVE ? 'success' : 'warning'" :text="$department->statusLabel()" />
+                                <x-quan_tri.huy_hieu :type="$department->status === \App\Models\PhongBan::STATUS_ACTIVE ? 'success' : 'warning'" :text="$department->statusLabel()" />
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-end gap-2">
@@ -156,7 +156,7 @@
                                         <i class="fas fa-pen text-[11px]"></i>
                                         Chỉnh sửa
                                     </a>
-                                    @if ($department->status === \App\Models\Department::STATUS_ACTIVE)
+                                    @if ($department->status === \App\Models\PhongBan::STATUS_ACTIVE)
                                         <form class="inline" method="post" action="{{ route('admin.departments.deactivate', $department) }}" onsubmit="return confirm('Chuyển phòng ban này sang tạm ngưng?')">
                                             @csrf
                                             <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">

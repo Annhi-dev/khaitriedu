@@ -5,24 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCourseTimeSlotRequest;
 use App\Http\Requests\Admin\UpdateCourseTimeSlotRequest;
-use App\Models\CourseTimeSlot;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\KhungGioKhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 
 class CourseTimeSlotController extends Controller
 {
     public function index(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
         $filters = $request->only(['search', 'status', 'subject_id', 'teacher_id']);
 
-        $timeSlots = CourseTimeSlot::query()
+        $timeSlots = KhungGioKhoaHoc::query()
             ->with(['subject.category', 'teacher', 'room'])
             ->withCount('registrations')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -43,10 +43,10 @@ class CourseTimeSlotController extends Controller
             ->withQueryString();
 
         $summary = [
-            'configured' => CourseTimeSlot::count(),
-            'open' => CourseTimeSlot::where('status', CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION)->count(),
-            'ready' => CourseTimeSlot::where('status', CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS)->count(),
-            'opened' => CourseTimeSlot::where('status', CourseTimeSlot::STATUS_CLASS_OPENED)->count(),
+            'configured' => KhungGioKhoaHoc::count(),
+            'open' => KhungGioKhoaHoc::where('status', KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION)->count(),
+            'ready' => KhungGioKhoaHoc::where('status', KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS)->count(),
+            'opened' => KhungGioKhoaHoc::where('status', KhungGioKhoaHoc::STATUS_CLASS_OPENED)->count(),
         ];
 
         return view('quan_tri.khung_gio_khoa_hoc.index', compact('current', 'filters', 'timeSlots', 'summary') + $this->formOptions());
@@ -54,15 +54,15 @@ class CourseTimeSlotController extends Controller
 
     public function create()
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
         return view('quan_tri.khung_gio_khoa_hoc.create', [
             'current' => $current,
-            'courseTimeSlot' => new CourseTimeSlot([
-                'status' => CourseTimeSlot::STATUS_PENDING_OPEN,
+            'courseTimeSlot' => new KhungGioKhoaHoc([
+                'status' => KhungGioKhoaHoc::STATUS_PENDING_OPEN,
                 'min_students' => 1,
                 'max_students' => 20,
             ]),
@@ -71,19 +71,19 @@ class CourseTimeSlotController extends Controller
 
     public function store(StoreCourseTimeSlotRequest $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        CourseTimeSlot::create($request->validated());
+        KhungGioKhoaHoc::create($request->validated());
 
         return redirect()->route('admin.course-time-slots.index')->with('status', 'Khung gio hoc da duoc tao.');
     }
 
-    public function edit(CourseTimeSlot $courseTimeSlot)
+    public function edit(KhungGioKhoaHoc $courseTimeSlot)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -91,9 +91,9 @@ class CourseTimeSlotController extends Controller
         return view('quan_tri.khung_gio_khoa_hoc.edit', compact('current', 'courseTimeSlot') + $this->formOptions());
     }
 
-    public function update(UpdateCourseTimeSlotRequest $request, CourseTimeSlot $courseTimeSlot)
+    public function update(UpdateCourseTimeSlotRequest $request, KhungGioKhoaHoc $courseTimeSlot)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -106,10 +106,10 @@ class CourseTimeSlotController extends Controller
     private function formOptions(): array
     {
         return [
-            'statuses' => CourseTimeSlot::statusOptions(),
-            'subjects' => Subject::with('category')->orderBy('name')->get(),
-            'teachers' => User::teachers()->orderBy('name')->get(),
-            'rooms' => Room::orderBy('code')->get(),
+            'statuses' => KhungGioKhoaHoc::statusOptions(),
+            'subjects' => MonHoc::with('category')->orderBy('name')->get(),
+            'teachers' => NguoiDung::teachers()->orderBy('name')->get(),
+            'rooms' => PhongHoc::orderBy('code')->get(),
             'dayOptions' => [
                 'Monday' => 'Thu 2',
                 'Tuesday' => 'Thu 3',

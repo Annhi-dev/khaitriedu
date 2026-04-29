@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Teacher;
 
-use App\Models\LeaveRequest;
+use App\Models\YeuCauXinPhep;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +24,7 @@ class ReviewLeaveRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', Rule::in(LeaveRequest::teacherReviewStatuses())],
+            'status' => ['required', Rule::in(YeuCauXinPhep::teacherReviewStatuses())],
             'teacher_note' => ['nullable', 'string', 'max:1000'],
         ];
     }
@@ -32,7 +32,7 @@ class ReviewLeaveRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if ($this->input('status') === LeaveRequest::STATUS_REJECTED && ! $this->filled('teacher_note')) {
+            if ($this->input('status') === YeuCauXinPhep::STATUS_REJECTED && ! $this->filled('teacher_note')) {
                 $validator->errors()->add('teacher_note', 'Vui lòng nhập ghi chú khi từ chối yêu cầu xin phép.');
             }
         });

@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\StoreTeacherAttendanceRequest;
 use App\Http\Requests\Teacher\StoreTeacherClassGradesRequest;
 use App\Http\Requests\Teacher\StoreTeacherEvaluationRequest;
-use App\Models\ClassRoom;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\NguoiDung;
 use App\Services\TeacherClassroomService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -16,7 +16,7 @@ class TeacherClassroomController extends Controller
 {
     public function index(TeacherClassroomService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -28,9 +28,9 @@ class TeacherClassroomController extends Controller
         ]);
     }
 
-    public function show(Request $request, ClassRoom $classRoom, TeacherClassroomService $service)
+    public function show(Request $request, LopHoc $classRoom, TeacherClassroomService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -54,9 +54,9 @@ class TeacherClassroomController extends Controller
         ]));
     }
 
-    public function storeAttendance(StoreTeacherAttendanceRequest $request, ClassRoom $classRoom, TeacherClassroomService $service)
+    public function storeAttendance(StoreTeacherAttendanceRequest $request, LopHoc $classRoom, TeacherClassroomService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -76,9 +76,9 @@ class TeacherClassroomController extends Controller
         ])->with('status', 'Đã lưu điểm danh cho buổi học.');
     }
 
-    public function storeGrades(StoreTeacherClassGradesRequest $request, ClassRoom $classRoom, TeacherClassroomService $service)
+    public function storeGrades(StoreTeacherClassGradesRequest $request, LopHoc $classRoom, TeacherClassroomService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -96,9 +96,9 @@ class TeacherClassroomController extends Controller
         ])->with('status', 'Đã cập nhật bảng điểm của lớp.');
     }
 
-    public function storeEvaluation(StoreTeacherEvaluationRequest $request, ClassRoom $classRoom, TeacherClassroomService $service)
+    public function storeEvaluation(StoreTeacherEvaluationRequest $request, LopHoc $classRoom, TeacherClassroomService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;

@@ -22,13 +22,13 @@
 @endphp
 @php
     $canApproveFixedClass = in_array($normalizedStatus, [
-        \App\Models\Enrollment::STATUS_PENDING,
-        \App\Models\Enrollment::STATUS_ENROLLED,
+        \App\Models\GhiDanh::STATUS_PENDING,
+        \App\Models\GhiDanh::STATUS_ENROLLED,
     ], true);
     $canAdvanceFixedClass = in_array($normalizedStatus, [
-        \App\Models\Enrollment::STATUS_APPROVED,
-        \App\Models\Enrollment::STATUS_SCHEDULED,
-        \App\Models\Enrollment::STATUS_ACTIVE,
+        \App\Models\GhiDanh::STATUS_APPROVED,
+        \App\Models\GhiDanh::STATUS_SCHEDULED,
+        \App\Models\GhiDanh::STATUS_ACTIVE,
     ], true);
 @endphp
 <div class="space-y-6">
@@ -165,7 +165,7 @@
                         @if ($canApproveFixedClass)
                             <button name="action" value="approve" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">Duyệt ghi danh</button>
                         @endif
-                        @if ($canAdvanceFixedClass || $normalizedStatus === \App\Models\Enrollment::STATUS_ENROLLED)
+                        @if ($canAdvanceFixedClass || $normalizedStatus === \App\Models\GhiDanh::STATUS_ENROLLED)
                             <button name="action" value="activate" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-700">Chuyển sang đang học</button>
                         @endif
                         @if ($canAdvanceFixedClass)

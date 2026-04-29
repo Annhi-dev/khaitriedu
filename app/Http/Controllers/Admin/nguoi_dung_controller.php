@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\VaiTro;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,24 +13,24 @@ class UserController extends Controller
 {
     public function index()
     {
-        [$user, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$user, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $users = User::with('role')->orderBy('id', 'desc')->get();
+        $users = NguoiDung::with('role')->orderBy('id', 'desc')->get();
 
         return view('quan_tri.nguoi_dung', compact('users', 'user'));
     }
 
     public function show($id)
     {
-        [$user, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$user, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $target = User::with('role')->find($id);
+        $target = NguoiDung::with('role')->find($id);
         if (! $target) {
             return redirect()->route('admin.users')->with('error', 'Người dùng không tồn tại.');
         }
@@ -40,7 +40,7 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -53,13 +53,13 @@ class UserController extends Controller
             'role' => 'required|in:admin,teacher,student',
         ]);
 
-        User::create([
+        NguoiDung::create([
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role_id' => Role::idByName($data['role']),
-            'status' => User::STATUS_ACTIVE,
+            'role_id' => VaiTro::idByName($data['role']),
+            'status' => NguoiDung::STATUS_ACTIVE,
             'email_verified_at' => Carbon::now(),
         ]);
 
@@ -68,12 +68,12 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        $user = User::find($id);
+        $user = NguoiDung::find($id);
         if (! $user) {
             return back()->with('error', 'Người dùng không tồn tại.');
         }
@@ -84,7 +84,7 @@ class UserController extends Controller
         ]);
 
         $user->name = $data['name'];
-        $user->role_id = Role::idByName($data['role']);
+        $user->role_id = VaiTro::idByName($data['role']);
         $user->save();
 
         return redirect()->route('admin.users')->with('status', 'Cập nhật người dùng thành công.');
@@ -92,12 +92,12 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
-        if ($user = User::find($id)) {
+        if ($user = NguoiDung::find($id)) {
             $user->delete();
         }
 

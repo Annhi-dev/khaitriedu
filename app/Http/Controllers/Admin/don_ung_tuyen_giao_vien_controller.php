@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewTeacherApplicationRequest;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use App\Services\AdminTeacherApplicationService;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class TeacherApplicationController extends Controller
 {
     public function index(Request $request, AdminTeacherApplicationService $applicationService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -24,9 +24,9 @@ class TeacherApplicationController extends Controller
         return view('quan_tri.don_ung_tuyen_giao_vien.index', compact('applications', 'current', 'filters'));
     }
 
-    public function show(TeacherApplication $teacherApplication, AdminTeacherApplicationService $applicationService)
+    public function show(DonUngTuyenGiaoVien $teacherApplication, AdminTeacherApplicationService $applicationService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -41,9 +41,9 @@ class TeacherApplicationController extends Controller
         ]);
     }
 
-    public function review(ReviewTeacherApplicationRequest $request, TeacherApplication $teacherApplication, AdminTeacherApplicationService $applicationService)
+    public function review(ReviewTeacherApplicationRequest $request, DonUngTuyenGiaoVien $teacherApplication, AdminTeacherApplicationService $applicationService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

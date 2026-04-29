@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreTeacherRequest;
 use App\Http\Requests\Admin\UpdateTeacherRequest;
-use App\Models\User;
+use App\Models\NguoiDung;
 use App\Services\AdminTeacherService;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class TeacherController extends Controller
 {
     public function index(Request $request, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -28,7 +28,7 @@ class TeacherController extends Controller
 
     public function create(AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -40,7 +40,7 @@ class TeacherController extends Controller
 
     public function store(StoreTeacherRequest $request, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -50,9 +50,9 @@ class TeacherController extends Controller
         return redirect()->route('admin.teachers.show', $teacher)->with('status', 'Giảng viên đã được tạo thành công.');
     }
 
-    public function show(User $teacher, AdminTeacherService $teacherService)
+    public function show(NguoiDung $teacher, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -65,9 +65,9 @@ class TeacherController extends Controller
         ));
     }
 
-    public function edit(User $teacher, AdminTeacherService $teacherService)
+    public function edit(NguoiDung $teacher, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -78,9 +78,9 @@ class TeacherController extends Controller
         return view('quan_tri.giao_vien.edit', compact('current', 'teacher', 'departments'));
     }
 
-    public function update(UpdateTeacherRequest $request, User $teacher, AdminTeacherService $teacherService)
+    public function update(UpdateTeacherRequest $request, NguoiDung $teacher, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -91,9 +91,9 @@ class TeacherController extends Controller
         return redirect()->route('admin.teachers.show', $teacher)->with('status', 'Thông tin giảng viên đã được cập nhật.');
     }
 
-    public function lock(User $teacher, AdminTeacherService $teacherService)
+    public function lock(NguoiDung $teacher, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -104,9 +104,9 @@ class TeacherController extends Controller
         return redirect()->route('admin.teachers.show', $teacher)->with('status', 'Tài khoản giảng viên đã được khóa.');
     }
 
-    public function unlock(User $teacher, AdminTeacherService $teacherService)
+    public function unlock(NguoiDung $teacher, AdminTeacherService $teacherService)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -117,7 +117,7 @@ class TeacherController extends Controller
         return redirect()->route('admin.teachers.show', $teacher)->with('status', 'Tài khoản giảng viên đã được mở khóa.');
     }
 
-    protected function resolveTeacher(User $teacher): User
+    protected function resolveTeacher(NguoiDung $teacher): NguoiDung
     {
         abort_if(! $teacher->isTeacher(), 404);
 

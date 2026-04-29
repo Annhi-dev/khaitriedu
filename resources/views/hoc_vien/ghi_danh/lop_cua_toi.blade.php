@@ -102,7 +102,7 @@
                                         </div>
                                         <div>
                                             <span class="font-medium text-slate-500">Ngày có thể học:</span>
-                                            {{ !empty($preferredDays) ? collect($preferredDays)->map(fn ($day) => \App\Models\ClassSchedule::$dayOptions[$day] ?? $day)->implode(', ') : 'Chưa cung cấp' }}
+                                            {{ !empty($preferredDays) ? collect($preferredDays)->map(fn ($day) => \App\Models\LichHoc::$dayOptions[$day] ?? $day)->implode(', ') : 'Chưa cung cấp' }}
                                         </div>
                                     </div>
                                 </div>

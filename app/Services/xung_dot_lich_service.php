@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Room;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\PhongHoc;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -137,7 +137,7 @@ class AdminScheduleConflictService
         $classRoom = null;
 
         if (! empty($filters['course_id'])) {
-            $course = Course::query()
+            $course = KhoaHoc::query()
                 ->with([
                     'teacher',
                     'subject.category',
@@ -150,7 +150,7 @@ class AdminScheduleConflictService
         }
 
         if (! empty($filters['class_room_id'])) {
-            $classRoom = ClassRoom::query()
+            $classRoom = LopHoc::query()
                 ->with([
                     'course.teacher',
                     'course.subject.category',
@@ -250,10 +250,10 @@ class AdminScheduleConflictService
             $endDate = $course->start_date->copy()->addMonths($months)->format('Y-m-d');
         }
 
-        $teacher = $teacherId ? User::query()->find($teacherId) : null;
-        $room = $roomId ? Room::query()->find($roomId) : null;
+        $teacher = $teacherId ? NguoiDung::query()->find($teacherId) : null;
+        $room = $roomId ? PhongHoc::query()->find($roomId) : null;
 
-        $previewCourse = new Course([
+        $previewCourse = new KhoaHoc([
             'day_of_week' => $days[0] ?? null,
             'meeting_days' => $days,
             'start_date' => $startDate,
@@ -297,7 +297,7 @@ class AdminScheduleConflictService
             return collect();
         }
 
-        $courseConflicts = Course::query()
+        $courseConflicts = KhoaHoc::query()
             ->with([
                 'subject.category',
                 'teacher',
@@ -308,9 +308,9 @@ class AdminScheduleConflictService
             ])
             ->where('teacher_id', $candidate['teacher_id'])
             ->whereIn('status', [
-                Course::STATUS_PENDING_OPEN,
-                Course::STATUS_SCHEDULED,
-                Course::STATUS_ACTIVE,
+                KhoaHoc::STATUS_PENDING_OPEN,
+                KhoaHoc::STATUS_SCHEDULED,
+                KhoaHoc::STATUS_ACTIVE,
             ])
             ->when($candidate['exclude_course_id'] ?? null, fn (Builder $builder) => $builder->whereKeyNot($candidate['exclude_course_id']))
             ->where('start_time', '<', $candidate['end_time'])
@@ -324,7 +324,7 @@ class AdminScheduleConflictService
                     ->orWhereDate('end_date', '>=', $candidate['start_date']);
             });
 
-        $classRoomConflicts = ClassRoom::query()
+        $classRoomConflicts = LopHoc::query()
             ->with([
                 'course.subject.category',
                 'course.teacher',
@@ -338,7 +338,7 @@ class AdminScheduleConflictService
                 'schedules.teacher',
             ])
             ->where('teacher_id', $candidate['teacher_id'])
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->when($candidate['exclude_class_room_id'] ?? null, fn (Builder $builder) => $builder->whereKeyNot($candidate['exclude_class_room_id']))
             ->when($candidate['exclude_course_id'] ?? null, fn (Builder $builder) => $builder->where('course_id', '!=', $candidate['exclude_course_id']))
             ->whereHas('schedules', function (Builder $query) use ($candidate) {
@@ -347,15 +347,15 @@ class AdminScheduleConflictService
                     ->where('end_time', '>', $candidate['start_time']);
             })
             ->get()
-            ->filter(fn (ClassRoom $classRoom) => $classRoom->overlapsDateRange(
+            ->filter(fn (LopHoc $classRoom) => $classRoom->overlapsDateRange(
                 Carbon::parse($candidate['start_date'])->startOfDay(),
                 Carbon::parse($candidate['end_date'])->endOfDay(),
             ))
-            ->map(fn (ClassRoom $classRoom) => $classRoom->course)
+            ->map(fn (LopHoc $classRoom) => $classRoom->course)
             ->filter();
 
         return $courseConflicts->get()
-            ->filter(fn (Course $course) => $this->meetingDaysOverlap($candidate['days'], $course->meetingDayValues()))
+            ->filter(fn (KhoaHoc $course) => $this->meetingDaysOverlap($candidate['days'], $course->meetingDayValues()))
             ->concat($classRoomConflicts)
             ->filter()
             ->unique('id')
@@ -368,7 +368,7 @@ class AdminScheduleConflictService
             return collect();
         }
 
-        $query = ClassRoom::query()
+        $query = LopHoc::query()
             ->with([
                 'subject.category',
                 'course.teacher',
@@ -378,7 +378,7 @@ class AdminScheduleConflictService
                 'schedules.teacher',
             ])
             ->where('room_id', $candidate['room_id'])
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->when($candidate['exclude_class_room_id'] ?? null, fn (Builder $builder) => $builder->whereKeyNot($candidate['exclude_class_room_id']))
             ->whereHas('schedules', function (Builder $query) use ($candidate) {
                 $query->whereIn('day_of_week', $candidate['days'])
@@ -387,7 +387,7 @@ class AdminScheduleConflictService
             });
 
         return $query->get()
-            ->filter(fn (ClassRoom $classRoom) => $classRoom->overlapsDateRange(
+            ->filter(fn (LopHoc $classRoom) => $classRoom->overlapsDateRange(
                 Carbon::parse($candidate['start_date'])->startOfDay(),
                 Carbon::parse($candidate['end_date'])->endOfDay(),
             ))
@@ -401,7 +401,7 @@ class AdminScheduleConflictService
 
     public function studentConflicts(): Collection
     {
-        $enrollments = Enrollment::query()
+        $enrollments = GhiDanh::query()
             ->with([
                 'user',
                 'subject.category',
@@ -412,11 +412,11 @@ class AdminScheduleConflictService
                 'classRoom.teacher',
                 'classRoom.schedules',
             ])
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->whereNotNull('lop_hoc_id')
             ->get();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         $rows = $enrollments
             ->groupBy('user_id')
@@ -438,14 +438,14 @@ class AdminScheduleConflictService
         }
 
         $studentIds = $targetClassRoom->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->pluck('user_id');
 
         if ($studentIds->isEmpty()) {
             return collect();
         }
 
-        $conflictingEnrollments = Enrollment::query()
+        $conflictingEnrollments = GhiDanh::query()
             ->with([
                 'user',
                 'course.subject.category',
@@ -454,9 +454,9 @@ class AdminScheduleConflictService
                 'course.classRooms.schedules',
             ])
             ->whereIn('user_id', $studentIds)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->whereHas('course', function (Builder $query) use ($candidate) {
-                $query->whereIn('status', Course::schedulingStatuses())
+                $query->whereIn('status', KhoaHoc::schedulingStatuses())
                     ->when($candidate['exclude_course_id'] ?? null, fn (Builder $builder) => $builder->whereKeyNot($candidate['exclude_course_id']))
                     ->where('start_time', '<', $candidate['end_time'])
                     ->where('end_time', '>', $candidate['start_time'])
@@ -467,7 +467,7 @@ class AdminScheduleConflictService
                     });
             })
             ->get()
-            ->filter(fn (Enrollment $enrollment) => $enrollment->course !== null
+            ->filter(fn (GhiDanh $enrollment) => $enrollment->course !== null
                 && $this->meetingDaysOverlap($candidate['days'], $enrollment->course->meetingDayValues()));
 
         return $conflictingEnrollments
@@ -475,7 +475,7 @@ class AdminScheduleConflictService
             ->map(function (Collection $studentEnrollments) use ($candidate) {
                 $student = $studentEnrollments->first()?->user;
                 $pairs = $studentEnrollments
-                    ->map(function (Enrollment $enrollment) use ($candidate) {
+                    ->map(function (GhiDanh $enrollment) use ($candidate) {
                         $conflictingCourse = $enrollment->course;
                         $conflictingClassRoom = $conflictingCourse?->currentClassRoom();
 
@@ -682,7 +682,7 @@ class AdminScheduleConflictService
         ];
     }
 
-    protected function buildStudentConflictPairKey(ClassRoom $firstClassRoom, ClassRoom $secondClassRoom, array $conflict): string
+    protected function buildStudentConflictPairKey(LopHoc $firstClassRoom, LopHoc $secondClassRoom, array $conflict): string
     {
         $ids = [(int) $firstClassRoom->id, (int) $secondClassRoom->id];
         sort($ids);
@@ -721,7 +721,7 @@ class AdminScheduleConflictService
             ->all();
     }
 
-    protected function buildSourceLabel(?Course $course, ?ClassRoom $classRoom): string
+    protected function buildSourceLabel(?KhoaHoc $course, ?LopHoc $classRoom): string
     {
         $parts = [];
 

@@ -15,15 +15,15 @@
             <div style="padding:28px;">
                 <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Chào {{ $application->name }},</p>
 
-                @if ($action === \App\Models\TeacherApplication::STATUS_APPROVED)
+                @if ($action === \App\Models\DonUngTuyenGiaoVien::STATUS_APPROVED)
                     <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
                         Hồ sơ ứng tuyển của bạn đã được <strong>duyệt</strong>. KhaiTriEdu đã kích hoạt tài khoản giảng viên để bạn có thể đăng nhập và bắt đầu làm việc trên hệ thống.
                     </p>
-                @elseif ($action === \App\Models\TeacherApplication::STATUS_NEEDS_REVISION)
+                @elseif ($action === \App\Models\DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION)
                     <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
                         Hồ sơ ứng tuyển của bạn hiện đang ở trạng thái <strong>cần bổ sung</strong>. Vui lòng xem ghi chú bên dưới và phản hồi lại để admin tiếp tục xử lý.
                     </p>
-                @elseif ($action === \App\Models\TeacherApplication::STATUS_REJECTED)
+                @elseif ($action === \App\Models\DonUngTuyenGiaoVien::STATUS_REJECTED)
                     <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
                         Cảm ơn bạn đã quan tâm đến vị trí giảng viên tại KhaiTriEdu. Hiện tại hồ sơ của bạn chưa phù hợp với nhu cầu tuyển chọn lần này.
                     </p>
@@ -36,7 +36,7 @@
                     </div>
                 @endif
 
-                @if ($action === \App\Models\TeacherApplication::STATUS_APPROVED && $username && $temporaryPassword)
+                @if ($action === \App\Models\DonUngTuyenGiaoVien::STATUS_APPROVED && $username && $temporaryPassword)
                     <div style="margin:20px 0;padding:20px;background:#ecfeff;border:1px solid #a5f3fc;border-radius:16px;">
                         <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0f766e;">Thông tin tài khoản giảng viên</p>
                         <p style="margin:0 0 10px;font-size:15px;line-height:1.7;"><strong>Tài khoản:</strong> {{ $username }}</p>

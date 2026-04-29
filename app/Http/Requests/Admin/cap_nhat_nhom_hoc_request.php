@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Category;
+use App\Models\NhomHoc;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -31,7 +31,7 @@ class UpdateStudyGroupRequest extends FormRequest
 
     public function rules(): array
     {
-        $categoryId = $this->route('category') instanceof Category
+        $categoryId = $this->route('category') instanceof NhomHoc
             ? $this->route('category')->id
             : $this->route('category');
 
@@ -41,7 +41,7 @@ class UpdateStudyGroupRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'program' => ['nullable', 'string', 'max:255'],
             'level' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', Rule::in([Category::STATUS_ACTIVE, Category::STATUS_INACTIVE])],
+            'status' => ['required', Rule::in([NhomHoc::STATUS_ACTIVE, NhomHoc::STATUS_INACTIVE])],
             'order' => ['nullable', 'integer', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
         ];

@@ -1,5 +1,5 @@
 @php
-    $statusValue = old('status', $department->status ?? \App\Models\Department::STATUS_ACTIVE);
+    $statusValue = old('status', $department->status ?? \App\Models\PhongBan::STATUS_ACTIVE);
 @endphp
 
 <div class="grid gap-5 md:grid-cols-2">
@@ -18,7 +18,7 @@
     <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">Trạng thái</label>
         <select name="status" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-            @foreach (\App\Models\Department::statusOptions() as $value => $label)
+            @foreach (\App\Models\PhongBan::statusOptions() as $value => $label)
                 <option value="{{ $value }}" @selected($statusValue === $value)>{{ $label }}</option>
             @endforeach
         </select>

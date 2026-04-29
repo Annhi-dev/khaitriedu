@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\ReviewLeaveRequest;
-use App\Models\LeaveRequest;
-use App\Models\User;
+use App\Models\YeuCauXinPhep;
+use App\Models\NguoiDung;
 use App\Services\LeaveRequestService;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class LeaveRequestController extends Controller
 {
     public function index(Request $request, LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -28,9 +28,9 @@ class LeaveRequestController extends Controller
         ], $service->teacherPageData($current, $filters)));
     }
 
-    public function show(LeaveRequest $leaveRequest, LeaveRequestService $service)
+    public function show(YeuCauXinPhep $leaveRequest, LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -41,9 +41,9 @@ class LeaveRequestController extends Controller
         return view('giao_vien.xin_phep.show', compact('current', 'leaveRequest'));
     }
 
-    public function review(ReviewLeaveRequest $request, LeaveRequest $leaveRequest, LeaveRequestService $service)
+    public function review(ReviewLeaveRequest $request, YeuCauXinPhep $leaveRequest, LeaveRequestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;

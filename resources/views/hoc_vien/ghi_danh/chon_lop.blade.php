@@ -154,9 +154,9 @@
                             @if($class->schedules->isNotEmpty())
                                 <div class="mt-4 flex flex-wrap gap-2">
                                     @foreach($class->schedules as $s)
-                                        <span class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
-                                            <i class="fas fa-clock text-slate-400"></i>
-                                            {{ \App\Models\ClassSchedule::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}
+                                            <span class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                                                <i class="fas fa-clock text-slate-400"></i>
+                                            {{ \App\Models\LichHoc::$dayOptions[$s->day_of_week] ?? $s->day_of_week }}
                                             {{ $s->start_time }}–{{ $s->end_time }}
                                         </span>
                                     @endforeach

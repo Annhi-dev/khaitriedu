@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Module;
+use App\Models\HocPhan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +32,7 @@ class UpdateCourseModuleRequest extends FormRequest
             'session_count' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'duration' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'position' => ['nullable', 'integer', 'min:1', 'max:9999'],
-            'status' => ['required', Rule::in([Module::STATUS_PUBLISHED, Module::STATUS_UNPUBLISHED])],
+            'status' => ['required', Rule::in([HocPhan::STATUS_PUBLISHED, HocPhan::STATUS_UNPUBLISHED])],
         ];
     }
 }

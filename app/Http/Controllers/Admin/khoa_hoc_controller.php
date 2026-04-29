@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ScheduleHelper;
 use App\Http\Controllers\Controller;
-use App\Models\ClassRoom;
-use App\Models\Enrollment;
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\GhiDanh;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\AdminCourseScheduleService;
 use App\Services\AdminScheduleConflictService;
 use App\Services\AdminScheduleService;
@@ -23,7 +23,7 @@ class CourseController extends Controller
 {
     public function index(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -35,15 +35,15 @@ class CourseController extends Controller
             : null;
 
         if ($request->filled('subject_id')) {
-            $selectedSubject = Subject::with('category')->find((int) $request->query('subject_id'));
+            $selectedSubject = MonHoc::with('category')->find((int) $request->query('subject_id'));
             $selectedCategory = $selectedSubject?->category;
         }
 
         if (! $selectedCategory && $returnToCategoryId) {
-            $selectedCategory = Category::find($returnToCategoryId);
+            $selectedCategory = NhomHoc::find($returnToCategoryId);
         }
 
-        $subjectsQuery = Subject::with('category')->orderBy('name');
+        $subjectsQuery = MonHoc::with('category')->orderBy('name');
 
         if ($selectedCategory) {
             $subjectsQuery->where('category_id', $selectedCategory->id);
@@ -55,7 +55,7 @@ class CourseController extends Controller
             $subjects = $subjects->prepend($selectedSubject);
         }
 
-        $coursesQuery = Course::with(['subject.category', 'teacher'])
+        $coursesQuery = KhoaHoc::with(['subject.category', 'teacher'])
             ->withCount('enrollments')
             ->orderBy('title');
 
@@ -64,8 +64,8 @@ class CourseController extends Controller
         }
 
         $courses = $coursesQuery->get();
-        $categories = Category::orderBy('name')->get();
-        $subjectSuggestions = $subjects->map(function (Subject $subject): array {
+        $categories = NhomHoc::orderBy('name')->get();
+        $subjectSuggestions = $subjects->map(function (MonHoc $subject): array {
             return [
                 'id' => $subject->id,
                 'name' => $subject->name,
@@ -90,9 +90,9 @@ class CourseController extends Controller
         ));
     }
 
-    public function show(Course $course)
+    public function show(KhoaHoc $course)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -102,15 +102,15 @@ class CourseController extends Controller
             'teacher',
             'modules' => fn ($query) => $query->with('lessons')->orderBy('position'),
         ])->loadCount('enrollments');
-        $teachers = User::teachers()->orderBy('name')->get();
-        $subjects = Subject::with('category')->orderBy('name')->get();
+        $teachers = NguoiDung::teachers()->orderBy('name')->get();
+        $subjects = MonHoc::with('category')->orderBy('name')->get();
 
         return view('quan_tri.khoa_hoc.show', compact('course', 'teachers', 'subjects', 'current'));
     }
 
     public function store(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -124,7 +124,7 @@ class CourseController extends Controller
         ]);
 
         if ($request->filled('subject_id')) {
-            $subjectForCategory = Subject::query()->find((int) $request->input('subject_id'));
+            $subjectForCategory = MonHoc::query()->find((int) $request->input('subject_id'));
 
             if ($subjectForCategory) {
                 $request->merge([
@@ -146,13 +146,13 @@ class CourseController extends Controller
             'return_to_category_id' => 'nullable|exists:danh_muc,id',
         ]);
 
-        $course = DB::transaction(function () use ($data): Course {
+        $course = DB::transaction(function () use ($data): KhoaHoc {
             if (! empty($data['subject_id'])) {
-                $subject = Subject::query()->findOrFail((int) $data['subject_id']);
+                $subject = MonHoc::query()->findOrFail((int) $data['subject_id']);
             } else {
                 $subjectName = trim((string) $data['subject_name']);
 
-                $subject = Subject::query()->firstOrCreate(
+                $subject = MonHoc::query()->firstOrCreate(
                     [
                         'category_id' => (int) $data['category_id'],
                         'name' => $subjectName,
@@ -161,12 +161,12 @@ class CourseController extends Controller
                         'description' => $data['description'] ?? null,
                         'price' => $data['price'] ?? 0,
                         'duration' => $data['subject_duration'] ?? 12,
-                        'status' => Subject::STATUS_OPEN,
+                        'status' => MonHoc::STATUS_OPEN,
                     ]
                 );
             }
 
-            return Course::create([
+            return KhoaHoc::create([
                 'subject_id' => $subject->id,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
@@ -188,13 +188,13 @@ class CourseController extends Controller
 
     public function update(
         Request $request,
-        Course $course,
+        KhoaHoc $course,
         AdminScheduleConflictService $conflictService,
         AdminScheduleService $scheduleService,
         AdminCourseScheduleService $courseScheduleService
     )
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -207,7 +207,7 @@ class CourseController extends Controller
             'teacher_id' => 'nullable|exists:nguoi_dung,id',
             'schedule' => 'nullable|string|max:255',
             'meeting_days' => ['nullable', 'array'],
-            'meeting_days.*' => ['string', Rule::in(array_keys(Course::dayOptions()))],
+            'meeting_days.*' => ['string', Rule::in(array_keys(KhoaHoc::dayOptions()))],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'start_time' => ['nullable', 'date_format:H:i'],
@@ -318,11 +318,11 @@ class CourseController extends Controller
 
     public function previewSchedule(
         Request $request,
-        Course $course,
+        KhoaHoc $course,
         AdminScheduleConflictService $conflictService,
         AdminCourseScheduleService $courseScheduleService
     ) {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -370,7 +370,7 @@ class CourseController extends Controller
         return 'Lịch này đang bị trùng ' . implode(', ', $conflictLabels) . '. Hãy chỉnh lại ngày hoặc giờ rồi kiểm tra lại ngay bên dưới.';
     }
 
-    protected function buildConflictRedirectQuery(Course $course, array $courseData): array
+    protected function buildConflictRedirectQuery(KhoaHoc $course, array $courseData): array
     {
         return array_filter([
             'course_id' => $course->id,
@@ -421,7 +421,7 @@ class CourseController extends Controller
     {
         return collect($conflicts)
             ->values()
-            ->map(function (Course $course): array {
+            ->map(function (KhoaHoc $course): array {
                 $classRoom = $course->currentClassRoom();
 
                 return [
@@ -443,7 +443,7 @@ class CourseController extends Controller
     {
         return collect($conflicts)
             ->values()
-            ->map(function (ClassRoom $classRoom): array {
+            ->map(function (LopHoc $classRoom): array {
                 return [
                     'title' => $classRoom->displayName(),
                     'schedule' => $classRoom->scheduleSummary(),
@@ -487,7 +487,7 @@ class CourseController extends Controller
             ->all();
     }
 
-    protected function resolveStartDate(Course $course, ?ClassRoom $classRoom, mixed $startDate): ?string
+    protected function resolveStartDate(KhoaHoc $course, ?LopHoc $classRoom, mixed $startDate): ?string
     {
         if (is_string($startDate) && $startDate !== '') {
             return $startDate;
@@ -504,7 +504,7 @@ class CourseController extends Controller
         return null;
     }
 
-    protected function resolveEndDate(Course $course, ?ClassRoom $classRoom, mixed $endDate, ?string $startDate): ?string
+    protected function resolveEndDate(KhoaHoc $course, ?LopHoc $classRoom, mixed $endDate, ?string $startDate): ?string
     {
         if (is_string($endDate) && $endDate !== '') {
             return $endDate;
@@ -529,7 +529,7 @@ class CourseController extends Controller
 
         if ($meetingDays !== []) {
             $segments[] = implode(', ', array_map(function (string $day): string {
-                return Course::dayOptions()[$day] ?? $day;
+                return KhoaHoc::dayOptions()[$day] ?? $day;
             }, $meetingDays));
         }
 
@@ -546,9 +546,9 @@ class CourseController extends Controller
         return $segments !== [] ? implode(' | ', $segments) : 'Chưa có lịch cụ thể';
     }
 
-    public function destroy(Course $course)
+    public function destroy(KhoaHoc $course)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -560,21 +560,21 @@ class CourseController extends Controller
 
     public function apiBaseCourse($id)
     {
-        $subject = \App\Models\Subject::findOrFail($id);
+        $subject = \App\Models\MonHoc::findOrFail($id);
         
-        $totalClasses = \App\Models\Course::where('subject_id', $subject->id)->count();
+        $totalClasses = \App\Models\KhoaHoc::where('subject_id', $subject->id)->count();
 
         return response()->json([
             'name' => $subject->name,
             'price' => $subject->price ?? 0,
-            'capacity' => Course::defaultCapacity(),
+            'capacity' => KhoaHoc::defaultCapacity(),
             'total_classes' => $totalClasses,
         ]);
     }
 
-    public function assign(Request $request, Course $course)
+    public function assign(Request $request, KhoaHoc $course)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -592,9 +592,9 @@ class CourseController extends Controller
         return redirect()->route('admin.courses')->with('status', 'Khóa học đã cập nhật giảng viên và lịch.');
     }
 
-    public function storeSubjectCourse(Request $request, Subject $subject)
+    public function storeSubjectCourse(Request $request, MonHoc $subject)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
@@ -607,7 +607,7 @@ class CourseController extends Controller
             'schedule' => 'nullable|string|max:255',
         ]);
 
-        Course::create([
+        KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
@@ -619,12 +619,12 @@ class CourseController extends Controller
         return back()->with('status', 'Khóa học thực tế đã được thêm vào khóa gốc.');
     }
 
-    protected function syncTeacherAssignments(Course $course): void
+    protected function syncTeacherAssignments(KhoaHoc $course): void
     {
         $course->loadMissing('classRooms');
 
         $activeClassRooms = $course->classRooms()
-            ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+            ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
             ->with('schedules')
             ->get();
 
@@ -638,13 +638,13 @@ class CourseController extends Controller
         }
 
         $course->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->update([
                 'assigned_teacher_id' => $course->teacher_id,
             ]);
     }
 
-    protected function syncCourseReferences(Course $course, array $previous): void
+    protected function syncCourseReferences(KhoaHoc $course, array $previous): void
     {
         $newSubjectId = (int) ($course->subject_id ?? 0);
         $oldTitle = trim((string) ($previous['title'] ?? ''));

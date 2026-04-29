@@ -3,27 +3,27 @@
 namespace App\Services;
 
 use App\Exceptions\EnrollmentOperationException;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StudentEnrollmentService
 {
-    public function paginateAvailableSubjects(User $student): LengthAwarePaginator
+    public function paginateAvailableSubjects(NguoiDung $student): LengthAwarePaginator
     {
-        return Subject::query()
+        return MonHoc::query()
             ->with([
                 'category',
                 'classRooms' => fn ($query) => $query
                     ->with(['room', 'teacher', 'schedules'])
                     ->withCount('enrollments')
-                    ->where('status', ClassRoom::STATUS_OPEN),
+                    ->where('status', LopHoc::STATUS_OPEN),
                 'enrollments' => fn ($query) => $query
                     ->where('user_id', $student->id)
                     ->latest('id'),
@@ -33,7 +33,7 @@ class StudentEnrollmentService
             ->paginate(12);
     }
 
-    public function getFixedClassSelectionContext(User $student, Subject $subject): array
+    public function getFixedClassSelectionContext(NguoiDung $student, MonHoc $subject): array
     {
         $this->ensureSubjectIsAvailable($subject);
         $subject->loadMissing('category');
@@ -56,7 +56,7 @@ class StudentEnrollmentService
         ];
     }
 
-    public function getCustomRequestContext(User $student, Subject $subject): array
+    public function getCustomRequestContext(NguoiDung $student, MonHoc $subject): array
     {
         $this->ensureSubjectIsAvailable($subject);
 
@@ -65,7 +65,7 @@ class StudentEnrollmentService
             'classRooms' => fn ($query) => $query
                 ->with(['room', 'teacher', 'schedules'])
                 ->withCount('enrollments')
-                ->where('status', ClassRoom::STATUS_OPEN),
+                ->where('status', LopHoc::STATUS_OPEN),
         ]);
 
         return [
@@ -78,18 +78,18 @@ class StudentEnrollmentService
                 'course',
             ]),
             'openClasses' => $subject->classRooms
-                ->filter(fn (ClassRoom $classRoom) => ! $classRoom->isFull())
+                ->filter(fn (LopHoc $classRoom) => ! $classRoom->isFull())
                 ->values(),
-            'dayOptions' => ClassSchedule::$dayOptions,
+            'dayOptions' => LichHoc::$dayOptions,
         ];
     }
 
-    public function submitFixedClassEnrollment(User $student, Subject $subject, int $classRoomId): string
+    public function submitFixedClassEnrollment(NguoiDung $student, MonHoc $subject, int $classRoomId): string
     {
         $this->ensureSubjectIsAvailable($subject);
 
         return DB::transaction(function () use ($student, $subject, $classRoomId) {
-            $classRoom = ClassRoom::query()
+            $classRoom = LopHoc::query()
                 ->with(['room', 'teacher', 'schedules'])
                 ->withCount('enrollments')
                 ->lockForUpdate()
@@ -110,7 +110,7 @@ class StudentEnrollmentService
             }
 
             $existingEnrollment = $this->findSubjectEnrollment($student->id, $subject->id);
-            $existingClassEnrollment = Enrollment::query()
+            $existingClassEnrollment = GhiDanh::query()
                 ->where('user_id', $student->id)
                 ->where('lop_hoc_id', $classRoom->id)
                 ->latest('id')
@@ -134,7 +134,7 @@ class StudentEnrollmentService
                 'lop_hoc_id' => $classRoom->id,
                 'preferred_schedule' => null,
                 'assigned_teacher_id' => $classRoom->teacher_id,
-                'status' => Enrollment::STATUS_ENROLLED,
+                'status' => GhiDanh::STATUS_ENROLLED,
                 'note' => null,
                 'schedule' => $classRoom->schedules->isNotEmpty() ? $classRoom->scheduleSummary() : null,
                 'start_time' => null,
@@ -149,12 +149,12 @@ class StudentEnrollmentService
             if ($targetEnrollment) {
                 $targetEnrollment->fill($payload)->save();
             } else {
-                Enrollment::create(array_merge($payload, [
+                GhiDanh::create(array_merge($payload, [
                     'user_id' => $student->id,
                 ]));
             }
 
-            $savedEnrollment = $targetEnrollment?->fresh() ?? Enrollment::query()
+            $savedEnrollment = $targetEnrollment?->fresh() ?? GhiDanh::query()
                 ->where('user_id', $student->id)
                 ->where('subject_id', $subject->id)
                 ->latest('id')
@@ -175,7 +175,7 @@ class StudentEnrollmentService
         });
     }
 
-    public function submitCustomScheduleRequest(User $student, Subject $subject, array $data): string
+    public function submitCustomScheduleRequest(NguoiDung $student, MonHoc $subject, array $data): string
     {
         $this->ensureSubjectIsAvailable($subject);
 
@@ -210,12 +210,12 @@ class StudentEnrollmentService
             ];
 
             if ($existingEnrollment) {
-                if (in_array($existingEnrollment->normalizedStatus(), [Enrollment::STATUS_REJECTED, Enrollment::STATUS_PENDING], true)) {
-                    $payload['status'] = Enrollment::STATUS_PENDING;
+                if (in_array($existingEnrollment->normalizedStatus(), [GhiDanh::STATUS_REJECTED, GhiDanh::STATUS_PENDING], true)) {
+                    $payload['status'] = GhiDanh::STATUS_PENDING;
                     $payload['reviewed_by'] = null;
                     $payload['reviewed_at'] = null;
-                } elseif ($existingEnrollment->normalizedStatus() === Enrollment::STATUS_APPROVED) {
-                    $payload['status'] = Enrollment::STATUS_APPROVED;
+                } elseif ($existingEnrollment->normalizedStatus() === GhiDanh::STATUS_APPROVED) {
+                    $payload['status'] = GhiDanh::STATUS_APPROVED;
                 } else {
                     $payload['status'] = $existingEnrollment->status;
                 }
@@ -235,9 +235,9 @@ class StudentEnrollmentService
                 return 'Yêu cầu đăng ký của bạn đã được cập nhật. Admin sẽ xem lại và xếp lớp phù hợp.';
             }
 
-            $savedEnrollment = Enrollment::create(array_merge($payload, [
+            $savedEnrollment = GhiDanh::create(array_merge($payload, [
                 'user_id' => $student->id,
-                'status' => Enrollment::STATUS_PENDING,
+                'status' => GhiDanh::STATUS_PENDING,
                 'reviewed_by' => null,
                 'reviewed_at' => null,
             ]));
@@ -256,9 +256,9 @@ class StudentEnrollmentService
         });
     }
 
-    public function paginateStudentEnrollments(User $student): LengthAwarePaginator
+    public function paginateStudentEnrollments(NguoiDung $student): LengthAwarePaginator
     {
-        $paginator = Enrollment::query()
+        $paginator = GhiDanh::query()
             ->with([
                 'subject.category',
                 'course',
@@ -272,59 +272,59 @@ class StudentEnrollmentService
             ->paginate(10);
 
         $collection = $paginator->getCollection();
-        Enrollment::syncDisplayStatusesByClass($collection);
+        GhiDanh::syncDisplayStatusesByClass($collection);
         $paginator->setCollection($collection);
 
         return $paginator;
     }
 
-    protected function openClassesForSubject(Subject $subject)
+    protected function openClassesForSubject(MonHoc $subject)
     {
-        return ClassRoom::query()
+        return LopHoc::query()
             ->with(['subject', 'course', 'room', 'teacher', 'schedules'])
             ->withCount('enrollments')
             ->where('subject_id', $subject->id)
-            ->where('status', ClassRoom::STATUS_OPEN)
+            ->where('status', LopHoc::STATUS_OPEN)
             ->get()
-            ->sortBy(fn (ClassRoom $classRoom) => $classRoom->enrollmentAvailabilitySortKey())
+            ->sortBy(fn (LopHoc $classRoom) => $classRoom->enrollmentAvailabilitySortKey())
             ->values();
     }
 
-    protected function ensureSubjectIsAvailable(Subject $subject): void
+    protected function ensureSubjectIsAvailable(MonHoc $subject): void
     {
         if (! $subject->isOpenForEnrollment()) {
             throw new EnrollmentOperationException('Khóa học này hiện chưa mở đăng ký.');
         }
     }
 
-    protected function findSubjectEnrollment(int $userId, int $subjectId, array $with = []): ?Enrollment
+    protected function findSubjectEnrollment(int $userId, int $subjectId, array $with = []): ?GhiDanh
     {
-        return Enrollment::query()
+        return GhiDanh::query()
             ->with($with)
             ->forUserSubject($userId, $subjectId)
             ->latest('id')
             ->first();
     }
 
-    protected function syncClassStatus(ClassRoom $classRoom): void
+    protected function syncClassStatus(LopHoc $classRoom): void
     {
         if (! $classRoom->room) {
             return;
         }
 
         $classRoom->update([
-            'status' => $classRoom->isFull() ? ClassRoom::STATUS_FULL : ClassRoom::STATUS_OPEN,
+            'status' => $classRoom->isFull() ? LopHoc::STATUS_FULL : LopHoc::STATUS_OPEN,
         ]);
     }
 
     protected function notifyAdmins(string $title, string $message, string $link): void
     {
-        User::query()
-            ->whereHas('role', fn ($query) => $query->where('name', User::ROLE_ADMIN))
-            ->where('status', User::STATUS_ACTIVE)
+        NguoiDung::query()
+            ->whereHas('role', fn ($query) => $query->where('name', NguoiDung::ROLE_ADMIN))
+            ->where('status', NguoiDung::STATUS_ACTIVE)
             ->get()
-            ->each(function (User $admin) use ($title, $message, $link): void {
-                Notification::create([
+            ->each(function (NguoiDung $admin) use ($title, $message, $link): void {
+                ThongBao::create([
                     'user_id' => $admin->id,
                     'title' => $title,
                     'message' => $message,
@@ -334,9 +334,9 @@ class StudentEnrollmentService
             });
     }
 
-    protected function ensureStudentHasNoScheduleConflict(User $student, ClassRoom $targetClassRoom, ?int $ignoreEnrollmentId = null): void
+    protected function ensureStudentHasNoScheduleConflict(NguoiDung $student, LopHoc $targetClassRoom, ?int $ignoreEnrollmentId = null): void
     {
-        $conflict = Enrollment::query()
+        $conflict = GhiDanh::query()
             ->with([
                 'classRoom.course',
                 'classRoom.schedules',
@@ -345,14 +345,14 @@ class StudentEnrollmentService
             ->where('user_id', $student->id)
             ->when($ignoreEnrollmentId, fn ($query) => $query->whereKeyNot($ignoreEnrollmentId))
             ->whereIn('status', [
-                Enrollment::LEGACY_STATUS_CONFIRMED,
-                Enrollment::STATUS_ENROLLED,
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::STATUS_ACTIVE,
-                Enrollment::STATUS_COMPLETED,
+                GhiDanh::LEGACY_STATUS_CONFIRMED,
+                GhiDanh::STATUS_ENROLLED,
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::STATUS_ACTIVE,
+                GhiDanh::STATUS_COMPLETED,
             ])
             ->get()
-            ->first(function (Enrollment $enrollment) use ($targetClassRoom): bool {
+            ->first(function (GhiDanh $enrollment) use ($targetClassRoom): bool {
                 $existingClassRoom = $enrollment->conflictReferenceClassRoom();
 
                 return $existingClassRoom !== null
@@ -372,7 +372,7 @@ class StudentEnrollmentService
         string $endTime,
         ?int $ignoreEnrollmentId = null
     ): void {
-        $conflict = Enrollment::query()
+        $conflict = GhiDanh::query()
             ->with([
                 'classRoom.course',
                 'classRoom.schedules',
@@ -380,9 +380,9 @@ class StudentEnrollmentService
             ])
             ->where('user_id', $studentId)
             ->when($ignoreEnrollmentId, fn ($query) => $query->whereKeyNot($ignoreEnrollmentId))
-            ->whereIn('status', Enrollment::scheduleBlockingStatuses())
+            ->whereIn('status', GhiDanh::scheduleBlockingStatuses())
             ->get()
-            ->first(function (Enrollment $enrollment) use ($meetingDays, $startTime, $endTime): bool {
+            ->first(function (GhiDanh $enrollment) use ($meetingDays, $startTime, $endTime): bool {
                 $existingClassRoom = $enrollment->conflictReferenceClassRoom();
 
                 if (! $existingClassRoom) {
@@ -426,15 +426,15 @@ class StudentEnrollmentService
         return $startA < $endB && $endA > $startB;
     }
 
-    protected function buildScheduleConflictMap(User $student, Collection $classes): array
+    protected function buildScheduleConflictMap(NguoiDung $student, Collection $classes): array
     {
-        $activeEnrollments = Enrollment::query()
+        $activeEnrollments = GhiDanh::query()
             ->with([
                 'classRoom.course',
                 'classRoom.schedules',
             ])
             ->where('user_id', $student->id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->whereNotNull('lop_hoc_id')
             ->get();
 

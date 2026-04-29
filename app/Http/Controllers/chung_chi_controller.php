@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Certificate;
+use App\Models\ChungChi;
 
 class CertificateController extends Controller
 {
@@ -14,7 +14,7 @@ class CertificateController extends Controller
             return redirect()->route('login');
         }
 
-        $certificates = Certificate::where('user_id', $user->id)
+        $certificates = ChungChi::where('user_id', $user->id)
             ->with('course')
             ->orderBy('issued_at', 'desc')
             ->get();
@@ -25,7 +25,7 @@ class CertificateController extends Controller
     public function show($id)
     {
         $user = $this->sessionUser();
-        $cert = Certificate::with('course')->find($id);
+        $cert = ChungChi::with('course')->find($id);
 
         if (! $user || ! $cert || $cert->user_id !== $user->id) {
             return redirect()->route('certificates.index')->with('error', 'Chứng chỉ không tồn tại.');

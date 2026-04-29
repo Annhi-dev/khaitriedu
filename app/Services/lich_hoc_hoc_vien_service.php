@@ -2,21 +2,21 @@
 
 namespace App\Services;
 
-use App\Models\AttendanceRecord;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Enrollment;
-use App\Models\User;
+use App\Models\DiemDanh;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\GhiDanh;
+use App\Models\NguoiDung;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class StudentScheduleService
 {
-    public function scheduleData(User $student): array
+    public function scheduleData(NguoiDung $student): array
     {
-        $enrollments = Enrollment::query()
+        $enrollments = GhiDanh::query()
             ->where('user_id', $student->id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->whereNotNull('course_id')
             ->with([
                 'course.subject',
@@ -25,14 +25,14 @@ class StudentScheduleService
                 'classRoom.teacher',
                 'classRoom.schedules',
                 'classRoom.enrollments' => fn ($query) => $query
-                    ->whereIn('status', Enrollment::courseAccessStatuses())
+                    ->whereIn('status', GhiDanh::courseAccessStatuses())
                     ->with('user')
                     ->orderByDesc('id'),
             ])
             ->orderByDesc('id')
             ->get();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         $classRoomIds = $enrollments
             ->pluck('lop_hoc_id')
@@ -43,7 +43,7 @@ class StudentScheduleService
         $attendanceSummaries = collect();
 
         if ($classRoomIds->isNotEmpty()) {
-            $attendanceRows = AttendanceRecord::query()
+            $attendanceRows = DiemDanh::query()
                 ->where('student_id', $student->id)
                 ->whereIn('class_room_id', $classRoomIds)
                 ->orderByDesc('attendance_date')
@@ -54,10 +54,10 @@ class StudentScheduleService
                 ->groupBy('class_room_id')
                 ->map(function (Collection $rows) {
                     $total = $rows->count();
-                    $present = $rows->where('status', AttendanceRecord::STATUS_PRESENT)->count();
-                    $late = $rows->where('status', AttendanceRecord::STATUS_LATE)->count();
-                    $excused = $rows->where('status', AttendanceRecord::STATUS_EXCUSED)->count();
-                    $absent = $rows->where('status', AttendanceRecord::STATUS_ABSENT)->count();
+                    $present = $rows->where('status', DiemDanh::STATUS_PRESENT)->count();
+                    $late = $rows->where('status', DiemDanh::STATUS_LATE)->count();
+                    $excused = $rows->where('status', DiemDanh::STATUS_EXCUSED)->count();
+                    $absent = $rows->where('status', DiemDanh::STATUS_ABSENT)->count();
 
                     return [
                         'total' => $total,
@@ -80,11 +80,11 @@ class StudentScheduleService
         ];
     }
 
-    public function weeklyEntries(User $student): Collection
+    public function weeklyEntries(NguoiDung $student): Collection
     {
-        $enrollments = Enrollment::query()
+        $enrollments = GhiDanh::query()
             ->where('user_id', $student->id)
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->whereNotNull('course_id')
             ->with([
                 'course.subject.category',
@@ -96,21 +96,21 @@ class StudentScheduleService
             ->orderByDesc('id')
             ->get();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         return $enrollments
-            ->flatMap(function (Enrollment $enrollment) {
+            ->flatMap(function (GhiDanh $enrollment) {
                 if ($enrollment->classRoom && $enrollment->classRoom->schedules->isNotEmpty()) {
                     $classRoom = $enrollment->classRoom;
                     $classStatus = (string) ($classRoom->status ?? '');
-                    $classFinished = in_array($classStatus, [ClassRoom::STATUS_COMPLETED, ClassRoom::STATUS_CLOSED], true)
+                    $classFinished = in_array($classStatus, [LopHoc::STATUS_COMPLETED, LopHoc::STATUS_CLOSED], true)
                         || $this->isClassRoomFinished($classRoom);
 
                     if ($classFinished) {
                         return collect();
                     }
 
-                    return $classRoom->schedules->map(function (ClassSchedule $schedule) use ($enrollment, $classRoom, $classStatus, $classFinished) {
+                    return $classRoom->schedules->map(function (LichHoc $schedule) use ($enrollment, $classRoom, $classStatus, $classFinished) {
                         $roomName = $schedule->room?->name ?? $classRoom->room?->name ?? 'Chua phan phong';
                         $teacherName = $classRoom->teacher?->displayName() ?? $enrollment->assignedTeacher?->displayName() ?? 'Chua phan cong';
                         $status = $enrollment->displayStatus();
@@ -128,8 +128,8 @@ class StudentScheduleService
                             'meta' => implode(' • ', array_filter([$teacherName, $roomName])),
                             'badge' => $enrollment->displayStatusLabel(),
                             'badge_class' => match ($status) {
-                                Enrollment::STATUS_ACTIVE, Enrollment::STATUS_ENROLLED, Enrollment::STATUS_SCHEDULED => 'bg-emerald-100 text-emerald-700',
-                                Enrollment::STATUS_PENDING, Enrollment::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
+                                GhiDanh::STATUS_ACTIVE, GhiDanh::STATUS_ENROLLED, GhiDanh::STATUS_SCHEDULED => 'bg-emerald-100 text-emerald-700',
+                                GhiDanh::STATUS_PENDING, GhiDanh::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
                                 default => 'bg-slate-100 text-slate-600',
                             },
                             'tone' => 'emerald',
@@ -167,14 +167,14 @@ class StudentScheduleService
             ->values();
     }
 
-    protected function isClassRoomFinished(ClassRoom $classRoom): bool
+    protected function isClassRoomFinished(LopHoc $classRoom): bool
     {
         $endDate = $classRoom->scheduleRangeEnd();
 
         return $endDate !== null && now()->startOfDay()->gt($endDate->copy()->startOfDay());
     }
 
-    public function weeklyTimetable(User $student, ?CarbonInterface $reference = null): array
+    public function weeklyTimetable(NguoiDung $student, ?CarbonInterface $reference = null): array
     {
         return app(WeeklyTimetableService::class)->build($this->weeklyEntries($student), $reference);
     }

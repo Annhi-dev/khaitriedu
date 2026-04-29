@@ -1,9 +1,9 @@
 @php
     $subject = $subject ?? null;
     $selectedCategory = $selectedCategory ?? null;
-    $statusValue = old('status', $subject->status ?? \App\Models\Subject::STATUS_OPEN);
+    $statusValue = old('status', $subject->status ?? \App\Models\MonHoc::STATUS_OPEN);
     $selectedCategoryId = (string) old('category_id', $subject->category_id ?? $selectedCategory?->id ?? request('category_id', ''));
-    $testCountValue = old('test_count', $subject->test_count ?? \App\Models\Subject::DEFAULT_TEST_COUNT);
+    $testCountValue = old('test_count', $subject->test_count ?? \App\Models\MonHoc::DEFAULT_TEST_COUNT);
     $returnToCategoryId = old('return_to_category_id', $returnToCategoryId ?? null);
 @endphp
 @if ($returnToCategoryId)
@@ -34,10 +34,10 @@
                 <div>
                     <label for="status" class="mb-2 block text-sm font-medium text-slate-700">Trang thai</label>
                     <select id="status" name="status" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                        <option value="{{ \App\Models\Subject::STATUS_DRAFT }}" @selected($statusValue === \App\Models\Subject::STATUS_DRAFT)>Nhap</option>
-                        <option value="{{ \App\Models\Subject::STATUS_OPEN }}" @selected($statusValue === \App\Models\Subject::STATUS_OPEN)>Dang mo</option>
-                        <option value="{{ \App\Models\Subject::STATUS_CLOSED }}" @selected($statusValue === \App\Models\Subject::STATUS_CLOSED)>Dong dang ky</option>
-                        <option value="{{ \App\Models\Subject::STATUS_ARCHIVED }}" @selected($statusValue === \App\Models\Subject::STATUS_ARCHIVED)>Luu tru</option>
+                        <option value="{{ \App\Models\MonHoc::STATUS_DRAFT }}" @selected($statusValue === \App\Models\MonHoc::STATUS_DRAFT)>Nhap</option>
+                        <option value="{{ \App\Models\MonHoc::STATUS_OPEN }}" @selected($statusValue === \App\Models\MonHoc::STATUS_OPEN)>Dang mo</option>
+                        <option value="{{ \App\Models\MonHoc::STATUS_CLOSED }}" @selected($statusValue === \App\Models\MonHoc::STATUS_CLOSED)>Dong dang ky</option>
+                        <option value="{{ \App\Models\MonHoc::STATUS_ARCHIVED }}" @selected($statusValue === \App\Models\MonHoc::STATUS_ARCHIVED)>Luu tru</option>
                     </select>
                     @error('status')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                 </div>

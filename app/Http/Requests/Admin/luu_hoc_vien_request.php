@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\User;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +21,7 @@ class StoreStudentRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique('nguoi_dung', 'email')],
             'phone' => ['nullable', 'string', 'max:30', Rule::unique('nguoi_dung', 'phone')],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
-            'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])],
+            'status' => ['required', Rule::in([NguoiDung::STATUS_ACTIVE, NguoiDung::STATUS_INACTIVE])],
         ];
     }
 }

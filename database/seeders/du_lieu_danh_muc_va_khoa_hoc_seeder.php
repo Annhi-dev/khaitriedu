@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Announcement;
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\ThongBaoChung;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Services\CourseCurriculumService;
 use App\Services\CourseScheduleSyncService;
 use Illuminate\Database\Seeder;
@@ -19,7 +19,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::query()
+        $admin = NguoiDung::query()
             ->where('email', 'admin@khaitriedu.vn')
             ->firstOrFail();
 
@@ -30,10 +30,10 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
         app(CourseCurriculumService::class)->syncCourses($courses->values());
 
         $syncableCourses = $courses
-            ->filter(fn (Course $course) => in_array($course->status, [
-                Course::STATUS_ACTIVE,
-                Course::STATUS_SCHEDULED,
-                Course::STATUS_COMPLETED,
+            ->filter(fn (KhoaHoc $course) => in_array($course->status, [
+                KhoaHoc::STATUS_ACTIVE,
+                KhoaHoc::STATUS_SCHEDULED,
+                KhoaHoc::STATUS_COMPLETED,
             ], true))
             ->values();
 
@@ -69,7 +69,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
         foreach ($fixtures as $index => $fixture) {
             $categories->put(
                 $fixture['key'],
-                Category::updateOrCreate(
+                NhomHoc::updateOrCreate(
                     ['slug' => $fixture['slug']],
                     [
                         'name' => $fixture['name'],
@@ -77,7 +77,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                         'description' => sprintf('Nhóm đào tạo %s của KhaiTriEdu.', $fixture['name']),
                         'program' => $fixture['program'],
                         'level' => $fixture['level'],
-                        'status' => Category::STATUS_ACTIVE,
+                        'status' => NhomHoc::STATUS_ACTIVE,
                         'order' => $fixture['order'],
                         'created_at' => $now->subDays(40 - $index),
                         'updated_at' => $now->subDays(40 - $index),
@@ -92,18 +92,18 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
     protected function seedRooms(): Collection
     {
         $fixtures = [
-            ['code' => 'PH101', 'name' => 'Phòng Lý thuyết A1', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 12, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết nhỏ cho lớp tối.'],
-            ['code' => 'PH102', 'name' => 'Phòng Lý thuyết A2', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết tiêu chuẩn, có máy chiếu.'],
-            ['code' => 'PH103', 'name' => 'Phòng Lý thuyết B1', 'type' => 'theory', 'location' => 'Tầng hầm', 'capacity' => 30, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết cho lớp đông học viên.'],
-            ['code' => 'TH201', 'name' => 'Phòng Nghề may', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 18, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành may mặc và cắt may cơ bản.'],
-            ['code' => 'TH202', 'name' => 'Phòng Nghề nấu', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 20, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành nấu ăn và bếp bánh.'],
-            ['code' => 'MT301', 'name' => 'Phòng Máy tính 1', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 22, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng máy tính cho tin học văn phòng và lập trình.'],
-            ['code' => 'MT302', 'name' => 'Phòng Máy tính 2', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 20, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng máy tính cho thực hành thiết kế và tin học.'],
-            ['code' => 'HT401', 'name' => 'Phòng Đa năng 401', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 35, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng hội thảo và bồi dưỡng lớp đông.'],
-            ['code' => 'DA501', 'name' => 'Phòng Chăm sóc da', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng thực hành chăm sóc da và spa cơ bản.'],
-            ['code' => 'DA502', 'name' => 'Phòng Đa năng thực hành', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 24, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng dùng cho lớp thực hành ngắn hạn.'],
-            ['code' => 'BT601', 'name' => 'Phòng Kỹ thuật - Kho thiết bị', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 16, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng phụ trợ cho thiết bị và đồ nghề.'],
-            ['code' => 'KT701', 'name' => 'Phòng Kho vật tư', 'type' => 'theory', 'location' => 'Tầng hầm', 'capacity' => 18, 'status' => Room::STATUS_ACTIVE, 'note' => 'Phòng phụ trợ cho lưu trữ vật tư học tập.'],
+            ['code' => 'PH101', 'name' => 'Phòng Lý thuyết A1', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 12, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết nhỏ cho lớp tối.'],
+            ['code' => 'PH102', 'name' => 'Phòng Lý thuyết A2', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 24, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết tiêu chuẩn, có máy chiếu.'],
+            ['code' => 'PH103', 'name' => 'Phòng Lý thuyết B1', 'type' => 'theory', 'location' => 'Tầng hầm', 'capacity' => 30, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng học lý thuyết cho lớp đông học viên.'],
+            ['code' => 'TH201', 'name' => 'Phòng Nghề may', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 18, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng thực hành may mặc và cắt may cơ bản.'],
+            ['code' => 'TH202', 'name' => 'Phòng Nghề nấu', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 20, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng thực hành nấu ăn và bếp bánh.'],
+            ['code' => 'MT301', 'name' => 'Phòng Máy tính 1', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 22, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng máy tính cho tin học văn phòng và lập trình.'],
+            ['code' => 'MT302', 'name' => 'Phòng Máy tính 2', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 20, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng máy tính cho thực hành thiết kế và tin học.'],
+            ['code' => 'HT401', 'name' => 'Phòng Đa năng 401', 'type' => 'theory', 'location' => 'Tầng trệt', 'capacity' => 35, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng hội thảo và bồi dưỡng lớp đông.'],
+            ['code' => 'DA501', 'name' => 'Phòng Chăm sóc da', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 24, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng thực hành chăm sóc da và spa cơ bản.'],
+            ['code' => 'DA502', 'name' => 'Phòng Đa năng thực hành', 'type' => 'practice', 'location' => 'Tầng trệt', 'capacity' => 24, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng dùng cho lớp thực hành ngắn hạn.'],
+            ['code' => 'BT601', 'name' => 'Phòng Kỹ thuật - Kho thiết bị', 'type' => 'practice', 'location' => 'Tầng hầm', 'capacity' => 16, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng phụ trợ cho thiết bị và đồ nghề.'],
+            ['code' => 'KT701', 'name' => 'Phòng Kho vật tư', 'type' => 'theory', 'location' => 'Tầng hầm', 'capacity' => 18, 'status' => PhongHoc::STATUS_ACTIVE, 'note' => 'Phòng phụ trợ cho lưu trữ vật tư học tập.'],
         ];
 
         $rooms = collect();
@@ -111,7 +111,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
         foreach ($fixtures as $index => $fixture) {
             $rooms->put(
                 $fixture['code'],
-                Room::updateOrCreate(
+                PhongHoc::updateOrCreate(
                     ['code' => $fixture['code']],
                     [
                         'name' => $fixture['name'],
@@ -142,7 +142,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3200000,
                 'duration' => 3,
                 'capacity' => 12,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 12,
             ],
             [
@@ -154,7 +154,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 2800000,
                 'duration' => 3,
                 'capacity' => 10,
-                'status' => Course::STATUS_COMPLETED,
+                'status' => KhoaHoc::STATUS_COMPLETED,
                 'students' => 6,
                 'historical' => true,
             ],
@@ -167,7 +167,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 2400000,
                 'duration' => 2,
                 'capacity' => 16,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 8,
             ],
             [
@@ -179,7 +179,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 4200000,
                 'duration' => 4,
                 'capacity' => 14,
-                'status' => Course::STATUS_SCHEDULED,
+                'status' => KhoaHoc::STATUS_SCHEDULED,
                 'students' => 6,
             ],
             [
@@ -191,7 +191,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3900000,
                 'duration' => 3,
                 'capacity' => 18,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 6,
             ],
             [
@@ -203,7 +203,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3900000,
                 'duration' => 3,
                 'capacity' => 16,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 7,
             ],
             [
@@ -215,7 +215,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 4500000,
                 'duration' => 3,
                 'capacity' => 12,
-                'status' => Course::STATUS_COMPLETED,
+                'status' => KhoaHoc::STATUS_COMPLETED,
                 'students' => 5,
                 'historical' => true,
             ],
@@ -228,7 +228,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3600000,
                 'duration' => 4,
                 'capacity' => 15,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 6,
             ],
             [
@@ -240,7 +240,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 4000000,
                 'duration' => 4,
                 'capacity' => 15,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 5,
             ],
             [
@@ -252,7 +252,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3800000,
                 'duration' => 3,
                 'capacity' => 12,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 5,
             ],
             [
@@ -264,7 +264,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 4200000,
                 'duration' => 3,
                 'capacity' => 12,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 5,
             ],
             [
@@ -276,7 +276,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3300000,
                 'duration' => 2,
                 'capacity' => 18,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 4,
             ],
             [
@@ -288,7 +288,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 9600000,
                 'duration' => 12,
                 'capacity' => 20,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 6,
             ],
             [
@@ -300,7 +300,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3500000,
                 'duration' => 3,
                 'capacity' => 20,
-                'status' => Course::STATUS_PENDING_OPEN,
+                'status' => KhoaHoc::STATUS_PENDING_OPEN,
                 'students' => 0,
             ],
             [
@@ -312,7 +312,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3000000,
                 'duration' => 2,
                 'capacity' => 20,
-                'status' => Course::STATUS_PENDING_OPEN,
+                'status' => KhoaHoc::STATUS_PENDING_OPEN,
                 'students' => 0,
             ],
             [
@@ -324,7 +324,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3200000,
                 'duration' => 3,
                 'capacity' => 12,
-                'status' => Course::STATUS_COMPLETED,
+                'status' => KhoaHoc::STATUS_COMPLETED,
                 'students' => 5,
                 'historical' => true,
             ],
@@ -337,7 +337,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 2300000,
                 'duration' => 2,
                 'capacity' => 15,
-                'status' => Course::STATUS_ACTIVE,
+                'status' => KhoaHoc::STATUS_ACTIVE,
                 'students' => 6,
             ],
             [
@@ -349,7 +349,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 2700000,
                 'duration' => 1,
                 'capacity' => 12,
-                'status' => Course::STATUS_COMPLETED,
+                'status' => KhoaHoc::STATUS_COMPLETED,
                 'students' => 5,
                 'historical' => true,
             ],
@@ -362,7 +362,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 3300000,
                 'duration' => 2,
                 'capacity' => 12,
-                'status' => Course::STATUS_COMPLETED,
+                'status' => KhoaHoc::STATUS_COMPLETED,
                 'students' => 4,
                 'historical' => true,
             ],
@@ -375,7 +375,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 'price' => 12500000,
                 'duration' => 24,
                 'capacity' => 20,
-                'status' => Course::STATUS_COMPLETED,
+                'status' => KhoaHoc::STATUS_COMPLETED,
                 'students' => 4,
                 'historical' => true,
             ],
@@ -385,20 +385,20 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
 
         foreach ($fixtures as $index => $fixture) {
             $category = $categories->get($fixture['category']);
-            $teacher = User::query()
+            $teacher = NguoiDung::query()
                 ->teachers()
                 ->where('email', $fixture['teacher_email'])
                 ->firstOrFail();
 
             $subjectId = $index + 1;
-            $subject = Subject::updateOrCreate(
+            $subject = MonHoc::updateOrCreate(
                 ['id' => $subjectId],
                 [
                     'name' => $fixture['subject_name'],
                     'description' => sprintf('Chương trình đào tạo %s tại KhaiTriEdu.', $fixture['subject_name']),
                     'price' => $fixture['price'],
                     'duration' => $fixture['duration'],
-                    'status' => Subject::STATUS_OPEN,
+                    'status' => MonHoc::STATUS_OPEN,
                     'category_id' => $category->id,
                     'image' => null,
                     'created_at' => Carbon::now()->subDays(30 - $index),
@@ -406,14 +406,14 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
                 ]
             );
 
-            $course = Course::updateOrCreate(
+            $course = KhoaHoc::updateOrCreate(
                 ['title' => $fixture['course_title']],
                 [
                     'subject_id' => $subject->id,
                     'title' => $fixture['course_title'],
                     'description' => sprintf('Khóa học %s dành cho học viên KhaiTriEdu.', $fixture['subject_name']),
                     'price' => $fixture['price'],
-                    'schedule' => $fixture['status'] === Course::STATUS_PENDING_OPEN ? 'Chờ xếp lớp' : null,
+                    'schedule' => $fixture['status'] === KhoaHoc::STATUS_PENDING_OPEN ? 'Chờ xếp lớp' : null,
                     'teacher_id' => $teacher->id,
                     'capacity' => $fixture['capacity'],
                     'status' => $fixture['status'],
@@ -433,7 +433,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
         foreach ($courses as $course) {
             $subjectName = Str::upper((string) $course->subject?->name);
 
-            if (! in_array($course->status, [Course::STATUS_COMPLETED], true)) {
+            if (! in_array($course->status, [KhoaHoc::STATUS_COMPLETED], true)) {
                 continue;
             }
 
@@ -462,7 +462,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
         }
     }
 
-    protected function seedAnnouncements(User $admin, Collection $courses): void
+    protected function seedAnnouncements(NguoiDung $admin, Collection $courses): void
     {
         $picks = $courses->only([
             'tieng_anh_giao_tiep',
@@ -513,7 +513,7 @@ class DuLieuDanhMucVaKhoaHocSeeder extends Seeder
         ];
 
         foreach ($announcements as $index => $announcement) {
-            Announcement::updateOrCreate(
+            ThongBaoChung::updateOrCreate(
                 ['title' => $announcement['title']],
                 [
                     'created_by' => $admin->id,

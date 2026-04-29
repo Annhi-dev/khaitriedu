@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Review;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\DanhGia;
+use App\Models\VaiTro;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +19,7 @@ class AdminStudentService
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
 
-        return User::query()
+        return NguoiDung::query()
             ->students()
             ->withCount('enrollments')
             ->when($search !== '', function (Builder $query) use ($search) {
@@ -40,28 +40,28 @@ class AdminStudentService
     public function summary(): array
     {
         return [
-            'total' => User::query()->students()->count(),
-            'active' => User::query()->students()->where('status', User::STATUS_ACTIVE)->count(),
-            'locked' => User::query()->students()->where('status', User::STATUS_LOCKED)->count(),
-            'enrolled' => User::query()->students()->has('enrollments')->count(),
+            'total' => NguoiDung::query()->students()->count(),
+            'active' => NguoiDung::query()->students()->where('status', NguoiDung::STATUS_ACTIVE)->count(),
+            'locked' => NguoiDung::query()->students()->where('status', NguoiDung::STATUS_LOCKED)->count(),
+            'enrolled' => NguoiDung::query()->students()->has('enrollments')->count(),
         ];
     }
 
-    public function createStudent(array $data): User
+    public function createStudent(array $data): NguoiDung
     {
-        return User::create([
+        return NguoiDung::create([
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?: null,
             'password' => Hash::make($data['password']),
-            'role_id' => Role::idByName(User::ROLE_STUDENT),
+            'role_id' => VaiTro::idByName(NguoiDung::ROLE_STUDENT),
             'status' => $data['status'],
             'email_verified_at' => now(),
         ]);
     }
 
-    public function updateStudent(User $student, array $data): User
+    public function updateStudent(NguoiDung $student, array $data): NguoiDung
     {
         $student->fill([
             'name' => $data['name'],
@@ -75,44 +75,44 @@ class AdminStudentService
             $student->password = Hash::make($data['password']);
         }
 
-        $student->role_id = Role::idByName(User::ROLE_STUDENT);
+        $student->role_id = VaiTro::idByName(NguoiDung::ROLE_STUDENT);
         $student->save();
 
         return $student;
     }
 
-    public function lockStudent(User $student): void
+    public function lockStudent(NguoiDung $student): void
     {
-        $student->update(['status' => User::STATUS_LOCKED]);
+        $student->update(['status' => NguoiDung::STATUS_LOCKED]);
     }
 
-    public function unlockStudent(User $student): void
+    public function unlockStudent(NguoiDung $student): void
     {
-        $student->update(['status' => User::STATUS_ACTIVE]);
+        $student->update(['status' => NguoiDung::STATUS_ACTIVE]);
     }
 
-    public function getStudentDetail(User $student): array
+    public function getStudentDetail(NguoiDung $student): array
     {
         $student->loadCount('enrollments');
 
-        $enrollments = Enrollment::with(['subject.category', 'course.subject.category', 'assignedTeacher'])
+        $enrollments = GhiDanh::with(['subject.category', 'course.subject.category', 'assignedTeacher'])
             ->where('user_id', $student->id)
             ->latest('id')
             ->get();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         $currentSchedules = $enrollments
-            ->filter(fn (Enrollment $enrollment) => in_array($enrollment->displayStatus(), [
-                Enrollment::STATUS_ENROLLED,
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::STATUS_ACTIVE,
+            ->filter(fn (GhiDanh $enrollment) => in_array($enrollment->displayStatus(), [
+                GhiDanh::STATUS_ENROLLED,
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::STATUS_ACTIVE,
             ], true) && $enrollment->course_id)
             ->values();
 
         $grades = collect();
-        if (Schema::hasTable((new Grade())->getTable())) {
-            $grades = Grade::with(['enrollment.course.subject', 'module'])
+        if (Schema::hasTable((new DiemSo())->getTable())) {
+            $grades = DiemSo::with(['enrollment.course.subject', 'module'])
                 ->whereHas('enrollment', fn (Builder $query) => $query->where('user_id', $student->id))
                 ->latest('updated_at')
                 ->take(5)
@@ -120,8 +120,8 @@ class AdminStudentService
         }
 
         $reviews = collect();
-        if (Schema::hasTable((new Review())->getTable())) {
-            $reviews = Review::with(['course.subject'])
+        if (Schema::hasTable((new DanhGia())->getTable())) {
+            $reviews = DanhGia::with(['course.subject'])
                 ->where('user_id', $student->id)
                 ->latest('id')
                 ->take(5)

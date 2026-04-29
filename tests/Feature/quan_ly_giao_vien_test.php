@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Course;
-use App\Models\Department;
-use App\Models\Enrollment;
-use App\Models\ScheduleChangeRequest;
-use App\Models\Subject;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\KhoaHoc;
+use App\Models\PhongBan;
+use App\Models\GhiDanh;
+use App\Models\YeuCauDoiLich;
+use App\Models\MonHoc;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,26 +18,26 @@ class quan_ly_giao_vien_test extends TestCase
 
     public function test_admin_can_view_teacher_list(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacherA = User::factory()->teacher()->create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacherA = NguoiDung::factory()->teacher()->create([
             'name' => 'Giang Vien A (Phát triển Cá nhân)',
             'email' => 'teacher-a@example.com',
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tieng Anh giao tiep',
             'price' => 1800000,
         ]);
-        Course::create([
+        KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Tieng Anh giao tiep - Lop sang',
             'teacher_id' => $teacherA->id,
             'schedule' => 'Thu 2 - Thu 4, 18:00 - 20:00',
         ]);
-        $teacherB = User::factory()->teacher()->inactive()->create([
+        $teacherB = NguoiDung::factory()->teacher()->inactive()->create([
             'name' => 'Giang Vien B',
             'email' => 'teacher-b@example.com',
         ]);
-        $student = User::factory()->student()->create([
+        $student = NguoiDung::factory()->student()->create([
             'name' => 'Student Hidden',
             'email' => 'student-hidden@example.com',
         ]);
@@ -61,25 +61,25 @@ class quan_ly_giao_vien_test extends TestCase
 
     public function test_admin_can_search_and_filter_teachers(): void
     {
-        $admin = User::factory()->admin()->create();
-        $targetDepartment = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $targetDepartment = PhongBan::create([
             'code' => 'PH-DT-01',
             'name' => 'Phong Dao tao 01',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $otherDepartment = Department::create([
+        $otherDepartment = PhongBan::create([
             'code' => 'PH-DT-02',
             'name' => 'Phong Dao tao 02',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
 
-        $target = User::factory()->teacher()->locked()->create([
+        $target = NguoiDung::factory()->teacher()->locked()->create([
             'name' => 'Tran Minh Locked',
             'email' => 'teacher-locked@example.com',
             'phone' => '0911000111',
             'department_id' => $targetDepartment->id,
         ]);
-        $other = User::factory()->teacher()->create([
+        $other = NguoiDung::factory()->teacher()->create([
             'name' => 'Tran Minh Active',
             'email' => 'teacher-active@example.com',
             'phone' => '0911000222',
@@ -90,7 +90,7 @@ class quan_ly_giao_vien_test extends TestCase
             ->withSession(['user_id' => $admin->id])
             ->get(route('admin.teachers.index', [
                 'search' => 'Tran Minh',
-                'status' => User::STATUS_LOCKED,
+                'status' => NguoiDung::STATUS_LOCKED,
                 'department_id' => $targetDepartment->id,
             ]));
 
@@ -101,11 +101,11 @@ class quan_ly_giao_vien_test extends TestCase
 
     public function test_admin_can_create_teacher(): void
     {
-        $admin = User::factory()->admin()->create();
-        $department = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $department = PhongBan::create([
             'code' => 'PH-GV-01',
             'name' => 'Phong Giang Vien 01',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
 
         $response = $this
@@ -118,34 +118,34 @@ class quan_ly_giao_vien_test extends TestCase
                 'department_id' => $department->id,
                 'password' => 'secret123',
                 'password_confirmation' => 'secret123',
-                'status' => User::STATUS_ACTIVE,
+                'status' => NguoiDung::STATUS_ACTIVE,
             ]);
 
-        $teacher = User::where('email', 'giangvienmoi@example.com')->first();
+        $teacher = NguoiDung::where('email', 'giangvienmoi@example.com')->first();
 
         $response->assertRedirect(route('admin.teachers.show', $teacher));
         $this->assertDatabaseHas('nguoi_dung', [
             'email' => 'giangvienmoi@example.com',
-            'role_id' => \App\Models\Role::idByName(User::ROLE_TEACHER),
+            'role_id' => \App\Models\VaiTro::idByName(NguoiDung::ROLE_TEACHER),
             'department_id' => $department->id,
-            'status' => User::STATUS_ACTIVE,
+            'status' => NguoiDung::STATUS_ACTIVE,
         ]);
     }
 
     public function test_admin_can_update_teacher(): void
     {
-        $admin = User::factory()->admin()->create();
-        $departmentA = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $departmentA = PhongBan::create([
             'code' => 'PH-SUA-01',
             'name' => 'Phong Sua 01',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $departmentB = Department::create([
+        $departmentB = PhongBan::create([
             'code' => 'PH-SUA-02',
             'name' => 'Phong Sua 02',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $teacher = User::factory()->teacher()->create([
+        $teacher = NguoiDung::factory()->teacher()->create([
             'name' => 'Giang Vien Cu',
             'username' => 'giangviencu',
             'email' => 'giangviencu@example.com',
@@ -163,7 +163,7 @@ class quan_ly_giao_vien_test extends TestCase
                 'department_id' => $departmentB->id,
                 'password' => '',
                 'password_confirmation' => '',
-                'status' => User::STATUS_INACTIVE,
+                'status' => NguoiDung::STATUS_INACTIVE,
             ]);
 
         $response->assertRedirect(route('admin.teachers.show', $teacher));
@@ -174,32 +174,32 @@ class quan_ly_giao_vien_test extends TestCase
             'email' => 'giangviendasua@example.com',
             'phone' => '0912222333',
             'department_id' => $departmentB->id,
-            'status' => User::STATUS_INACTIVE,
+            'status' => NguoiDung::STATUS_INACTIVE,
         ]);
     }
 
     public function test_admin_can_view_teacher_detail_with_teaching_data(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create([
             'name' => 'Giang Vien Chi Tiet (Phát triển Cá nhân)',
             'email' => 'giangvienchitiet@example.com',
         ]);
-        $student = User::factory()->student()->create([
+        $student = NguoiDung::factory()->student()->create([
             'name' => 'Hoc Vien A',
         ]);
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => 'Tieng Anh giao tiep',
             'price' => 1800000,
         ]);
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => 'Tieng Anh giao tiep - Lop toi',
             'teacher_id' => $teacher->id,
             'schedule' => 'Thu 3 - Thu 5, 18:30 - 20:30',
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
@@ -209,7 +209,7 @@ class quan_ly_giao_vien_test extends TestCase
             'is_submitted' => true,
         ]);
 
-        TeacherApplication::create([
+        DonUngTuyenGiaoVien::create([
             'name' => $teacher->name,
             'email' => $teacher->email,
             'experience' => '5 nam day giao tiep',
@@ -217,14 +217,14 @@ class quan_ly_giao_vien_test extends TestCase
             'status' => 'approved',
         ]);
 
-        ScheduleChangeRequest::create([
+        YeuCauDoiLich::create([
             'teacher_id' => $teacher->id,
             'course_id' => $course->id,
             'requested_date' => '2026-04-01',
             'requested_start_time' => '19:00',
             'requested_end_time' => '21:00',
             'reason' => 'Cần dời buổi do công tác',
-            'status' => ScheduleChangeRequest::STATUS_PENDING,
+            'status' => YeuCauDoiLich::STATUS_PENDING,
         ]);
 
         $response = $this
@@ -244,8 +244,8 @@ class quan_ly_giao_vien_test extends TestCase
 
     public function test_admin_can_lock_and_unlock_teacher(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $lockResponse = $this
             ->withSession(['user_id' => $admin->id])
@@ -254,7 +254,7 @@ class quan_ly_giao_vien_test extends TestCase
         $lockResponse->assertRedirect(route('admin.teachers.show', $teacher));
         $this->assertDatabaseHas('nguoi_dung', [
             'id' => $teacher->id,
-            'status' => User::STATUS_LOCKED,
+            'status' => NguoiDung::STATUS_LOCKED,
         ]);
 
         $unlockResponse = $this
@@ -264,13 +264,13 @@ class quan_ly_giao_vien_test extends TestCase
         $unlockResponse->assertRedirect(route('admin.teachers.show', $teacher));
         $this->assertDatabaseHas('nguoi_dung', [
             'id' => $teacher->id,
-            'status' => User::STATUS_ACTIVE,
+            'status' => NguoiDung::STATUS_ACTIVE,
         ]);
     }
 
     public function test_student_is_blocked_from_teacher_management(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->withSession(['user_id' => $student->id])
@@ -282,7 +282,7 @@ class quan_ly_giao_vien_test extends TestCase
 
     public function test_teacher_is_blocked_from_admin_teacher_management(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $response = $this
             ->withSession(['user_id' => $teacher->id])
@@ -294,13 +294,13 @@ class quan_ly_giao_vien_test extends TestCase
 
     public function test_admin_cannot_create_teacher_with_duplicate_email_username_or_phone(): void
     {
-        $admin = User::factory()->admin()->create();
-        $department = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $department = PhongBan::create([
             'code' => 'PH-DUP-01',
             'name' => 'Phong Duplicate',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        User::factory()->teacher()->create([
+        NguoiDung::factory()->teacher()->create([
             'username' => 'duplicate-teacher',
             'email' => 'duplicate-teacher@example.com',
             'phone' => '0913333444',
@@ -318,7 +318,7 @@ class quan_ly_giao_vien_test extends TestCase
                 'department_id' => $department->id,
                 'password' => 'secret123',
                 'password_confirmation' => 'secret123',
-                'status' => User::STATUS_ACTIVE,
+                'status' => NguoiDung::STATUS_ACTIVE,
             ]);
 
         $response->assertRedirect(route('admin.teachers.create'));

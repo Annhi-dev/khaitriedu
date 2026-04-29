@@ -2,28 +2,28 @@
 
 namespace Database\Seeders;
 
-use App\Models\AttendanceRecord;
-use App\Models\Certificate;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\CourseTimeSlot;
-use App\Models\CustomScheduleRequest;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\LessonProgress;
-use App\Models\Notification;
-use App\Models\Option;
-use App\Models\Question;
-use App\Models\Quiz;
-use App\Models\QuizAnswer;
-use App\Models\Review;
-use App\Models\Room;
-use App\Models\ScheduleChangeRequest;
-use App\Models\SlotRegistration;
-use App\Models\SlotRegistrationChoice;
-use App\Models\TeacherEvaluation;
-use App\Models\User;
+use App\Models\DiemDanh;
+use App\Models\ChungChi;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\KhungGioKhoaHoc;
+use App\Models\YeuCauLichTuyChon;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\TienDoBaiHoc;
+use App\Models\ThongBao;
+use App\Models\LuaChon;
+use App\Models\CauHoi;
+use App\Models\BaiKiemTra;
+use App\Models\TraLoiBaiKiemTra;
+use App\Models\DanhGia;
+use App\Models\PhongHoc;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguyenVongKhungGio;
+use App\Models\LuaChonNguyenVongKhungGio;
+use App\Models\DanhGiaGiaoVien;
+use App\Models\NguoiDung;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -129,13 +129,13 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
     protected function seedCourseTimeSlots(Collection $courses, Collection $teachers): Collection
     {
         $fixtures = [
-            ['key' => 'english_evening', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'teacher' => 'anhdung@khaitriedu.vn', 'room' => 'PH101', 'day_of_week' => 'Monday', 'slot_date' => Carbon::now()->addDays(9), 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Đợt học tối dành cho học viên đi làm.'],
-            ['key' => 'it_office_evening', 'course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'teacher' => 'baochau@khaitriedu.vn', 'room' => 'MT301', 'day_of_week' => 'Tuesday', 'slot_date' => Carbon::now()->addDays(10), 'start_time' => '18:00:00', 'end_time' => '20:00:00', 'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Khung giờ phù hợp cho lớp thực hành máy tính.'],
-            ['key' => 'accounting_ready', 'course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'teacher' => 'minhtu@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Wednesday', 'slot_date' => Carbon::now()->addDays(11), 'start_time' => '19:00:00', 'end_time' => '21:00:00', 'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Đã đủ nguyện vọng chờ phê duyệt mở lớp.'],
-            ['key' => 'web_ready', 'course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'teacher' => 'thuylinh@khaitriedu.vn', 'room' => 'MT302', 'day_of_week' => 'Thursday', 'slot_date' => Carbon::now()->addDays(12), 'start_time' => '19:00:00', 'end_time' => '21:15:00', 'status' => CourseTimeSlot::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Khung giờ thực hành thiết kế và bố cục web.'],
-            ['key' => 'electric_class_opened', 'course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'teacher' => 'hoangnam@khaitriedu.vn', 'room' => 'TH201', 'day_of_week' => 'Saturday', 'slot_date' => Carbon::now()->addDays(13), 'start_time' => '13:30:00', 'end_time' => '16:30:00', 'status' => CourseTimeSlot::STATUS_CLASS_OPENED, 'note' => 'Đợt thực hành cuối tuần đã chuyển sang lớp cố định.'],
-            ['key' => 'marketing_pending', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'room' => 'DA501', 'day_of_week' => 'Friday', 'slot_date' => Carbon::now()->addDays(14), 'start_time' => '19:00:00', 'end_time' => '21:00:00', 'status' => CourseTimeSlot::STATUS_PENDING_OPEN, 'note' => 'Chờ đủ học viên để kích hoạt mở đăng ký.'],
-            ['key' => 'teacher_boost_open', 'course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'teacher' => 'thanhtung@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Sunday', 'slot_date' => Carbon::now()->addDays(15), 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => CourseTimeSlot::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Khung giờ bồi dưỡng cuối tuần cho giáo viên đang công tác.'],
+            ['key' => 'english_evening', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'teacher' => 'anhdung@khaitriedu.vn', 'room' => 'PH101', 'day_of_week' => 'Monday', 'slot_date' => Carbon::now()->addDays(9), 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Đợt học tối dành cho học viên đi làm.'],
+            ['key' => 'it_office_evening', 'course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'teacher' => 'baochau@khaitriedu.vn', 'room' => 'MT301', 'day_of_week' => 'Tuesday', 'slot_date' => Carbon::now()->addDays(10), 'start_time' => '18:00:00', 'end_time' => '20:00:00', 'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Khung giờ phù hợp cho lớp thực hành máy tính.'],
+            ['key' => 'accounting_ready', 'course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'teacher' => 'minhtu@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Wednesday', 'slot_date' => Carbon::now()->addDays(11), 'start_time' => '19:00:00', 'end_time' => '21:00:00', 'status' => KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Đã đủ nguyện vọng chờ phê duyệt mở lớp.'],
+            ['key' => 'web_ready', 'course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'teacher' => 'thuylinh@khaitriedu.vn', 'room' => 'MT302', 'day_of_week' => 'Thursday', 'slot_date' => Carbon::now()->addDays(12), 'start_time' => '19:00:00', 'end_time' => '21:15:00', 'status' => KhungGioKhoaHoc::STATUS_READY_TO_OPEN_CLASS, 'note' => 'Khung giờ thực hành thiết kế và bố cục web.'],
+            ['key' => 'electric_class_opened', 'course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'teacher' => 'hoangnam@khaitriedu.vn', 'room' => 'TH201', 'day_of_week' => 'Saturday', 'slot_date' => Carbon::now()->addDays(13), 'start_time' => '13:30:00', 'end_time' => '16:30:00', 'status' => KhungGioKhoaHoc::STATUS_CLASS_OPENED, 'note' => 'Đợt thực hành cuối tuần đã chuyển sang lớp cố định.'],
+            ['key' => 'marketing_pending', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'room' => 'DA501', 'day_of_week' => 'Friday', 'slot_date' => Carbon::now()->addDays(14), 'start_time' => '19:00:00', 'end_time' => '21:00:00', 'status' => KhungGioKhoaHoc::STATUS_PENDING_OPEN, 'note' => 'Chờ đủ học viên để kích hoạt mở đăng ký.'],
+            ['key' => 'teacher_boost_open', 'course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'teacher' => 'thanhtung@khaitriedu.vn', 'room' => 'HT401', 'day_of_week' => 'Sunday', 'slot_date' => Carbon::now()->addDays(15), 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => KhungGioKhoaHoc::STATUS_OPEN_FOR_REGISTRATION, 'note' => 'Khung giờ bồi dưỡng cuối tuần cho giáo viên đang công tác.'],
         ];
 
         $timeSlots = collect();
@@ -149,11 +149,11 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            CourseTimeSlot::query()
+            KhungGioKhoaHoc::query()
                 ->where('subject_id', $course->subject_id)
                 ->delete();
 
-            $timeSlot = CourseTimeSlot::updateOrCreate(
+            $timeSlot = KhungGioKhoaHoc::updateOrCreate(
                 [
                     'subject_id' => $course->subject_id,
                     'slot_date' => $fixture['slot_date']->toDateString(),
@@ -179,25 +179,25 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         return $timeSlots;
     }
 
-    protected function seedFixedEnrollments(Collection $courses, Collection $students, User $admin): Collection
+    protected function seedFixedEnrollments(Collection $courses, Collection $students, NguoiDung $admin): Collection
     {
         $fixtures = [
-            ['course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'vo.hai.nam@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'dang.thanh.truc@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => Enrollment::STATUS_ENROLLED], ['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => Enrollment::STATUS_ENROLLED], ['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'cao.nhat.minh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'records' => [['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'duong.thu.ha@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'trinh.minh.tu@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'ho.ngoc.diep@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'le.anh.khoa@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'ngo.bao.tran@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'do.van.tai@khaitriedu.vn', 'status' => Enrollment::STATUS_ENROLLED]]],
-            ['course' => 'KhaiTriEdu 2026 - Lập trình Python cơ bản', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => Enrollment::STATUS_ENROLLED], ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => Enrollment::STATUS_ENROLLED]]],
-            ['course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'records' => [['email' => 'ly.nhat.ha@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'nguyen.hoang.long@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'truong.my.duyen@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'phan.minh.nhat@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'le.dieu.linh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'do.tuan.kiet@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Báo cáo thuế', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'vo.hai.nam@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'dang.thanh.truc@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED]]],
-            ['course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'duong.thu.ha@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'ngo.bao.tran@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'records' => [['email' => 'tran.gia.han@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'records' => [['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Liên thông Đại học - Văn bằng 2 Quản trị kinh doanh', 'records' => [['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => Enrollment::STATUS_SCHEDULED], ['email' => 'do.van.tai@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'ly.nhat.ha@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Kỹ thuật chăm sóc da', 'records' => [['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'cao.nhat.minh@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'KhaiTriEdu 2026 - Thiết kế đồ họa', 'records' => [['email' => 'nguyen.hoang.long@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'truong.my.duyen@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE], ['email' => 'phan.minh.nhat@khaitriedu.vn', 'status' => Enrollment::STATUS_ACTIVE]]],
-            ['course' => 'Khóa nội bộ - ANH VĂN KHUNG 6 BẬC', 'records' => [['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED]]],
-            ['course' => 'Khóa nội bộ - TIN HỌC VĂN PHÒNG', 'records' => [['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'do.van.tai@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED]]],
-            ['course' => 'Khóa nội bộ - CHỨNG CHỈ BẤT ĐỘNG SẢN', 'records' => [['email' => 'le.anh.khoa@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'ngo.bao.tran@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'do.tuan.kiet@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'nguyen.hoang.long@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED]]],
-            ['course' => 'Khóa nội bộ - BỒI DƯỠNG CHỨC DANH NGHỀ NGHIỆP GIÁO VIÊN', 'records' => [['email' => 'tran.gia.han@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED]]],
-            ['course' => 'Khóa nội bộ - THẠC SĨ QUẢN TRỊ KINH DOANH', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED], ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => Enrollment::STATUS_COMPLETED]]],
+            ['course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'vo.hai.nam@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'dang.thanh.truc@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ENROLLED], ['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => GhiDanh::STATUS_ENROLLED], ['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'cao.nhat.minh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'records' => [['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'duong.thu.ha@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'trinh.minh.tu@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'ho.ngoc.diep@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'le.anh.khoa@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'ngo.bao.tran@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'do.van.tai@khaitriedu.vn', 'status' => GhiDanh::STATUS_ENROLLED]]],
+            ['course' => 'KhaiTriEdu 2026 - Lập trình Python cơ bản', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => GhiDanh::STATUS_ENROLLED], ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ENROLLED]]],
+            ['course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'records' => [['email' => 'ly.nhat.ha@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'nguyen.hoang.long@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'truong.my.duyen@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'phan.minh.nhat@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'le.dieu.linh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'do.tuan.kiet@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Báo cáo thuế', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'vo.hai.nam@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'dang.thanh.truc@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED]]],
+            ['course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'duong.thu.ha@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'ngo.bao.tran@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'records' => [['email' => 'tran.gia.han@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'records' => [['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Liên thông Đại học - Văn bằng 2 Quản trị kinh doanh', 'records' => [['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => GhiDanh::STATUS_SCHEDULED], ['email' => 'do.van.tai@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'ly.nhat.ha@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Kỹ thuật chăm sóc da', 'records' => [['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'cao.nhat.minh@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'KhaiTriEdu 2026 - Thiết kế đồ họa', 'records' => [['email' => 'nguyen.hoang.long@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'truong.my.duyen@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE], ['email' => 'phan.minh.nhat@khaitriedu.vn', 'status' => GhiDanh::STATUS_ACTIVE]]],
+            ['course' => 'Khóa nội bộ - ANH VĂN KHUNG 6 BẬC', 'records' => [['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED]]],
+            ['course' => 'Khóa nội bộ - TIN HỌC VĂN PHÒNG', 'records' => [['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'do.van.tai@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED]]],
+            ['course' => 'Khóa nội bộ - CHỨNG CHỈ BẤT ĐỘNG SẢN', 'records' => [['email' => 'le.anh.khoa@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'ngo.bao.tran@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'do.tuan.kiet@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'nguyen.hoang.long@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED]]],
+            ['course' => 'Khóa nội bộ - BỒI DƯỠNG CHỨC DANH NGHỀ NGHIỆP GIÁO VIÊN', 'records' => [['email' => 'tran.gia.han@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED]]],
+            ['course' => 'Khóa nội bộ - THẠC SĨ QUẢN TRỊ KINH DOANH', 'records' => [['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED], ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => GhiDanh::STATUS_COMPLETED]]],
         ];
 
         $enrollments = collect();
@@ -225,9 +225,9 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 }
 
                 $submittedAt = Carbon::now()->subDays(24 - $courseIndex - $studentIndex);
-                $reviewedAt = $record['status'] === Enrollment::STATUS_PENDING ? null : Carbon::now()->subDays(23 - $courseIndex - $studentIndex);
+                $reviewedAt = $record['status'] === GhiDanh::STATUS_PENDING ? null : Carbon::now()->subDays(23 - $courseIndex - $studentIndex);
 
-                $enrollment = Enrollment::updateOrCreate(
+                $enrollment = GhiDanh::updateOrCreate(
                     [
                         'user_id' => $student->id,
                         'lop_hoc_id' => $classRoom->id,
@@ -245,7 +245,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                         'preferred_days' => null,
                         'is_submitted' => true,
                         'submitted_at' => $submittedAt,
-                        'reviewed_by' => $record['status'] === Enrollment::STATUS_PENDING ? null : $admin->id,
+                        'reviewed_by' => $record['status'] === GhiDanh::STATUS_PENDING ? null : $admin->id,
                         'reviewed_at' => $reviewedAt,
                     ]
                 );
@@ -273,7 +273,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            Enrollment::updateOrCreate(
+            GhiDanh::updateOrCreate(
                 [
                     'user_id' => $student->id,
                     'course_id' => $course->id,
@@ -283,7 +283,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     'subject_id' => $course->subject_id,
                     'assigned_teacher_id' => $course->teacher_id,
                     'preferred_schedule' => $fixture['preferred_schedule'],
-                    'status' => Enrollment::STATUS_PENDING,
+                    'status' => GhiDanh::STATUS_PENDING,
                     'note' => $fixture['note'],
                     'schedule' => null,
                     'start_time' => null,
@@ -298,14 +298,14 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         }
     }
 
-    protected function seedSlotRegistrations(Collection $courses, Collection $students, User $admin, Collection $timeSlots): void
+    protected function seedSlotRegistrations(Collection $courses, Collection $students, NguoiDung $admin, Collection $timeSlots): void
     {
         $fixtures = [
-            ['student' => 'nguyen.thi.an@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'status' => SlotRegistration::STATUS_PENDING, 'note' => 'Muốn học tối thứ 2, 4, 6 để dễ sắp xếp công việc.', 'choices' => ['english_evening', 'teacher_boost_open', 'it_office_evening']],
-            ['student' => 'ta.phuong.nhi@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'status' => SlotRegistration::STATUS_RECORDED, 'note' => 'Đã ghi nhận nhu cầu học buổi tối sau giờ làm.', 'choices' => ['it_office_evening', 'english_evening']],
-            ['student' => 'le.minh.quan@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'status' => SlotRegistration::STATUS_SCHEDULED, 'note' => 'Đã xếp vào nhóm học tối trong tuần.', 'choices' => ['accounting_ready', 'web_ready']],
-            ['student' => 'phan.quynh.anh@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'status' => SlotRegistration::STATUS_NEEDS_RESELECT, 'note' => 'Cần chọn lại vì trùng ca với công việc hiện tại.', 'choices' => ['web_ready', 'teacher_boost_open']],
-            ['student' => 'do.tuan.kiet@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'status' => SlotRegistration::STATUS_REJECTED, 'note' => 'Chưa đủ điều kiện đầu vào nên tạm từ chối.', 'choices' => ['electric_class_opened']],
+            ['student' => 'nguyen.thi.an@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'status' => NguyenVongKhungGio::STATUS_PENDING, 'note' => 'Muốn học tối thứ 2, 4, 6 để dễ sắp xếp công việc.', 'choices' => ['english_evening', 'teacher_boost_open', 'it_office_evening']],
+            ['student' => 'ta.phuong.nhi@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'status' => NguyenVongKhungGio::STATUS_RECORDED, 'note' => 'Đã ghi nhận nhu cầu học buổi tối sau giờ làm.', 'choices' => ['it_office_evening', 'english_evening']],
+            ['student' => 'le.minh.quan@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Kế toán thực hành', 'status' => NguyenVongKhungGio::STATUS_SCHEDULED, 'note' => 'Đã xếp vào nhóm học tối trong tuần.', 'choices' => ['accounting_ready', 'web_ready']],
+            ['student' => 'phan.quynh.anh@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'status' => NguyenVongKhungGio::STATUS_NEEDS_RESELECT, 'note' => 'Cần chọn lại vì trùng ca với công việc hiện tại.', 'choices' => ['web_ready', 'teacher_boost_open']],
+            ['student' => 'do.tuan.kiet@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Điện dân dụng', 'status' => NguyenVongKhungGio::STATUS_REJECTED, 'note' => 'Chưa đủ điều kiện đầu vào nên tạm từ chối.', 'choices' => ['electric_class_opened']],
         ];
 
         foreach ($fixtures as $index => $fixture) {
@@ -316,7 +316,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            $registration = SlotRegistration::updateOrCreate(
+            $registration = NguyenVongKhungGio::updateOrCreate(
                 [
                     'student_id' => $student->id,
                     'subject_id' => $course->subject_id,
@@ -325,23 +325,23 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 [
                     'status' => $fixture['status'],
                     'reviewed_by' => in_array($fixture['status'], [
-                        SlotRegistration::STATUS_RECORDED,
-                        SlotRegistration::STATUS_SCHEDULED,
-                        SlotRegistration::STATUS_NEEDS_RESELECT,
-                        SlotRegistration::STATUS_REJECTED,
+                        NguyenVongKhungGio::STATUS_RECORDED,
+                        NguyenVongKhungGio::STATUS_SCHEDULED,
+                        NguyenVongKhungGio::STATUS_NEEDS_RESELECT,
+                        NguyenVongKhungGio::STATUS_REJECTED,
                     ], true) ? $admin->id : null,
                     'reviewed_at' => in_array($fixture['status'], [
-                        SlotRegistration::STATUS_RECORDED,
-                        SlotRegistration::STATUS_SCHEDULED,
-                        SlotRegistration::STATUS_NEEDS_RESELECT,
-                        SlotRegistration::STATUS_REJECTED,
+                        NguyenVongKhungGio::STATUS_RECORDED,
+                        NguyenVongKhungGio::STATUS_SCHEDULED,
+                        NguyenVongKhungGio::STATUS_NEEDS_RESELECT,
+                        NguyenVongKhungGio::STATUS_REJECTED,
                     ], true) ? Carbon::now()->subDays(7 - $index) : null,
                     'created_at' => Carbon::now()->subDays(9 - $index),
                     'updated_at' => Carbon::now()->subDays(9 - $index),
                 ]
             );
 
-            SlotRegistrationChoice::query()
+            LuaChonNguyenVongKhungGio::query()
                 ->where('slot_registration_id', $registration->id)
                 ->delete();
 
@@ -352,7 +352,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     continue;
                 }
 
-                SlotRegistrationChoice::updateOrCreate(
+                LuaChonNguyenVongKhungGio::updateOrCreate(
                     [
                         'slot_registration_id' => $registration->id,
                         'course_time_slot_id' => $timeSlot->id,
@@ -365,7 +365,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         }
     }
 
-    protected function seedCustomScheduleRequests(Collection $courses, Collection $students, Collection $teachers, User $admin): void
+    protected function seedCustomScheduleRequests(Collection $courses, Collection $students, Collection $teachers, NguoiDung $admin): void
     {
         $fixtures = [
             ['student' => 'do.tuan.kiet@khaitriedu.vn', 'course' => 'KhaiTriEdu 2026 - Marketing Digital căn bản', 'teacher' => 'quochuy@khaitriedu.vn', 'days' => ['Monday', 'Wednesday', 'Friday'], 'time' => '20:30 - 22:30', 'status' => 'pending', 'notes' => 'Muốn học sau 20:30 để tránh trùng với lớp buổi tối hiện tại.', 'reviewed' => false],
@@ -382,12 +382,12 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            CustomScheduleRequest::query()
+            YeuCauLichTuyChon::query()
                 ->where('student_id', $student->id)
                 ->where('subject_id', $course->subject_id)
                 ->delete();
 
-            CustomScheduleRequest::updateOrCreate(
+            YeuCauLichTuyChon::updateOrCreate(
                 [
                     'student_id' => $student->id,
                     'subject_id' => $course->subject_id,
@@ -406,13 +406,13 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         }
     }
 
-    protected function seedScheduleChangeRequests(Collection $courses, User $admin): void
+    protected function seedScheduleChangeRequests(Collection $courses, NguoiDung $admin): void
     {
         $fixtures = [
-            ['course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'room' => 'PH102', 'day_of_week' => 'Monday', 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => ScheduleChangeRequest::STATUS_PENDING, 'reason' => 'Cần đổi sang phòng có màn hình lớn hơn để tiện luyện nghe.'],
-            ['course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'room' => 'MT302', 'day_of_week' => 'Tuesday', 'start_time' => '18:00:00', 'end_time' => '20:00:00', 'status' => ScheduleChangeRequest::STATUS_APPROVED, 'reason' => 'Đổi sang phòng máy dự phòng để tăng trải nghiệm thực hành.', 'admin_note' => 'Đã duyệt theo đề xuất của giảng viên.'],
-            ['course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'room' => 'MT301', 'day_of_week' => 'Sunday', 'start_time' => '19:00:00', 'end_time' => '21:15:00', 'status' => ScheduleChangeRequest::STATUS_REJECTED, 'reason' => 'Đề xuất chuyển sang phòng máy khác nhưng lịch phòng đã kín.', 'admin_note' => 'Giữ nguyên lịch cũ để không ảnh hưởng lớp khác.'],
-            ['course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'room' => 'PH102', 'day_of_week' => 'Sunday', 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => ScheduleChangeRequest::STATUS_PENDING, 'reason' => 'Muốn tách buổi thảo luận sang phòng hội thảo yên tĩnh hơn.'],
+            ['course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp', 'room' => 'PH102', 'day_of_week' => 'Monday', 'start_time' => '18:00:00', 'end_time' => '20:15:00', 'status' => YeuCauDoiLich::STATUS_PENDING, 'reason' => 'Cần đổi sang phòng có màn hình lớn hơn để tiện luyện nghe.'],
+            ['course' => 'KhaiTriEdu 2026 - Tin học văn phòng', 'room' => 'MT302', 'day_of_week' => 'Tuesday', 'start_time' => '18:00:00', 'end_time' => '20:00:00', 'status' => YeuCauDoiLich::STATUS_APPROVED, 'reason' => 'Đổi sang phòng máy dự phòng để tăng trải nghiệm thực hành.', 'admin_note' => 'Đã duyệt theo đề xuất của giảng viên.'],
+            ['course' => 'KhaiTriEdu 2026 - Thiết kế Web', 'room' => 'MT301', 'day_of_week' => 'Sunday', 'start_time' => '19:00:00', 'end_time' => '21:15:00', 'status' => YeuCauDoiLich::STATUS_REJECTED, 'reason' => 'Đề xuất chuyển sang phòng máy khác nhưng lịch phòng đã kín.', 'admin_note' => 'Giữ nguyên lịch cũ để không ảnh hưởng lớp khác.'],
+            ['course' => 'KhaiTriEdu 2026 - Bồi dưỡng giáo viên phổ thông', 'room' => 'PH102', 'day_of_week' => 'Sunday', 'start_time' => '08:00:00', 'end_time' => '10:15:00', 'status' => YeuCauDoiLich::STATUS_PENDING, 'reason' => 'Muốn tách buổi thảo luận sang phòng hội thảo yên tĩnh hơn.'],
         ];
 
         foreach ($fixtures as $index => $fixture) {
@@ -425,7 +425,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            ScheduleChangeRequest::updateOrCreate(
+            YeuCauDoiLich::updateOrCreate(
                 [
                     'teacher_id' => $classRoom->teacher_id,
                     'class_room_id' => $classRoom->id,
@@ -444,8 +444,8 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     'reason' => $fixture['reason'],
                     'status' => $fixture['status'],
                     'admin_note' => $fixture['admin_note'] ?? null,
-                    'reviewed_by' => in_array($fixture['status'], [ScheduleChangeRequest::STATUS_APPROVED, ScheduleChangeRequest::STATUS_REJECTED], true) ? $admin->id : null,
-                    'reviewed_at' => in_array($fixture['status'], [ScheduleChangeRequest::STATUS_APPROVED, ScheduleChangeRequest::STATUS_REJECTED], true) ? Carbon::now()->subDays(4 - $index) : null,
+                    'reviewed_by' => in_array($fixture['status'], [YeuCauDoiLich::STATUS_APPROVED, YeuCauDoiLich::STATUS_REJECTED], true) ? $admin->id : null,
+                    'reviewed_at' => in_array($fixture['status'], [YeuCauDoiLich::STATUS_APPROVED, YeuCauDoiLich::STATUS_REJECTED], true) ? Carbon::now()->subDays(4 - $index) : null,
                 ]
             );
         }
@@ -459,12 +459,12 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 'schedule_index' => 0,
                 'date' => Carbon::now()->subDays(2),
                 'rows' => [
-                    ['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Có mặt sớm 5 phút.'],
-                    ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Tham gia đầy đủ.'],
-                    ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_LATE, 'note' => 'Đến trễ 10 phút do kẹt xe.'],
-                    ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_EXCUSED, 'note' => 'Có xin phép trước.'],
-                    ['email' => 'vo.hai.nam@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Hoàn thành bài tập miệng.'],
-                    ['email' => 'dang.thanh.truc@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_ABSENT, 'note' => 'Vắng không báo trước.'],
+                    ['email' => 'nguyen.thi.an@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Có mặt sớm 5 phút.'],
+                    ['email' => 'tran.gia.han@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Tham gia đầy đủ.'],
+                    ['email' => 'le.minh.quan@khaitriedu.vn', 'status' => DiemDanh::STATUS_LATE, 'note' => 'Đến trễ 10 phút do kẹt xe.'],
+                    ['email' => 'pham.ngoc.linh@khaitriedu.vn', 'status' => DiemDanh::STATUS_EXCUSED, 'note' => 'Có xin phép trước.'],
+                    ['email' => 'vo.hai.nam@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Hoàn thành bài tập miệng.'],
+                    ['email' => 'dang.thanh.truc@khaitriedu.vn', 'status' => DiemDanh::STATUS_ABSENT, 'note' => 'Vắng không báo trước.'],
                 ],
             ],
             [
@@ -472,12 +472,12 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 'schedule_index' => 1,
                 'date' => Carbon::now()->subDays(5),
                 'rows' => [
-                    ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Tích cực phát biểu.'],
-                    ['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Chuẩn bị bài tốt.'],
-                    ['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_LATE, 'note' => 'Đến trễ 7 phút.'],
-                    ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Làm việc nhóm tốt.'],
-                    ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_EXCUSED, 'note' => 'Nghỉ có phép vì công tác.'],
-                    ['email' => 'cao.nhat.minh@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Hoàn thành đủ hoạt động.'],
+                    ['email' => 'bui.duc.minh@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Tích cực phát biểu.'],
+                    ['email' => 'huynh.bao.ngoc@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Chuẩn bị bài tốt.'],
+                    ['email' => 'nguyen.khac.hung@khaitriedu.vn', 'status' => DiemDanh::STATUS_LATE, 'note' => 'Đến trễ 7 phút.'],
+                    ['email' => 'luu.thanh.vy@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Làm việc nhóm tốt.'],
+                    ['email' => 'phan.quynh.anh@khaitriedu.vn', 'status' => DiemDanh::STATUS_EXCUSED, 'note' => 'Nghỉ có phép vì công tác.'],
+                    ['email' => 'cao.nhat.minh@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Hoàn thành đủ hoạt động.'],
                 ],
             ],
             [
@@ -485,10 +485,10 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 'schedule_index' => 0,
                 'date' => Carbon::now()->subDays(1),
                 'rows' => [
-                    ['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Thực hành Word tốt.'],
-                    ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Hoàn thành bài Excel.'],
-                    ['email' => 'duong.thu.ha@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_LATE, 'note' => 'Vào lớp muộn.'],
-                    ['email' => 'trinh.minh.tu@khaitriedu.vn', 'status' => AttendanceRecord::STATUS_PRESENT, 'note' => 'Làm bài thực hành đầy đủ.'],
+                    ['email' => 'ta.phuong.nhi@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Thực hành Word tốt.'],
+                    ['email' => 'vuong.gia.bao@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Hoàn thành bài Excel.'],
+                    ['email' => 'duong.thu.ha@khaitriedu.vn', 'status' => DiemDanh::STATUS_LATE, 'note' => 'Vào lớp muộn.'],
+                    ['email' => 'trinh.minh.tu@khaitriedu.vn', 'status' => DiemDanh::STATUS_PRESENT, 'note' => 'Làm bài thực hành đầy đủ.'],
                 ],
             ],
         ];
@@ -515,7 +515,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     continue;
                 }
 
-                AttendanceRecord::updateOrCreate(
+                DiemDanh::updateOrCreate(
                     [
                         'course_id' => $course->id,
                         'student_id' => $student->id,
@@ -595,7 +595,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
 
                 $score = (float) $row['score'];
 
-                Grade::updateOrCreate(
+                DiemSo::updateOrCreate(
                     [
                         'class_room_id' => $classRoom->id,
                         'student_id' => $student->id,
@@ -639,7 +639,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     continue;
                 }
 
-                TeacherEvaluation::updateOrCreate(
+                DanhGiaGiaoVien::updateOrCreate(
                     [
                         'class_room_id' => $classRoom->id,
                         'student_id' => $student->id,
@@ -677,7 +677,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     continue;
                 }
 
-                Certificate::updateOrCreate(
+                ChungChi::updateOrCreate(
                     [
                         'certificate_number' => $row['number'],
                     ],
@@ -704,7 +704,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             return;
         }
 
-        $quiz = Quiz::updateOrCreate(
+        $quiz = BaiKiemTra::updateOrCreate(
             [
                 'lesson_id' => $lesson->id,
                 'title' => 'Kiểm tra nhập môn giao tiếp',
@@ -768,7 +768,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         $questionModels = collect();
 
         foreach ($questions as $questionFixture) {
-            $question = Question::updateOrCreate(
+            $question = CauHoi::updateOrCreate(
                 [
                     'quiz_id' => $quiz->id,
                     'order' => $questionFixture['order'],
@@ -782,7 +782,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             );
 
             foreach ($questionFixture['options'] as $optionIndex => $optionFixture) {
-                Option::updateOrCreate(
+                LuaChon::updateOrCreate(
                     [
                         'question_id' => $question->id,
                         'order' => $optionIndex + 1,
@@ -854,7 +854,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     }
                 }
 
-                QuizAnswer::updateOrCreate(
+                TraLoiBaiKiemTra::updateOrCreate(
                     [
                         'user_id' => $student->id,
                         'quiz_id' => $quiz->id,
@@ -904,7 +904,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                     continue;
                 }
 
-                LessonProgress::updateOrCreate(
+                TienDoBaiHoc::updateOrCreate(
                     [
                         'user_id' => $student->id,
                         'lesson_id' => $lesson->id,
@@ -940,7 +940,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            Notification::updateOrCreate(
+            ThongBao::updateOrCreate(
                 [
                     'user_id' => $user->id,
                     'title' => $fixture['title'],
@@ -977,7 +977,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
                 continue;
             }
 
-            Review::updateOrCreate(
+            DanhGia::updateOrCreate(
                 [
                     'user_id' => $student->id,
                     'course_id' => $course->id,
@@ -997,16 +997,16 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         foreach ($courses as $course) {
             $classRoom = $course->currentClassRoom();
 
-            if (! $classRoom || $classRoom->status === ClassRoom::STATUS_COMPLETED) {
+            if (! $classRoom || $classRoom->status === LopHoc::STATUS_COMPLETED) {
                 continue;
             }
 
             $enrolledCount = $classRoom->enrollments()
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->count();
 
             if ($classRoom->room && $enrolledCount >= $classRoom->room->capacity) {
-                $classRoom->update(['status' => ClassRoom::STATUS_FULL]);
+                $classRoom->update(['status' => LopHoc::STATUS_FULL]);
             }
         }
     }
@@ -1016,11 +1016,11 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
         $fixtures = [
             [
                 'course' => 'KhaiTriEdu 2026 - Tiếng Anh giao tiếp',
-                'status' => ClassRoom::STATUS_FULL,
+                'status' => LopHoc::STATUS_FULL,
             ],
             [
                 'course' => 'KhaiTriEdu 2026 - Tin học văn phòng',
-                'status' => ClassRoom::STATUS_CLOSED,
+                'status' => LopHoc::STATUS_CLOSED,
             ],
         ];
 
@@ -1085,7 +1085,7 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             $classRoom->schedules()->delete();
 
             foreach ($schedules as $schedule) {
-                ClassSchedule::create([
+                LichHoc::create([
                     'lop_hoc_id' => $classRoom->id,
                     'teacher_id' => $classRoom->teacher_id,
                     'room_id' => $classRoom->room_id,
@@ -1119,20 +1119,20 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
 
     protected function users(array $emails): Collection
     {
-        return User::query()
+        return NguoiDung::query()
             ->whereIn('email', $emails)
             ->get()
             ->keyBy('email');
     }
 
-    protected function user(string $email): ?User
+    protected function user(string $email): ?NguoiDung
     {
-        return User::query()->where('email', $email)->first();
+        return NguoiDung::query()->where('email', $email)->first();
     }
 
     protected function courses(array $titles): Collection
     {
-        return Course::query()
+        return KhoaHoc::query()
             ->with([
                 'subject.category',
                 'teacher',
@@ -1145,8 +1145,8 @@ class DuLieuVanHanhDaoTaoSeeder extends Seeder
             ->keyBy('title');
     }
 
-    protected function room(string $code): ?Room
+    protected function room(string $code): ?PhongHoc
     {
-        return Room::query()->where('code', $code)->first();
+        return PhongHoc::query()->where('code', $code)->first();
     }
 }

@@ -35,7 +35,7 @@
                     @csrf
                     @foreach ($modules as $listedModule)
                         @php
-                            $statusClasses = $listedModule->status === \App\Models\Module::STATUS_PUBLISHED
+                            $statusClasses = $listedModule->status === \App\Models\HocPhan::STATUS_PUBLISHED
                                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                 : 'border-amber-200 bg-amber-50 text-amber-700';
                         @endphp
@@ -107,4 +107,3 @@
     </div>
 </div>
 @endsection
-

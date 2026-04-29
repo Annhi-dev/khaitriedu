@@ -3,54 +3,54 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\LessonProgress;
-use App\Models\User;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\TienDoBaiHoc;
+use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
     public function courses()
     {
-        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$user, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
         }
 
-        $courses = Course::where('teacher_id', $user->id)
+        $courses = KhoaHoc::where('teacher_id', $user->id)
             ->with(['subject.category', 'modules'])
             ->withCount([
-                'enrollments as active_enrollments_count' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments as active_enrollments_count' => fn ($query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
             ])
             ->get();
 
-        $enrollments = Enrollment::whereIn('course_id', $courses->pluck('id'))
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+        $enrollments = GhiDanh::whereIn('course_id', $courses->pluck('id'))
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->with(['user', 'course.subject', 'classRoom'])
             ->orderByDesc('id')
             ->get();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         return view('giao_vien.khoa_hoc', compact('user', 'courses', 'enrollments'));
     }
 
     public function showCourse($id)
     {
-        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$user, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
         }
 
-        $course = Course::where('teacher_id', $user->id)
+        $course = KhoaHoc::where('teacher_id', $user->id)
             ->with([
                 'subject.category',
                 'modules.lessons',
-                'enrollments' => fn ($query) => $query->whereIn('status', Enrollment::courseAccessStatuses()),
+                'enrollments' => fn ($query) => $query->whereIn('status', GhiDanh::courseAccessStatuses()),
                 'enrollments.user',
                 'enrollments.classRoom',
             ])
@@ -60,9 +60,9 @@ class CourseController extends Controller
             return redirect()->route('teacher.courses')->with('error', 'Lớp học không tồn tại.');
         }
 
-        Enrollment::syncDisplayStatusesByClass($course->enrollments);
+        GhiDanh::syncDisplayStatusesByClass($course->enrollments);
 
-        $gradeMap = Grade::whereIn('enrollment_id', $course->enrollments->pluck('id'))
+        $gradeMap = DiemSo::whereIn('enrollment_id', $course->enrollments->pluck('id'))
             ->get()
             ->keyBy(function ($grade) {
                 return $grade->enrollment_id . '-' . ($grade->module_id ?? 'summary');
@@ -85,7 +85,7 @@ class CourseController extends Controller
         $completedByStudentAndModule = [];
 
         if ($studentIds->isNotEmpty() && $lessonIds !== []) {
-            $progressRows = LessonProgress::query()
+            $progressRows = TienDoBaiHoc::query()
                 ->whereIn('user_id', $studentIds)
                 ->whereIn('lesson_id', $lessonIds)
                 ->where('is_completed', true)
@@ -146,7 +146,7 @@ class CourseController extends Controller
 
     public function updateGrades(Request $request)
     {
-        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$user, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -160,13 +160,13 @@ class CourseController extends Controller
             'feedback' => 'nullable|string|max:1000',
         ]);
 
-        $enrollment = Enrollment::with('course')->find($data['enrollment_id']);
+        $enrollment = GhiDanh::with('course')->find($data['enrollment_id']);
 
         if (! $enrollment || ! $enrollment->course || $enrollment->course->teacher_id !== $user->id) {
             return back()->with('error', 'Bạn không có quyền nhập điểm cho lớp học này.');
         }
 
-        Grade::updateOrCreate(
+        DiemSo::updateOrCreate(
             ['enrollment_id' => $data['enrollment_id'], 'module_id' => $data['module_id']],
             array_filter($data, fn ($value) => $value !== null)
         );

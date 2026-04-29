@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Lesson;
-use App\Models\Module;
-use App\Models\Enrollment;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\BaiHoc;
+use App\Models\HocPhan;
+use App\Models\GhiDanh;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use App\Helpers\ScheduleHelper;
 use App\Services\AdminScheduleService;
 use App\Services\CourseCurriculumService;
@@ -24,7 +24,7 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_can_create_course_with_existing_subject_id(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $category = $this->createCategory('Tin hoc', 'tin-hoc');
         $subject = $this->createSubject($category, [
             'name' => 'Tin hoc van phong',
@@ -55,7 +55,7 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_can_create_course_by_typing_new_subject_name(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $category = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
 
         $response = $this
@@ -72,7 +72,7 @@ class quan_ly_khoa_hoc_test extends TestCase
 
         $response->assertRedirect(route('admin.categories.show', $category));
 
-        $subject = Subject::query()->where('name', 'Lap trinh Python co ban')->first();
+        $subject = MonHoc::query()->where('name', 'Lap trinh Python co ban')->first();
 
         $this->assertNotNull($subject);
         $this->assertDatabaseHas('mon_hoc', [
@@ -80,7 +80,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'category_id' => $category->id,
             'price' => 5500000,
             'duration' => 18,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
         ]);
         $this->assertDatabaseHas('khoa_hoc', [
             'subject_id' => $subject->id,
@@ -90,7 +90,7 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_reuses_existing_subject_when_typing_matching_name(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $category = $this->createCategory('Ky nang', 'ky-nang');
         $subject = $this->createSubject($category, [
             'name' => 'Tin hoc van phong',
@@ -122,39 +122,39 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_updating_course_syncs_related_subject_references(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         $categoryA = $this->createCategory('Tin hoc', 'tin-hoc');
         $categoryB = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
         $subjectA = $this->createSubject($categoryA, ['name' => 'Tin hoc van phong']);
         $subjectB = $this->createSubject($categoryB, ['name' => 'Tieng Anh giao tiep']);
 
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subjectA->id,
             'title' => 'Khoa 27 - Tin hoc van phong',
             'description' => 'Mo ta cu',
             'price' => 2500000,
         ]);
 
-        $autoNamedClass = ClassRoom::create([
+        $autoNamedClass = LopHoc::create([
             'subject_id' => $subjectA->id,
             'course_id' => $course->id,
             'name' => 'Khoa 27 - Tin hoc van phong',
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        $customNamedClass = ClassRoom::create([
+        $customNamedClass = LopHoc::create([
             'subject_id' => $subjectA->id,
             'course_id' => $course->id,
             'name' => 'Lop doanh nghiep',
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subjectA->id,
             'course_id' => $course->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'is_submitted' => true,
         ]);
 
@@ -196,8 +196,8 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_can_update_course_schedule_with_separate_day_and_time_fields(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Schedule']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Schedule']);
         $category = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
         $subject = $this->createSubject($category, ['name' => 'Tieng Anh giao tiep', 'duration' => 12]);
         $room = $this->createRoom(['name' => 'Phong 305', 'code' => 'P305']);
@@ -211,10 +211,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-01',
             'start_time' => '18:00',
             'end_time' => '20:00',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'teacher_id' => $teacher->id,
@@ -222,10 +222,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'name' => 'Lop Tieng Anh giao tiep',
             'start_date' => '2026-04-01',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -294,8 +294,8 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_cannot_save_course_schedule_when_it_conflicts(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Conflict']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Conflict']);
         $category = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
         $subject = $this->createSubject($category, ['name' => 'Tieng Anh giao tiep', 'duration' => 12]);
 
@@ -308,7 +308,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-01',
             'start_time' => '18:00',
             'end_time' => '20:00',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
         $this->createInternalCourse($subject, $teacher, [
@@ -320,7 +320,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-01',
             'start_time' => '18:30',
             'end_time' => '20:30',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
         $response = $this
@@ -360,11 +360,11 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_can_preview_course_schedule_conflicts_live(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Preview']);
-        $teacherForRoom = User::factory()->teacher()->create(['name' => 'Teacher Room Conflict']);
-        $teacherForStudent = User::factory()->teacher()->create(['name' => 'Teacher Student Conflict']);
-        $student = User::factory()->student()->create(['name' => 'Student Preview']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Preview']);
+        $teacherForRoom = NguoiDung::factory()->teacher()->create(['name' => 'Teacher PhongHoc Conflict']);
+        $teacherForStudent = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Student Conflict']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Student Preview']);
         $category = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
         $subject = $this->createSubject($category, ['name' => 'Tieng Anh giao tiep', 'duration' => 12]);
         $room = $this->createRoom(['name' => 'Phong 306', 'code' => 'P306']);
@@ -379,10 +379,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-03',
             'start_time' => '19:00',
             'end_time' => '21:00',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        $currentClassRoom = ClassRoom::create([
+        $currentClassRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $currentCourse->id,
             'teacher_id' => $teacher->id,
@@ -390,10 +390,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'name' => 'Lop Tieng Anh giao tiep',
             'start_date' => '2026-04-03',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $currentClassRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -402,12 +402,12 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_time' => '21:00',
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $currentCourse->id,
             'lop_hoc_id' => $currentClassRoom->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'is_submitted' => true,
         ]);
 
@@ -420,7 +420,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-03',
             'start_time' => '19:30',
             'end_time' => '21:30',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
         $roomConflictCourse = $this->createInternalCourse($subject, $teacherForRoom, [
@@ -432,10 +432,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-03',
             'start_time' => '19:15',
             'end_time' => '21:15',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        $roomConflictClassRoom = ClassRoom::create([
+        $roomConflictClassRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $roomConflictCourse->id,
             'teacher_id' => $teacherForRoom->id,
@@ -443,10 +443,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'name' => 'Lop trung phong',
             'start_date' => '2026-04-03',
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $roomConflictClassRoom->id,
             'teacher_id' => $teacherForRoom->id,
             'room_id' => $room->id,
@@ -464,15 +464,15 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_date' => '2026-05-03',
             'start_time' => '19:00',
             'end_time' => '21:00',
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $studentConflictCourse->id,
             'lop_hoc_id' => null,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'is_submitted' => true,
         ]);
 
@@ -501,14 +501,14 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_admin_can_autofill_end_time_when_only_start_time_is_provided(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create(['name' => 'Teacher Auto End']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Teacher Auto End']);
         $category = $this->createCategory('Ngoai ngu', 'ngoai-ngu');
         $subject = $this->createSubject($category, ['name' => 'Tieng Anh giao tiep', 'duration' => 12]);
 
         $course = $this->createInternalCourse($subject, $teacher, [
             'title' => 'Khoa 29 - Tieng Anh giao tiep',
-            'status' => Course::STATUS_DRAFT,
+            'status' => KhoaHoc::STATUS_DRAFT,
         ]);
 
         $response = $this
@@ -555,20 +555,20 @@ class quan_ly_khoa_hoc_test extends TestCase
             'title' => 'KhaiTriEdu 2026 - Tieng Anh giao tiep',
             'description' => 'Mo ta khoa hoc',
             'price' => 0,
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
 
-        $module = Module::create([
+        $module = HocPhan::create([
             'course_id' => $course->id,
             'title' => 'Tong quan khoa hoc',
             'content' => 'Noi dung bi sai ?',
             'session_count' => 4,
             'duration' => 60,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
             'position' => 1,
         ]);
 
-        Lesson::create([
+        BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Bu?i 1: T?ng quan khoa h?c - Nh?p m?n',
             'description' => 'Mo ta bi sai ?',
@@ -590,7 +590,7 @@ class quan_ly_khoa_hoc_test extends TestCase
 
     public function test_schedule_sync_refreshes_current_classroom_name(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $category = $this->createCategory('Boi duong giao vien', 'boi-duong-giao-vien');
         $subject = $this->createSubject($category, [
             'name' => 'Boi duong giao vien pho thong',
@@ -601,7 +601,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'title' => 'KhaiTriEdu 2026 - Boi duong giao vien pho thong',
             'description' => 'Mo ta khoa hoc',
             'price' => 0,
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
             'meeting_days' => ['Sunday'],
             'start_date' => '2026-04-01',
             'end_date' => '2026-05-01',
@@ -609,7 +609,7 @@ class quan_ly_khoa_hoc_test extends TestCase
             'end_time' => '10:15',
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'teacher_id' => $teacher->id,
@@ -617,10 +617,10 @@ class quan_ly_khoa_hoc_test extends TestCase
             'name' => 'Kh?a n?i b? - TH?C S? QU?N TR? KINH DOANH',
             'start_date' => '2026-04-01',
             'duration' => 12,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        ClassSchedule::create([
+        LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -636,50 +636,50 @@ class quan_ly_khoa_hoc_test extends TestCase
         $this->assertSame($course->title, $classRoom->name);
     }
 
-    private function createCategory(string $name, string $slug): Category
+    private function createCategory(string $name, string $slug): NhomHoc
     {
-        return Category::create([
+        return NhomHoc::create([
             'name' => $name,
             'slug' => $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
     }
 
-    private function createSubject(Category $category, array $overrides = []): Subject
+    private function createSubject(NhomHoc $category, array $overrides = []): MonHoc
     {
-        return Subject::create(array_merge([
+        return MonHoc::create(array_merge([
             'name' => 'Mon hoc mau',
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
             'duration' => 12,
             'description' => 'Mo ta mau',
         ], $overrides));
     }
 
-    private function createRoom(array $overrides = []): Room
+    private function createRoom(array $overrides = []): PhongHoc
     {
         $code = $overrides['code'] ?? 'P' . fake()->unique()->numberBetween(100, 999);
 
-        return Room::create(array_merge([
+        return PhongHoc::create(array_merge([
             'code' => $code,
             'name' => 'Phong ' . $code,
             'type' => 'offline',
             'location' => 'Tang 2',
             'capacity' => 30,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ], $overrides));
     }
 
-    private function createInternalCourse(Subject $subject, ?User $teacher = null, array $overrides = []): Course
+    private function createInternalCourse(MonHoc $subject, ?NguoiDung $teacher = null, array $overrides = []): KhoaHoc
     {
-        return Course::create(array_merge([
+        return KhoaHoc::create(array_merge([
             'subject_id' => $subject->id,
             'title' => $subject->name . ' - Lop noi bo',
             'description' => 'Lop hoc noi bo danh cho hoc vien da duoc admin xep lich.',
             'teacher_id' => $teacher?->id,
             'capacity' => 20,
-            'status' => Course::STATUS_DRAFT,
+            'status' => KhoaHoc::STATUS_DRAFT,
         ], $overrides));
     }
 }

@@ -4,19 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Guest\StoreContactMessageRequest;
 use App\Http\Requests\Guest\StoreTeacherApplicationRequest;
-use App\Models\Announcement;
-use App\Models\Subject;
-use App\Models\TeacherApplication;
-use App\Models\User;
+use App\Models\ThongBaoChung;
+use App\Models\MonHoc;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\NguoiDung;
 use Illuminate\Support\Facades\Mail;
 
 class PublicPageController extends Controller
 {
     public function about()
     {
-        $studentCount = User::students()->count();
-        $courseCount = Subject::count();
-        $teacherCount = User::teachers()->count();
+        $studentCount = NguoiDung::students()->count();
+        $courseCount = MonHoc::count();
+        $teacherCount = NguoiDung::teachers()->count();
 
         return view('trang_tinh.gioi_thieu', compact('studentCount', 'courseCount', 'teacherCount'));
     }
@@ -39,7 +39,7 @@ class PublicPageController extends Controller
 
     public function blog()
     {
-        $posts = Announcement::where('status', 'published')
+        $posts = ThongBaoChung::where('status', 'published')
             ->orderByDesc('published_at')
             ->limit(6)
             ->get();
@@ -49,7 +49,7 @@ class PublicPageController extends Controller
 
     public function teachers()
     {
-        $teachers = User::teachers()->get();
+        $teachers = NguoiDung::teachers()->get();
 
         return view('trang_tinh.giao_vien', compact('teachers'));
     }
@@ -81,7 +81,7 @@ class PublicPageController extends Controller
 
     public function submitTeacherApplication(StoreTeacherApplicationRequest $request)
     {
-        TeacherApplication::create($request->validated());
+        DonUngTuyenGiaoVien::create($request->validated());
 
         return redirect()->route('apply-teacher')->with('status', 'Đã gửi hồ sơ ứng tuyển. Admin sẽ phản hồi sớm.');
     }

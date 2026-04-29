@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Department;
-use App\Models\User;
+use App\Models\PhongBan;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,17 +13,17 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_admin_can_view_department_list(): void
     {
-        $admin = User::factory()->admin()->create();
-        $departmentA = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $departmentA = PhongBan::create([
             'code' => 'PB-DT',
             'name' => 'Phong Dao tao',
             'description' => 'Phu trach dieu phoi lich hoc',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $departmentB = Department::create([
+        $departmentB = PhongBan::create([
             'code' => 'PB-KTCL',
             'name' => 'Phong Khao thi',
-            'status' => Department::STATUS_INACTIVE,
+            'status' => PhongBan::STATUS_INACTIVE,
         ]);
 
         $response = $this
@@ -38,23 +38,23 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_admin_can_filter_departments(): void
     {
-        $admin = User::factory()->admin()->create();
-        $target = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $target = PhongBan::create([
             'code' => 'PB-CNTT',
             'name' => 'Phong Cong nghe giao duc',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $other = Department::create([
+        $other = PhongBan::create([
             'code' => 'PB-HCNS',
             'name' => 'Phong Hanh chinh nhan su',
-            'status' => Department::STATUS_INACTIVE,
+            'status' => PhongBan::STATUS_INACTIVE,
         ]);
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
             ->get(route('admin.departments.index', [
                 'search' => 'Cong nghe',
-                'status' => Department::STATUS_ACTIVE,
+                'status' => PhongBan::STATUS_ACTIVE,
             ]));
 
         $response->assertOk();
@@ -64,7 +64,7 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_admin_can_create_department(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
@@ -72,26 +72,26 @@ class quan_ly_phong_ban_test extends TestCase
                 'code' => 'pb.gv',
                 'name' => 'Phong Quan ly giang vien',
                 'description' => 'Bo phan theo doi va phan cong giang vien',
-                'status' => Department::STATUS_ACTIVE,
+                'status' => PhongBan::STATUS_ACTIVE,
             ]);
 
-        $department = Department::where('name', 'Phong Quan ly giang vien')->first();
+        $department = PhongBan::where('name', 'Phong Quan ly giang vien')->first();
 
         $response->assertRedirect(route('admin.departments.edit', $department));
         $this->assertDatabaseHas('phong_ban', [
             'id' => $department->id,
             'code' => 'PB.GV',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
     }
 
     public function test_admin_can_update_department(): void
     {
-        $admin = User::factory()->admin()->create();
-        $department = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $department = PhongBan::create([
             'code' => 'PB-CU',
             'name' => 'Phong cu',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
 
         $response = $this
@@ -100,7 +100,7 @@ class quan_ly_phong_ban_test extends TestCase
                 'code' => 'pb-moi',
                 'name' => 'Phong moi',
                 'description' => 'Cap nhat mo ta phong ban',
-                'status' => Department::STATUS_INACTIVE,
+                'status' => PhongBan::STATUS_INACTIVE,
             ]);
 
         $response->assertRedirect(route('admin.departments.edit', $department));
@@ -108,17 +108,17 @@ class quan_ly_phong_ban_test extends TestCase
             'id' => $department->id,
             'code' => 'PB-MOI',
             'name' => 'Phong moi',
-            'status' => Department::STATUS_INACTIVE,
+            'status' => PhongBan::STATUS_INACTIVE,
         ]);
     }
 
     public function test_admin_can_deactivate_and_activate_department(): void
     {
-        $admin = User::factory()->admin()->create();
-        $department = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $department = PhongBan::create([
             'code' => 'PB-KH',
             'name' => 'Phong ke hoach',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
 
         $deactivateResponse = $this
@@ -128,7 +128,7 @@ class quan_ly_phong_ban_test extends TestCase
         $deactivateResponse->assertRedirect(route('admin.departments.index'));
         $this->assertDatabaseHas('phong_ban', [
             'id' => $department->id,
-            'status' => Department::STATUS_INACTIVE,
+            'status' => PhongBan::STATUS_INACTIVE,
         ]);
 
         $activateResponse = $this
@@ -138,19 +138,19 @@ class quan_ly_phong_ban_test extends TestCase
         $activateResponse->assertRedirect(route('admin.departments.index'));
         $this->assertDatabaseHas('phong_ban', [
             'id' => $department->id,
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
     }
 
     public function test_admin_can_assign_teacher_to_department_from_department_management(): void
     {
-        $admin = User::factory()->admin()->create();
-        $department = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $department = PhongBan::create([
             'code' => 'PB-GV',
             'name' => 'Phong quan ly giao vien',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $teacher = User::factory()->teacher()->create([
+        $teacher = NguoiDung::factory()->teacher()->create([
             'department_id' => null,
         ]);
 
@@ -169,18 +169,18 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_admin_can_reassign_teacher_from_other_department(): void
     {
-        $admin = User::factory()->admin()->create();
-        $oldDepartment = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $oldDepartment = PhongBan::create([
             'code' => 'PB-OLD',
             'name' => 'Phong cu',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $newDepartment = Department::create([
+        $newDepartment = PhongBan::create([
             'code' => 'PB-NEW',
             'name' => 'Phong moi',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $teacher = User::factory()->teacher()->create([
+        $teacher = NguoiDung::factory()->teacher()->create([
             'department_id' => $oldDepartment->id,
         ]);
 
@@ -199,13 +199,13 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_department_assignment_rejects_non_teacher_account(): void
     {
-        $admin = User::factory()->admin()->create();
-        $department = Department::create([
+        $admin = NguoiDung::factory()->admin()->create();
+        $department = PhongBan::create([
             'code' => 'PB-ERR',
             'name' => 'Phong test loi',
-            'status' => Department::STATUS_ACTIVE,
+            'status' => PhongBan::STATUS_ACTIVE,
         ]);
-        $student = User::factory()->student()->create([
+        $student = NguoiDung::factory()->student()->create([
             'department_id' => null,
         ]);
 
@@ -226,7 +226,7 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_student_is_blocked_from_department_management(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->withSession(['user_id' => $student->id])
@@ -238,7 +238,7 @@ class quan_ly_phong_ban_test extends TestCase
 
     public function test_teacher_is_blocked_from_department_management(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $response = $this
             ->withSession(['user_id' => $teacher->id])

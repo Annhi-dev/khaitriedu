@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Certificate;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Quiz;
-use App\Models\QuizAnswer;
-use App\Models\User;
+use App\Models\ChungChi;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\BaiKiemTra;
+use App\Models\TraLoiBaiKiemTra;
+use App\Models\NguoiDung;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,11 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class CourseQuizService
 {
-    public function getStudentQuizProgress(User $student, Quiz $quiz): array
+    public function getStudentQuizProgress(NguoiDung $student, BaiKiemTra $quiz): array
     {
         $quiz->loadMissing('questions.options');
 
-        $answers = QuizAnswer::query()
+        $answers = TraLoiBaiKiemTra::query()
             ->where('user_id', $student->id)
             ->where('quiz_id', $quiz->id)
             ->with(['question', 'option'])
@@ -50,11 +50,11 @@ class CourseQuizService
         ];
     }
 
-    public function getTeacherQuizReport(Quiz $quiz): array
+    public function getTeacherQuizReport(BaiKiemTra $quiz): array
     {
         $quiz->loadMissing('questions.options');
 
-        $answers = QuizAnswer::query()
+        $answers = TraLoiBaiKiemTra::query()
             ->where('quiz_id', $quiz->id)
             ->with(['student', 'question', 'option'])
             ->orderBy('user_id')
@@ -86,7 +86,7 @@ class CourseQuizService
             ->values();
 
         $totalAttempts = $answers
-            ->map(fn (QuizAnswer $answer) => $answer->user_id . '|' . $answer->attempt)
+            ->map(fn (TraLoiBaiKiemTra $answer) => $answer->user_id . '|' . $answer->attempt)
             ->unique()
             ->count();
         $studentCount = $studentAttempts->count();
@@ -106,13 +106,13 @@ class CourseQuizService
         ];
     }
 
-    public function submit(User $student, Course $course, Quiz $quiz, array $answers): array
+    public function submit(NguoiDung $student, KhoaHoc $course, BaiKiemTra $quiz, array $answers): array
     {
         return DB::transaction(function () use ($student, $course, $quiz, $answers): array {
-            $hasCourseAccess = Enrollment::query()
+            $hasCourseAccess = GhiDanh::query()
                 ->where('user_id', $student->id)
                 ->where('course_id', $course->id)
-                ->whereIn('status', Enrollment::courseAccessStatuses())
+                ->whereIn('status', GhiDanh::courseAccessStatuses())
                 ->exists();
 
             if (! $hasCourseAccess) {
@@ -144,7 +144,7 @@ class CourseQuizService
                     $earnedPoints += (int) $question->points;
                 }
 
-                QuizAnswer::create([
+                TraLoiBaiKiemTra::create([
                     'user_id' => $student->id,
                     'quiz_id' => $quiz->id,
                     'question_id' => $question->id,
@@ -202,9 +202,9 @@ class CourseQuizService
         ];
     }
 
-    protected function nextAttemptNumber(User $student, Quiz $quiz): int
+    protected function nextAttemptNumber(NguoiDung $student, BaiKiemTra $quiz): int
     {
-        $lastAttempt = QuizAnswer::query()
+        $lastAttempt = TraLoiBaiKiemTra::query()
             ->where('user_id', $student->id)
             ->where('quiz_id', $quiz->id)
             ->max('attempt');
@@ -212,7 +212,7 @@ class CourseQuizService
         return ((int) $lastAttempt) + 1;
     }
 
-    protected function summarizeAttempt(int $attempt, Collection $attemptAnswers, Quiz $quiz): array
+    protected function summarizeAttempt(int $attempt, Collection $attemptAnswers, BaiKiemTra $quiz): array
     {
         $attemptAnswers = $attemptAnswers->sortBy('question_id')->values();
         $answerMap = $attemptAnswers->keyBy('question_id');
@@ -260,9 +260,9 @@ class CourseQuizService
         ];
     }
 
-    protected function issueCertificate(User $student, Course $course, float $score): Certificate
+    protected function issueCertificate(NguoiDung $student, KhoaHoc $course, float $score): ChungChi
     {
-        $certificate = Certificate::firstOrNew([
+        $certificate = ChungChi::firstOrNew([
             'user_id' => $student->id,
             'course_id' => $course->id,
         ]);
@@ -283,7 +283,7 @@ class CourseQuizService
     {
         do {
             $number = 'KT-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
-        } while (Certificate::where('certificate_number', $number)->exists());
+        } while (ChungChi::where('certificate_number', $number)->exists());
 
         return $number;
     }

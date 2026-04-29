@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Notification;
+use App\Models\ThongBao;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
@@ -59,7 +59,7 @@ return new class extends Migration
         ];
 
         foreach ($rows as $id => $payload) {
-            Notification::query()
+            ThongBao::query()
                 ->whereKey($id)
                 ->update($payload);
         }
@@ -119,7 +119,7 @@ return new class extends Migration
         ];
 
         foreach ($rows as $id => $payload) {
-            Notification::query()
+            ThongBao::query()
                 ->whereKey($id)
                 ->update($payload);
         }

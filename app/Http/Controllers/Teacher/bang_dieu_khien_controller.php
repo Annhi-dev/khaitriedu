@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\NguoiDung;
 use App\Services\TeacherScheduleService;
 
 class DashboardController extends Controller
 {
     public function index(TeacherScheduleService $service)
     {
-        [$user, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$user, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;

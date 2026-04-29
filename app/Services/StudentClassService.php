@@ -2,21 +2,21 @@
 
 namespace App\Services;
 
-use App\Models\AttendanceRecord;
-use App\Models\ClassRoom;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Quiz;
-use App\Models\QuizAnswer;
-use App\Models\TeacherEvaluation;
-use App\Models\User;
+use App\Models\DiemDanh;
+use App\Models\LopHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\BaiKiemTra;
+use App\Models\TraLoiBaiKiemTra;
+use App\Models\DanhGiaGiaoVien;
+use App\Models\NguoiDung;
 use Illuminate\Support\Collection;
 
 class StudentClassService
 {
-    public function getStudentClasses(User $student): Collection
+    public function getStudentClasses(NguoiDung $student): Collection
     {
-        $enrollments = Enrollment::query()
+        $enrollments = GhiDanh::query()
             ->where('user_id', $student->id)
             ->whereIn('status', $this->accessibleStatuses())
             ->with([
@@ -39,16 +39,16 @@ class StudentClassService
             ->orderByDesc('id')
             ->get();
 
-        Enrollment::syncDisplayStatusesByClass($enrollments);
+        GhiDanh::syncDisplayStatusesByClass($enrollments);
 
         return $enrollments;
     }
 
-    public function getStudentClassDetail(User $student, Enrollment $enrollment): array
+    public function getStudentClassDetail(NguoiDung $student, GhiDanh $enrollment): array
     {
         abort_unless((int) $enrollment->user_id === (int) $student->id, 403);
 
-        $enrollment = Enrollment::query()
+        $enrollment = GhiDanh::query()
             ->with([
                 'subject.category',
                 'course.subject.category',
@@ -68,7 +68,7 @@ class StudentClassService
             ])
             ->findOrFail($enrollment->id);
 
-        Enrollment::syncDisplayStatusesByClass(collect([$enrollment]));
+        GhiDanh::syncDisplayStatusesByClass(collect([$enrollment]));
 
         $grades = $this->getStudentGrades($enrollment);
         $attendanceRecords = $this->getStudentAttendance($enrollment);
@@ -91,7 +91,7 @@ class StudentClassService
         ];
     }
 
-    public function getClassmates(Enrollment $enrollment): Collection
+    public function getClassmates(GhiDanh $enrollment): Collection
     {
         $classRoom = $enrollment->classRoom;
 
@@ -100,19 +100,19 @@ class StudentClassService
         }
 
         $students = $classRoom->enrollments
-            ->filter(fn (Enrollment $classEnrollment) => in_array($classEnrollment->normalizedStatus(), Enrollment::courseAccessStatuses(), true))
-            ->map(fn (Enrollment $classEnrollment) => $classEnrollment->user)
+            ->filter(fn (GhiDanh $classEnrollment) => in_array($classEnrollment->normalizedStatus(), GhiDanh::courseAccessStatuses(), true))
+            ->map(fn (GhiDanh $classEnrollment) => $classEnrollment->user)
             ->filter()
-            ->unique(fn (User $student) => (int) $student->id)
-            ->sortBy(fn (User $student) => mb_strtolower((string) $student->displayName()))
+            ->unique(fn (NguoiDung $student) => (int) $student->id)
+            ->sortBy(fn (NguoiDung $student) => mb_strtolower((string) $student->displayName()))
             ->values();
 
         return $students;
     }
 
-    public function getStudentGrades(Enrollment $enrollment): Collection
+    public function getStudentGrades(GhiDanh $enrollment): Collection
     {
-        return Grade::query()
+        return DiemSo::query()
             ->where(function ($query) use ($enrollment): void {
                 $query->where('enrollment_id', $enrollment->id);
 
@@ -128,9 +128,9 @@ class StudentClassService
             ->get();
     }
 
-    public function getStudentAttendance(Enrollment $enrollment): Collection
+    public function getStudentAttendance(GhiDanh $enrollment): Collection
     {
-        return AttendanceRecord::query()
+        return DiemDanh::query()
             ->where(function ($query) use ($enrollment): void {
                 $query->where('enrollment_id', $enrollment->id);
 
@@ -147,7 +147,7 @@ class StudentClassService
             ->get();
     }
 
-    public function getAvailableQuizzes(Enrollment $enrollment): Collection
+    public function getAvailableQuizzes(GhiDanh $enrollment): Collection
     {
         $course = $enrollment->course;
         $classRoom = $enrollment->classRoom;
@@ -159,7 +159,7 @@ class StudentClassService
         $course->loadMissing(['modules.lessons.quiz.questions.options']);
         $classRoom?->loadMissing(['quizzes.questions.options']);
 
-        $quizzes = Quiz::query()
+        $quizzes = BaiKiemTra::query()
             ->published()
             ->where(function ($query) use ($course, $classRoom, $enrollment): void {
                 $query->where('course_id', $course->id)
@@ -179,11 +179,11 @@ class StudentClassService
                 'questions.options',
             ])
             ->get()
-            ->unique(fn (Quiz $quiz) => (int) $quiz->id)
+            ->unique(fn (BaiKiemTra $quiz) => (int) $quiz->id)
             ->values();
 
         return $quizzes->map(function ($quiz) use ($enrollment, $course) {
-            $answers = QuizAnswer::query()
+            $answers = TraLoiBaiKiemTra::query()
                 ->where('user_id', $enrollment->user_id)
                 ->where('quiz_id', $quiz->id)
                 ->with('question')
@@ -218,19 +218,19 @@ class StudentClassService
         })->sortBy(fn ($quiz) => mb_strtolower((string) $quiz->title))->values();
     }
 
-    public function getEvaluation(Enrollment $enrollment): ?TeacherEvaluation
+    public function getEvaluation(GhiDanh $enrollment): ?DanhGiaGiaoVien
     {
         if ($enrollment->lop_hoc_id === null) {
             return null;
         }
 
-        return TeacherEvaluation::query()
+        return DanhGiaGiaoVien::query()
             ->where('class_room_id', $enrollment->lop_hoc_id)
             ->where('student_id', $enrollment->user_id)
             ->first();
     }
 
-    public function saveEvaluation(User $student, Enrollment $enrollment, array $data): TeacherEvaluation
+    public function saveEvaluation(NguoiDung $student, GhiDanh $enrollment, array $data): DanhGiaGiaoVien
     {
         abort_unless((int) $enrollment->user_id === (int) $student->id, 403);
 
@@ -238,7 +238,7 @@ class StudentClassService
             throw new \InvalidArgumentException('Không thể đánh giá khi lớp chưa được xếp.');
         }
 
-        return TeacherEvaluation::updateOrCreate(
+        return DanhGiaGiaoVien::updateOrCreate(
             [
                 'class_room_id' => $enrollment->lop_hoc_id,
                 'student_id' => $student->id,
@@ -254,22 +254,22 @@ class StudentClassService
     public function accessibleStatuses(): array
     {
         return [
-            Enrollment::STATUS_APPROVED,
-            Enrollment::STATUS_ENROLLED,
-            Enrollment::STATUS_SCHEDULED,
-            Enrollment::STATUS_ACTIVE,
-            Enrollment::STATUS_COMPLETED,
-            Enrollment::LEGACY_STATUS_CONFIRMED,
+            GhiDanh::STATUS_APPROVED,
+            GhiDanh::STATUS_ENROLLED,
+            GhiDanh::STATUS_SCHEDULED,
+            GhiDanh::STATUS_ACTIVE,
+            GhiDanh::STATUS_COMPLETED,
+            GhiDanh::LEGACY_STATUS_CONFIRMED,
         ];
     }
 
     protected function attendanceSummary(Collection $attendanceRecords): array
     {
         $total = $attendanceRecords->count();
-        $present = $attendanceRecords->where('status', AttendanceRecord::STATUS_PRESENT)->count();
-        $absent = $attendanceRecords->where('status', AttendanceRecord::STATUS_ABSENT)->count();
-        $late = $attendanceRecords->where('status', AttendanceRecord::STATUS_LATE)->count();
-        $excused = $attendanceRecords->where('status', AttendanceRecord::STATUS_EXCUSED)->count();
+        $present = $attendanceRecords->where('status', DiemDanh::STATUS_PRESENT)->count();
+        $absent = $attendanceRecords->where('status', DiemDanh::STATUS_ABSENT)->count();
+        $late = $attendanceRecords->where('status', DiemDanh::STATUS_LATE)->count();
+        $excused = $attendanceRecords->where('status', DiemDanh::STATUS_EXCUSED)->count();
 
         return [
             'total' => $total,

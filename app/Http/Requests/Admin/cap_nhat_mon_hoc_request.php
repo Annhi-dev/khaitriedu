@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Subject;
+use App\Models\MonHoc;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +19,7 @@ class UpdateSubjectRequest extends FormRequest
             'name' => trim((string) $this->input('name', '')),
             'description' => $this->filled('description') ? trim((string) $this->input('description')) : null,
             'duration' => $this->filled('duration') ? (int) $this->input('duration') : null,
-            'test_count' => $this->filled('test_count') ? (int) $this->input('test_count') : Subject::DEFAULT_TEST_COUNT,
+            'test_count' => $this->filled('test_count') ? (int) $this->input('test_count') : MonHoc::DEFAULT_TEST_COUNT,
             'category_id' => $this->filled('category_id') ? (int) $this->input('category_id') : null,
         ]);
     }
@@ -33,10 +33,10 @@ class UpdateSubjectRequest extends FormRequest
             'duration' => ['required', 'integer', 'min:1', 'max:120'],
             'test_count' => ['required', 'integer', 'min:1', 'max:12'],
             'status' => ['required', Rule::in([
-                Subject::STATUS_DRAFT,
-                Subject::STATUS_OPEN,
-                Subject::STATUS_CLOSED,
-                Subject::STATUS_ARCHIVED,
+                MonHoc::STATUS_DRAFT,
+                MonHoc::STATUS_OPEN,
+                MonHoc::STATUS_CLOSED,
+                MonHoc::STATUS_ARCHIVED,
             ])],
             'category_id' => ['nullable', 'exists:danh_muc,id'],
             'image' => ['nullable', 'image', 'max:2048'],

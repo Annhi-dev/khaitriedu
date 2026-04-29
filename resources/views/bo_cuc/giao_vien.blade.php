@@ -13,6 +13,7 @@
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800">
 @php
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag();
     $teacherUser = $current ?? Auth::user();
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Khu vực giảng viên';
     $pageEyebrow = trim($__env->yieldContent('eyebrow'));

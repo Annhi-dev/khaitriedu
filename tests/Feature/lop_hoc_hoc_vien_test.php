@@ -2,22 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Models\AttendanceRecord;
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Question;
-use App\Models\Room;
-use App\Models\Subject;
-use App\Models\TeacherEvaluation;
-use App\Models\User;
-use App\Models\Quiz;
-use App\Models\Lesson;
-use App\Models\Module as CourseModule;
-use App\Models\QuizAnswer;
+use App\Models\DiemDanh;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\CauHoi;
+use App\Models\PhongHoc;
+use App\Models\MonHoc;
+use App\Models\DanhGiaGiaoVien;
+use App\Models\NguoiDung;
+use App\Models\BaiKiemTra;
+use App\Models\BaiHoc;
+use App\Models\HocPhan as CourseModule;
+use App\Models\TraLoiBaiKiemTra;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,30 +33,30 @@ class lop_hoc_hoc_vien_test extends TestCase
 
     public function test_student_class_index_shows_only_accessible_classes_and_summary(): void
     {
-        $student = User::factory()->student()->create(['name' => 'Hoc vien A']);
-        $teacher = User::factory()->teacher()->create(['name' => 'Giang vien A']);
-        $completedTeacher = User::factory()->teacher()->create(['name' => 'Giang vien B']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien A']);
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien A']);
+        $completedTeacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien B']);
 
         $activeBundle = $this->createStudentClassBundle($student, $teacher, [
-            'subject_name' => 'Tin hoc van phong',
-            'class_name' => 'Tin hoc van phong - Lop A',
-            'class_status' => ClassRoom::STATUS_OPEN,
-            'enrollment_status' => Enrollment::STATUS_ACTIVE,
+            'subject_name' => 'Tin học văn phòng',
+            'class_name' => 'Tin học văn phòng - Lớp A',
+            'class_status' => LopHoc::STATUS_OPEN,
+            'enrollment_status' => GhiDanh::STATUS_ACTIVE,
             'grade_score' => 88.5,
         ]);
 
         $completedBundle = $this->createStudentClassBundle($student, $completedTeacher, [
-            'subject_name' => 'Tieng Anh giao tiep',
-            'class_name' => 'Tieng Anh giao tiep - Lop B',
-            'class_status' => ClassRoom::STATUS_COMPLETED,
-            'enrollment_status' => Enrollment::STATUS_COMPLETED,
+            'subject_name' => 'Tiếng Anh giao tiếp',
+            'class_name' => 'Tiếng Anh giao tiếp - Lớp B',
+            'class_status' => LopHoc::STATUS_COMPLETED,
+            'enrollment_status' => GhiDanh::STATUS_COMPLETED,
             'grade_score' => 92.0,
         ]);
 
-        Enrollment::create([
+        GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $completedBundle['subject']->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
@@ -84,16 +84,16 @@ class lop_hoc_hoc_vien_test extends TestCase
 
     public function test_student_can_view_class_detail_and_sections(): void
     {
-        $student = User::factory()->student()->create(['name' => 'Hoc vien detail']);
-        $teacher = User::factory()->teacher()->create(['name' => 'Giang vien detail']);
+        $student = NguoiDung::factory()->student()->create(['name' => 'Hoc vien detail']);
+        $teacher = NguoiDung::factory()->teacher()->create(['name' => 'Giang vien detail']);
 
         $bundle = $this->createStudentClassBundle($student, $teacher, [
             'subject_name' => 'Nhap mon lap trinh',
             'class_name' => 'Nhap mon lap trinh - Lop 1',
-            'class_status' => ClassRoom::STATUS_OPEN,
-            'enrollment_status' => Enrollment::STATUS_ACTIVE,
+            'class_status' => LopHoc::STATUS_OPEN,
+            'enrollment_status' => GhiDanh::STATUS_ACTIVE,
             'grade_score' => 76.25,
-            'attendance_status' => AttendanceRecord::STATUS_LATE,
+            'attendance_status' => DiemDanh::STATUS_LATE,
             'evaluation_rating' => 5,
             'evaluation_comments' => 'Rõ ràng, dễ hiểu.',
         ]);
@@ -119,15 +119,15 @@ class lop_hoc_hoc_vien_test extends TestCase
 
     public function test_student_cannot_access_other_student_enrollment_and_pending_enrollment_redirects(): void
     {
-        $student = User::factory()->student()->create();
-        $otherStudent = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $otherStudent = NguoiDung::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $bundle = $this->createStudentClassBundle($student, $teacher, [
             'subject_name' => 'Quan tri co so du lieu',
             'class_name' => 'Quan tri co so du lieu - Lop 1',
-            'class_status' => ClassRoom::STATUS_OPEN,
-            'enrollment_status' => Enrollment::STATUS_ACTIVE,
+            'class_status' => LopHoc::STATUS_OPEN,
+            'enrollment_status' => GhiDanh::STATUS_ACTIVE,
         ]);
 
         $otherResponse = $this
@@ -137,10 +137,10 @@ class lop_hoc_hoc_vien_test extends TestCase
 
         $otherResponse->assertForbidden();
 
-        $pendingEnrollment = Enrollment::create([
+        $pendingEnrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $bundle['subject']->id,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => GhiDanh::STATUS_PENDING,
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
@@ -156,14 +156,14 @@ class lop_hoc_hoc_vien_test extends TestCase
 
     public function test_student_can_create_and_update_class_evaluation(): void
     {
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create();
+        $student = NguoiDung::factory()->student()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
 
         $bundle = $this->createStudentClassBundle($student, $teacher, [
             'subject_name' => 'Thiet ke web',
             'class_name' => 'Thiet ke web - Lop 1',
-            'class_status' => ClassRoom::STATUS_OPEN,
-            'enrollment_status' => Enrollment::STATUS_ACTIVE,
+            'class_status' => LopHoc::STATUS_OPEN,
+            'enrollment_status' => GhiDanh::STATUS_ACTIVE,
             'evaluation_rating' => 3,
             'evaluation_comments' => 'Nhan xet cu.',
         ]);
@@ -190,7 +190,7 @@ class lop_hoc_hoc_vien_test extends TestCase
 
     public function test_legacy_my_classes_route_redirects_to_new_class_index(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->actingAs($student)
@@ -200,25 +200,25 @@ class lop_hoc_hoc_vien_test extends TestCase
         $response->assertRedirect(route('student.classes.index'));
     }
 
-    protected function createStudentClassBundle(User $student, User $teacher, array $overrides = []): array
+    protected function createStudentClassBundle(NguoiDung $student, NguoiDung $teacher, array $overrides = []): array
     {
         $slug = str()->slug(($overrides['subject_name'] ?? 'Mon hoc') . '-' . str()->random(6));
 
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-hoc-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $overrides['subject_name'] ?? 'Mon hoc',
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
             'duration' => 3,
         ]);
 
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $overrides['class_name'] ?? ($subject->name . ' - Lop hoc'),
             'description' => 'Khoa hoc phuc vu test hoc vien.',
@@ -230,19 +230,19 @@ class lop_hoc_hoc_vien_test extends TestCase
             'start_time' => '18:00',
             'end_time' => '20:00',
             'capacity' => 20,
-            'status' => Course::STATUS_ACTIVE,
+            'status' => KhoaHoc::STATUS_ACTIVE,
         ]);
 
-        $room = Room::create([
+        $room = PhongHoc::create([
             'code' => 'P' . fake()->unique()->numberBetween(100, 999),
             'name' => 'Phong hoc ' . fake()->unique()->numberBetween(1, 99),
             'type' => 'offline',
             'location' => 'Tang 2',
             'capacity' => 20,
-            'status' => Room::STATUS_ACTIVE,
+            'status' => PhongHoc::STATUS_ACTIVE,
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $overrides['class_name'] ?? ($subject->name . ' - Lop hoc'),
@@ -250,10 +250,10 @@ class lop_hoc_hoc_vien_test extends TestCase
             'teacher_id' => $teacher->id,
             'start_date' => now()->subDays(3)->toDateString(),
             'duration' => 3,
-            'status' => $overrides['class_status'] ?? ClassRoom::STATUS_OPEN,
+            'status' => $overrides['class_status'] ?? LopHoc::STATUS_OPEN,
         ]);
 
-        $schedule = ClassSchedule::create([
+        $schedule = LichHoc::create([
             'lop_hoc_id' => $classRoom->id,
             'teacher_id' => $teacher->id,
             'room_id' => $room->id,
@@ -270,7 +270,7 @@ class lop_hoc_hoc_vien_test extends TestCase
             'position' => 1,
         ]);
 
-        $lesson = Lesson::create([
+        $lesson = BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Bai 1',
             'description' => 'Mo dau',
@@ -279,16 +279,16 @@ class lop_hoc_hoc_vien_test extends TestCase
             'duration' => 45,
         ]);
 
-        $quiz = Quiz::create([
+        $quiz = BaiKiemTra::create([
             'lesson_id' => $lesson->id,
-            'title' => 'Quiz 1',
+            'title' => 'BaiKiemTra 1',
             'description' => 'Kiem tra chuong 1',
             'passing_score' => 70,
             'is_required' => true,
             'max_attempts' => 3,
         ]);
 
-        $question = Question::create([
+        $question = CauHoi::create([
             'quiz_id' => $quiz->id,
             'question' => 'Cau hoi 1',
             'description' => 'Mo ta cau hoi',
@@ -297,19 +297,19 @@ class lop_hoc_hoc_vien_test extends TestCase
             'points' => 10,
         ]);
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => $overrides['enrollment_status'] ?? Enrollment::STATUS_ACTIVE,
+            'status' => $overrides['enrollment_status'] ?? GhiDanh::STATUS_ACTIVE,
             'schedule' => $course->formattedSchedule(),
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        Grade::create([
+        DiemSo::create([
             'enrollment_id' => $enrollment->id,
             'class_room_id' => $classRoom->id,
             'student_id' => $student->id,
@@ -320,7 +320,7 @@ class lop_hoc_hoc_vien_test extends TestCase
             'feedback' => 'Ghi chu bai lam.',
         ]);
 
-        AttendanceRecord::create([
+        DiemDanh::create([
             'course_id' => $course->id,
             'class_room_id' => $classRoom->id,
             'class_schedule_id' => $schedule->id,
@@ -328,12 +328,12 @@ class lop_hoc_hoc_vien_test extends TestCase
             'student_id' => $student->id,
             'teacher_id' => $teacher->id,
             'attendance_date' => now()->toDateString(),
-            'status' => $overrides['attendance_status'] ?? AttendanceRecord::STATUS_PRESENT,
+            'status' => $overrides['attendance_status'] ?? DiemDanh::STATUS_PRESENT,
             'note' => 'Diem danh test',
             'recorded_at' => now(),
         ]);
 
-        TeacherEvaluation::create([
+        DanhGiaGiaoVien::create([
             'class_room_id' => $classRoom->id,
             'student_id' => $student->id,
             'teacher_id' => $teacher->id,
@@ -342,7 +342,7 @@ class lop_hoc_hoc_vien_test extends TestCase
         ]);
 
         if (array_key_exists('quiz_attempt_score', $overrides) && $overrides['quiz_attempt_score'] !== null) {
-            QuizAnswer::create([
+            TraLoiBaiKiemTra::create([
                 'user_id' => $student->id,
                 'quiz_id' => $quiz->id,
                 'question_id' => $question->id,

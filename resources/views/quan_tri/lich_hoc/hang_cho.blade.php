@@ -32,7 +32,7 @@
                         <h2 class="mt-2 text-xl font-semibold text-slate-900">{{ $enrollment->user?->name ?? 'Học viên' }}</h2>
                         <p class="mt-1 text-sm text-slate-600">{{ $enrollment->subject?->name ?? 'Khóa học chưa xác định' }}</p>
                     </div>
-                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $enrollment->status === \App\Models\Enrollment::STATUS_APPROVED ? 'bg-cyan-100 text-cyan-700' : 'bg-amber-100 text-amber-700' }}">{{ $enrollment->statusLabel() }}</span>
+                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $enrollment->status === \App\Models\GhiDanh::STATUS_APPROVED ? 'bg-cyan-100 text-cyan-700' : 'bg-amber-100 text-amber-700' }}">{{ $enrollment->statusLabel() }}</span>
                 </div>
                 <div class="mt-5 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
                     <p><strong>Khung giờ:</strong> {{ $enrollment->start_time ?: '--:--' }} - {{ $enrollment->end_time ?: '--:--' }}</p>

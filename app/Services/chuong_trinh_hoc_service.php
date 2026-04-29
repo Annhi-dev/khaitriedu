@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Course;
-use App\Models\Module;
+use App\Models\KhoaHoc;
+use App\Models\HocPhan;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -33,13 +33,13 @@ class CourseCurriculumService
         return $report;
     }
 
-    public function syncCourse(Course $course): array
+    public function syncCourse(KhoaHoc $course): array
     {
         $course->loadMissing(['subject.category', 'modules.lessons']);
 
         $templates = $this->curriculumFor($course);
         $modules = $course->modules->sortBy('position')->values();
-        $placeholderModules = $modules->filter(fn (Module $module) => $this->isPlaceholderModule($module))->values();
+        $placeholderModules = $modules->filter(fn (HocPhan $module) => $this->isPlaceholderModule($module))->values();
         $allPlaceholder = $modules->isNotEmpty() && $placeholderModules->count() === $modules->count();
 
         return DB::transaction(function () use ($course, $templates, $modules, $placeholderModules, $allPlaceholder) {
@@ -51,7 +51,7 @@ class CourseCurriculumService
         });
     }
 
-    public function curriculumFor(Course $course): array
+    public function curriculumFor(KhoaHoc $course): array
     {
         $signature = $this->signatureFor($course);
 
@@ -75,8 +75,8 @@ class CourseCurriculumService
                     'content' => 'Rèn phát âm, ngữ điệu và phản xạ giao tiếp trước khi kiểm tra đầu ra.',
                     'lesson_topics' => [
                         'Pronunciation drills',
-                        'Question & answer',
-                        'Role-play',
+                        'CauHoi & answer',
+                        'VaiTro-play',
                         'Topic presentation',
                     ],
                 ],
@@ -108,12 +108,12 @@ class CourseCurriculumService
                     'content' => 'Hệ thống lại ngữ pháp trọng tâm và từ vựng theo chủ đề của khóa.',
                     'lesson_topics' => [
                         'Tenses and structures',
-                        'Question forms',
+                        'CauHoi forms',
                         'Core vocabulary by topic',
                     ],
                 ],
                 [
-                    'title' => 'Mock Test & Review',
+                    'title' => 'Mock Test & DanhGia',
                     'sessions' => 2,
                     'content' => 'Làm bài kiểm tra mô phỏng, chữa lỗi và chốt kỹ năng cần cải thiện.',
                     'lesson_topics' => [
@@ -158,7 +158,7 @@ class CourseCurriculumService
                         'Listen and repeat',
                         'Short dialogues',
                         'Speaking games',
-                        'Role-play',
+                        'VaiTro-play',
                     ],
                 ],
                 [
@@ -206,7 +206,7 @@ class CourseCurriculumService
                         'Pronunciation',
                         'Speaking in pairs',
                         'Short presentation',
-                        'Role-play',
+                        'VaiTro-play',
                     ],
                 ],
                 [
@@ -217,7 +217,7 @@ class CourseCurriculumService
                         'Short texts',
                         'Information scanning',
                         'Reading for detail',
-                        'Review',
+                        'DanhGia',
                     ],
                 ],
                 [
@@ -242,7 +242,7 @@ class CourseCurriculumService
                     ],
                 ],
                 [
-                    'title' => 'Mock Test & Review',
+                    'title' => 'Mock Test & DanhGia',
                     'sessions' => 2,
                     'content' => 'Luyện đề, tổng ôn và đánh giá năng lực cuối khóa.',
                     'lesson_topics' => [
@@ -462,7 +462,7 @@ class CourseCurriculumService
         ]);
     }
 
-    protected function rebuildCourseCurriculum(Course $course, array $templates, Collection $modules): array
+    protected function rebuildCourseCurriculum(KhoaHoc $course, array $templates, Collection $modules): array
     {
         $report = [
             'modules_created' => 0,
@@ -486,7 +486,7 @@ class CourseCurriculumService
         }
 
         if ($modules->count() > count($templates)) {
-            $modules->slice(count($templates))->each(function (Module $module) use (&$report): void {
+            $modules->slice(count($templates))->each(function (HocPhan $module) use (&$report): void {
                 $module->delete();
                 $report['modules_deleted']++;
             });
@@ -495,7 +495,7 @@ class CourseCurriculumService
         return $report;
     }
 
-    protected function fillMissingCourseCurriculum(Course $course, array $templates, Collection $modules, Collection $placeholderModules): array
+    protected function fillMissingCourseCurriculum(KhoaHoc $course, array $templates, Collection $modules, Collection $placeholderModules): array
     {
         $report = [
             'modules_created' => 0,
@@ -509,7 +509,7 @@ class CourseCurriculumService
 
         foreach ($templates as $template) {
             $templateKey = $this->moduleKey($template['title']);
-            $existingModule = $modules->first(fn (Module $module) => $this->moduleKey($module->title) === $templateKey);
+            $existingModule = $modules->first(fn (HocPhan $module) => $this->moduleKey($module->title) === $templateKey);
 
             if ($existingModule) {
                 $report['lessons_created'] += $this->applyTemplateToModule($existingModule, $template, (int) ($existingModule->position ?: $nextPosition));
@@ -533,14 +533,14 @@ class CourseCurriculumService
         return $report;
     }
 
-    protected function applyTemplateToModule(Module $module, array $template, int $position): int
+    protected function applyTemplateToModule(HocPhan $module, array $template, int $position): int
     {
         $module->update([
             'title' => $template['title'],
             'content' => $template['content'],
             'session_count' => $template['session_count'],
             'duration' => $template['duration'],
-            'status' => $template['status'] ?? Module::STATUS_PUBLISHED,
+            'status' => $template['status'] ?? HocPhan::STATUS_PUBLISHED,
             'position' => $position,
         ]);
 
@@ -549,21 +549,21 @@ class CourseCurriculumService
         return $this->createLessonsForModule($module, $template);
     }
 
-    protected function createModuleFromTemplate(Course $course, array $template, int $position): int
+    protected function createModuleFromTemplate(KhoaHoc $course, array $template, int $position): int
     {
         $module = $course->modules()->create([
             'title' => $template['title'],
             'content' => $template['content'],
             'session_count' => $template['session_count'],
             'duration' => $template['duration'],
-            'status' => $template['status'] ?? Module::STATUS_PUBLISHED,
+            'status' => $template['status'] ?? HocPhan::STATUS_PUBLISHED,
             'position' => $position,
         ]);
 
         return $this->createLessonsForModule($module, $template);
     }
 
-    protected function createLessonsForModule(Module $module, array $template): int
+    protected function createLessonsForModule(HocPhan $module, array $template): int
     {
         $count = (int) $template['session_count'];
         $lessonDuration = (int) ($template['lesson_duration'] ?? 45);
@@ -598,14 +598,18 @@ class CourseCurriculumService
         };
     }
 
-    protected function isPlaceholderModule(Module $module): bool
+    protected function isPlaceholderModule(HocPhan $module): bool
     {
         $title = $this->moduleKey($module->title);
 
-        return Str::startsWith($title, 'module ') && Str::contains($title, ' cua ');
+        return (
+            Str::startsWith($title, 'module ')
+            || Str::startsWith($title, 'hocphan ')
+            || Str::startsWith($title, 'hoc phan ')
+        ) && Str::contains($title, ' cua ');
     }
 
-    protected function signatureFor(Course $course): string
+    protected function signatureFor(KhoaHoc $course): string
     {
         return $this->moduleKey(collect([
             $course->title,
@@ -630,7 +634,7 @@ class CourseCurriculumService
         return false;
     }
 
-    protected function themeCurriculum(Course $course, array $items): array
+    protected function themeCurriculum(KhoaHoc $course, array $items): array
     {
         $courseTitle = trim((string) $course->title);
         $modules = [];
@@ -642,7 +646,7 @@ class CourseCurriculumService
                 $item['sessions'] ?? 4,
                 $item['duration'] ?? 60,
                 $item['lesson_topics'] ?? [],
-                $item['status'] ?? Module::STATUS_PUBLISHED
+                $item['status'] ?? HocPhan::STATUS_PUBLISHED
             );
         }
 
@@ -657,7 +661,7 @@ class CourseCurriculumService
             'session_count' => $sessionCount,
             'duration' => $duration,
             'lesson_topics' => $lessonTopics,
-            'status' => $status ?? Module::STATUS_PUBLISHED,
+            'status' => $status ?? HocPhan::STATUS_PUBLISHED,
         ];
     }
 }

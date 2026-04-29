@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Mail\TeacherApplicationReviewedMail;
-use App\Models\Department;
-use App\Models\TeacherApplication;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\PhongBan;
+use App\Models\DonUngTuyenGiaoVien;
+use App\Models\VaiTro;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +22,7 @@ class AdminTeacherApplicationService
         $search = trim((string) ($filters['search'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
 
-        return TeacherApplication::query()
+        return DonUngTuyenGiaoVien::query()
             ->with('reviewer')
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
@@ -38,12 +38,12 @@ class AdminTeacherApplicationService
             ->withQueryString();
     }
 
-    public function review(TeacherApplication $application, array $data, User $admin): TeacherApplication
+    public function review(DonUngTuyenGiaoVien $application, array $data, NguoiDung $admin): DonUngTuyenGiaoVien
     {
         return DB::transaction(function () use ($application, $data, $admin) {
             $application->status = $data['action'];
             $application->admin_note = $data['admin_note'] ?? null;
-            $application->rejection_reason = $data['action'] === TeacherApplication::STATUS_REJECTED
+            $application->rejection_reason = $data['action'] === DonUngTuyenGiaoVien::STATUS_REJECTED
                 ? ($data['rejection_reason'] ?? null)
                 : null;
             $application->reviewed_at = now();
@@ -52,7 +52,7 @@ class AdminTeacherApplicationService
 
             $credentials = null;
 
-            if ($data['action'] === TeacherApplication::STATUS_APPROVED) {
+            if ($data['action'] === DonUngTuyenGiaoVien::STATUS_APPROVED) {
                 $credentials = $this->activateTeacherAccount($application);
             }
 
@@ -62,26 +62,26 @@ class AdminTeacherApplicationService
         });
     }
 
-    public function resolveRelatedUser(TeacherApplication $application): ?User
+    public function resolveRelatedUser(DonUngTuyenGiaoVien $application): ?NguoiDung
     {
-        return User::where('email', $application->email)->first();
+        return NguoiDung::where('email', $application->email)->first();
     }
 
-    protected function activateTeacherAccount(TeacherApplication $application): array
+    protected function activateTeacherAccount(DonUngTuyenGiaoVien $application): array
     {
-        $user = User::where('email', $application->email)->first();
+        $user = NguoiDung::where('email', $application->email)->first();
         $temporaryPassword = $this->generateTemporaryPassword();
 
         if (! $user) {
-            $user = User::create([
+            $user = NguoiDung::create([
                 'name' => $application->name,
                 'email' => $application->email,
                 'phone' => $application->phone,
                 'username' => $this->generateUniqueUsername($application->email),
                 'password' => Hash::make($temporaryPassword),
-                'role_id' => Role::idByName(User::ROLE_TEACHER),
+                'role_id' => VaiTro::idByName(NguoiDung::ROLE_TEACHER),
                 'department_id' => $this->resolveTeacherDepartmentId(),
-                'status' => User::STATUS_ACTIVE,
+                'status' => NguoiDung::STATUS_ACTIVE,
                 'email_verified_at' => now(),
             ]);
 
@@ -94,9 +94,9 @@ class AdminTeacherApplicationService
         $user->fill([
             'name' => $application->name,
             'phone' => $application->phone,
-            'role_id' => Role::idByName(User::ROLE_TEACHER),
+            'role_id' => VaiTro::idByName(NguoiDung::ROLE_TEACHER),
             'department_id' => $this->resolveTeacherDepartmentId($user),
-            'status' => User::STATUS_ACTIVE,
+            'status' => NguoiDung::STATUS_ACTIVE,
         ]);
         $user->username = $user->username ?: $this->generateUniqueUsername($application->email);
         $user->password = Hash::make($temporaryPassword);
@@ -123,7 +123,7 @@ class AdminTeacherApplicationService
         }
 
         $suffix = 1;
-        while (User::where('username', $candidate)->exists()) {
+        while (NguoiDung::where('username', $candidate)->exists()) {
             $candidate = $base . '.' . str_pad((string) $suffix, 3, '0', STR_PAD_LEFT);
             $suffix++;
         }
@@ -136,7 +136,7 @@ class AdminTeacherApplicationService
         return 'GV@' . Str::upper(Str::random(4)) . random_int(1000, 9999);
     }
 
-    protected function resolveTeacherDepartmentId(?User $user = null): ?int
+    protected function resolveTeacherDepartmentId(?NguoiDung $user = null): ?int
     {
         if ($user?->department_id) {
             return $user->department_id;
@@ -146,10 +146,10 @@ class AdminTeacherApplicationService
             return null;
         }
 
-        return Department::query()->orderBy('id')->value('id');
+        return PhongBan::query()->orderBy('id')->value('id');
     }
 
-    protected function sendReviewEmail(TeacherApplication $application, string $action, ?array $credentials = null): void
+    protected function sendReviewEmail(DonUngTuyenGiaoVien $application, string $action, ?array $credentials = null): void
     {
         Mail::to($application->email)->send(new TeacherApplicationReviewedMail(
             application: $application,
@@ -157,16 +157,16 @@ class AdminTeacherApplicationService
             reviewMessage: $this->resolveReviewMessage($application, $action),
             username: $credentials['user']->username ?? null,
             temporaryPassword: $credentials['temporary_password'] ?? null,
-            loginUrl: $action === TeacherApplication::STATUS_APPROVED ? route('login') : null,
+            loginUrl: $action === DonUngTuyenGiaoVien::STATUS_APPROVED ? route('login') : null,
         ));
     }
 
-    protected function resolveReviewMessage(TeacherApplication $application, string $action): ?string
+    protected function resolveReviewMessage(DonUngTuyenGiaoVien $application, string $action): ?string
     {
         return match ($action) {
-            TeacherApplication::STATUS_REJECTED => $application->rejection_reason,
-            TeacherApplication::STATUS_NEEDS_REVISION,
-            TeacherApplication::STATUS_APPROVED => $application->admin_note,
+            DonUngTuyenGiaoVien::STATUS_REJECTED => $application->rejection_reason,
+            DonUngTuyenGiaoVien::STATUS_NEEDS_REVISION,
+            DonUngTuyenGiaoVien::STATUS_APPROVED => $application->admin_note,
             default => null,
         };
     }

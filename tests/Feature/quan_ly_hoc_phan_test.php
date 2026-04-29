@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Lesson;
-use App\Models\Module;
-use App\Models\Option;
-use App\Models\Question;
-use App\Models\Quiz;
-use App\Models\QuizAnswer;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\KhoaHoc;
+use App\Models\BaiHoc;
+use App\Models\HocPhan;
+use App\Models\LuaChon;
+use App\Models\CauHoi;
+use App\Models\BaiKiemTra;
+use App\Models\TraLoiBaiKiemTra;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -22,17 +22,17 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_admin_can_view_module_management_page(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $course = $this->createCourseWithSubject();
-        $module = Module::create([
+        $module = HocPhan::create([
             'course_id' => $course->id,
             'title' => 'Listening',
             'content' => 'Nghe hội thoại cơ bản và bắt ý chính.',
             'session_count' => 5,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
             'position' => 1,
         ]);
-        Lesson::create([
+        BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Buổi 1',
             'description' => 'Nhận diện chủ đề và từ khóa.',
@@ -40,7 +40,7 @@ class quan_ly_hoc_phan_test extends TestCase
             'order' => 1,
             'duration' => 45,
         ]);
-        Lesson::create([
+        BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Buổi 2',
             'description' => 'Luyện nghe chi tiết.',
@@ -63,68 +63,68 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_admin_can_create_module_for_course(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $course = $this->createCourseWithSubject();
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.courses.modules.create', $course), [
-                'title' => 'Module Nhap Mon',
+                'title' => 'HocPhan Nhap Mon',
                 'content' => 'Tong quan noi dung',
                 'session_count' => 6,
                 'duration' => 90,
                 'position' => 1,
-                'status' => Module::STATUS_PUBLISHED,
+                'status' => HocPhan::STATUS_PUBLISHED,
             ]);
 
         $response->assertRedirect(route('admin.courses.modules.index', $course));
         $this->assertDatabaseHas('chuong_hoc', [
             'course_id' => $course->id,
-            'title' => 'Module Nhap Mon',
+            'title' => 'HocPhan Nhap Mon',
             'session_count' => 6,
             'duration' => 90,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
             'position' => 1,
         ]);
     }
 
     public function test_admin_can_update_module(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $course = $this->createCourseWithSubject();
-        $module = Module::create([
+        $module = HocPhan::create([
             'course_id' => $course->id,
-            'title' => 'Module Cu',
+            'title' => 'HocPhan Cu',
             'session_count' => 3,
             'position' => 1,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
         ]);
 
         $response = $this
             ->withSession(['user_id' => $admin->id])
             ->post(route('admin.courses.modules.update', [$course, $module]), [
-                'title' => 'Module Da Sua',
+                'title' => 'HocPhan Da Sua',
                 'content' => 'Noi dung moi',
                 'session_count' => 4,
                 'duration' => 120,
                 'position' => 2,
-                'status' => Module::STATUS_UNPUBLISHED,
+                'status' => HocPhan::STATUS_UNPUBLISHED,
             ]);
 
         $response->assertRedirect(route('admin.courses.modules.index', $course));
         $this->assertDatabaseHas('chuong_hoc', [
             'id' => $module->id,
-            'title' => 'Module Da Sua',
+            'title' => 'HocPhan Da Sua',
             'session_count' => 4,
             'duration' => 120,
             'position' => 2,
-            'status' => Module::STATUS_UNPUBLISHED,
+            'status' => HocPhan::STATUS_UNPUBLISHED,
         ]);
     }
 
     public function test_admin_can_sync_curriculum_template_for_a_course(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $course = $this->createCourseWithSubject('ANH VĂN KHUNG 6 BẬC', 'Ngoại ngữ - Tin học');
 
         $response = $this
@@ -144,21 +144,21 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_admin_can_reorder_modules(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $course = $this->createCourseWithSubject();
-        $moduleA = Module::create([
+        $moduleA = HocPhan::create([
             'course_id' => $course->id,
-            'title' => 'Module A',
+            'title' => 'HocPhan A',
             'session_count' => 3,
             'position' => 1,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
         ]);
-        $moduleB = Module::create([
+        $moduleB = HocPhan::create([
             'course_id' => $course->id,
-            'title' => 'Module B',
+            'title' => 'HocPhan B',
             'session_count' => 3,
             'position' => 2,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
         ]);
 
         $response = $this
@@ -177,14 +177,14 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_admin_can_delete_module_without_dependencies(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = NguoiDung::factory()->admin()->create();
         $course = $this->createCourseWithSubject();
-        $module = Module::create([
+        $module = HocPhan::create([
             'course_id' => $course->id,
-            'title' => 'Module Xoa',
+            'title' => 'HocPhan Xoa',
             'session_count' => 2,
             'position' => 1,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
         ]);
 
         $response = $this
@@ -197,42 +197,42 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_delete_module_with_lessons_and_quiz_hard_deletes_related_content(): void
     {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+        $admin = NguoiDung::factory()->admin()->create();
+        $student = NguoiDung::factory()->student()->create();
         $course = $this->createCourseWithSubject();
-        $module = Module::create([
+        $module = HocPhan::create([
             'course_id' => $course->id,
-            'title' => 'Module Co Bai Hoc',
+            'title' => 'HocPhan Co Bai Hoc',
             'session_count' => 2,
             'position' => 1,
-            'status' => Module::STATUS_PUBLISHED,
+            'status' => HocPhan::STATUS_PUBLISHED,
         ]);
-        $lesson = Lesson::create([
+        $lesson = BaiHoc::create([
             'module_id' => $module->id,
             'title' => 'Bai hoc 1',
             'content' => 'Noi dung bai hoc 1',
         ]);
-        $quiz = Quiz::create([
+        $quiz = BaiKiemTra::create([
             'lesson_id' => $lesson->id,
-            'title' => 'Quiz 1',
+            'title' => 'BaiKiemTra 1',
             'passing_score' => 70,
             'is_required' => true,
             'max_attempts' => 3,
         ]);
-        $question = Question::create([
+        $question = CauHoi::create([
             'quiz_id' => $quiz->id,
             'question' => 'Cau hoi 1',
             'type' => 'multiple_choice',
             'order' => 1,
             'points' => 1,
         ]);
-        $option = Option::create([
+        $option = LuaChon::create([
             'question_id' => $question->id,
             'option_text' => 'Lua chon 1',
             'is_correct' => true,
             'order' => 1,
         ]);
-        QuizAnswer::create([
+        TraLoiBaiKiemTra::create([
             'user_id' => $student->id,
             'quiz_id' => $quiz->id,
             'question_id' => $question->id,
@@ -257,7 +257,7 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_student_is_blocked_from_module_management(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
         $course = $this->createCourseWithSubject();
 
         $response = $this
@@ -270,7 +270,7 @@ class quan_ly_hoc_phan_test extends TestCase
 
     public function test_teacher_is_blocked_from_module_management(): void
     {
-        $teacher = User::factory()->teacher()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
         $course = $this->createCourseWithSubject();
 
         $response = $this
@@ -281,23 +281,23 @@ class quan_ly_hoc_phan_test extends TestCase
         $response->assertSessionHas('error');
     }
 
-    private function createCourseWithSubject(string $subjectName = 'Tin hoc van phong', string $categoryName = 'Tin hoc'): Course
+    private function createCourseWithSubject(string $subjectName = 'Tin hoc van phong', string $categoryName = 'Tin hoc'): KhoaHoc
     {
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => $categoryName,
             'slug' => Str::slug($categoryName),
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $subjectName,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'duration' => 40,
             'price' => 1500000,
         ]);
 
-        return Course::create([
+        return KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $subjectName . ' - Lop toi',
             'schedule' => 'Thu 2 - Thu 4',

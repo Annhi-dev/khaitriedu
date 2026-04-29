@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\ScheduleChangeRequest;
-use App\Models\Room;
-use App\Models\User;
+use App\Models\YeuCauDoiLich;
+use App\Models\PhongHoc;
+use App\Models\NguoiDung;
 use App\Services\TeacherScheduleService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ class ScheduleController extends Controller
 {
     public function index(Request $request, TeacherScheduleService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -89,8 +89,8 @@ class ScheduleController extends Controller
             'current' => $current,
             'scheduleItems' => $scheduleItems,
             'weeklyTimetable' => $weeklyTimetable,
-            'availableRooms' => Room::query()
-                ->where('status', Room::STATUS_ACTIVE)
+            'availableRooms' => PhongHoc::query()
+                ->where('status', PhongHoc::STATUS_ACTIVE)
                 ->orderBy('name')
                 ->get(['id', 'name', 'code']),
             'scheduleMode' => $mode,
@@ -101,9 +101,9 @@ class ScheduleController extends Controller
             'anchorDate' => $anchorDate,
             'prevDate' => $prevDate,
             'nextDate' => $nextDate,
-            'pendingRequestsCount' => ScheduleChangeRequest::query()
+            'pendingRequestsCount' => YeuCauDoiLich::query()
                 ->where('teacher_id', $current->id)
-                ->where('status', ScheduleChangeRequest::STATUS_PENDING)
+                ->where('status', YeuCauDoiLich::STATUS_PENDING)
                 ->count(),
         ]);
     }

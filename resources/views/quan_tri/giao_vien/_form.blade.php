@@ -1,5 +1,5 @@
 @php
-    $statusValue = old('status', $teacher->status ?? \App\Models\User::STATUS_ACTIVE);
+    $statusValue = old('status', $teacher->status ?? \App\Models\NguoiDung::STATUS_ACTIVE);
     $departmentValue = old('department_id', $teacher->department_id ?? '');
 @endphp
 
@@ -35,8 +35,8 @@
     <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">Trạng thái tài khoản</label>
         <select name="status" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-            <option value="{{ \App\Models\User::STATUS_ACTIVE }}" @selected($statusValue === \App\Models\User::STATUS_ACTIVE)>Hoạt động</option>
-            <option value="{{ \App\Models\User::STATUS_INACTIVE }}" @selected($statusValue === \App\Models\User::STATUS_INACTIVE)>Tạm dừng</option>
+            <option value="{{ \App\Models\NguoiDung::STATUS_ACTIVE }}" @selected($statusValue === \App\Models\NguoiDung::STATUS_ACTIVE)>Hoạt động</option>
+            <option value="{{ \App\Models\NguoiDung::STATUS_INACTIVE }}" @selected($statusValue === \App\Models\NguoiDung::STATUS_INACTIVE)>Tạm dừng</option>
         </select>
     </div>
     <div>

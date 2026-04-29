@@ -12,9 +12,9 @@
     $teachingPreview = $teachingSubjects->take(3)->implode(' · ');
     $teachingOverflow = max($teachingSubjectCount - 3, 0);
     $statusClasses = match ($teacher->status) {
-        \App\Models\User::STATUS_ACTIVE => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        \App\Models\User::STATUS_INACTIVE => 'border-amber-200 bg-amber-50 text-amber-700',
-        \App\Models\User::STATUS_LOCKED => 'border-rose-200 bg-rose-50 text-rose-700',
+        \App\Models\NguoiDung::STATUS_ACTIVE => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        \App\Models\NguoiDung::STATUS_INACTIVE => 'border-amber-200 bg-amber-50 text-amber-700',
+        \App\Models\NguoiDung::STATUS_LOCKED => 'border-rose-200 bg-rose-50 text-rose-700',
         default => 'border-slate-200 bg-slate-100 text-slate-700',
     };
 @endphp

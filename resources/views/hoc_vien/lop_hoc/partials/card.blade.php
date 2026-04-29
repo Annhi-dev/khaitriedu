@@ -5,11 +5,11 @@
     $status = $enrollment->displayStatus();
     $statusLabel = $enrollment->displayStatusLabel();
     $statusClass = match ($status) {
-        \App\Models\Enrollment::STATUS_COMPLETED => 'bg-slate-100 text-slate-700',
-        \App\Models\Enrollment::STATUS_ACTIVE => 'bg-emerald-100 text-emerald-700',
-        \App\Models\Enrollment::STATUS_SCHEDULED, \App\Models\Enrollment::STATUS_ENROLLED, \App\Models\Enrollment::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
-        \App\Models\Enrollment::STATUS_PENDING => 'bg-amber-100 text-amber-700',
-        \App\Models\Enrollment::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
+        \App\Models\GhiDanh::STATUS_COMPLETED => 'bg-slate-100 text-slate-700',
+        \App\Models\GhiDanh::STATUS_ACTIVE => 'bg-emerald-100 text-emerald-700',
+        \App\Models\GhiDanh::STATUS_SCHEDULED, \App\Models\GhiDanh::STATUS_ENROLLED, \App\Models\GhiDanh::STATUS_APPROVED => 'bg-cyan-100 text-cyan-700',
+        \App\Models\GhiDanh::STATUS_PENDING => 'bg-amber-100 text-amber-700',
+        \App\Models\GhiDanh::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
         default => 'bg-slate-100 text-slate-600',
     };
     $scheduleText = $classRoom?->schedules?->isNotEmpty()

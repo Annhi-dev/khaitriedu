@@ -6,7 +6,7 @@
 @section('content')
 @php
     $requestList = method_exists($requests, 'getCollection') ? $requests->getCollection() : collect($requests);
-    $statusOptions = \App\Models\LeaveRequest::statusOptions();
+    $statusOptions = \App\Models\YeuCauXinPhep::statusOptions();
 @endphp
 
 <div class="space-y-6">
@@ -68,9 +68,9 @@
         @forelse($requestList as $leaveRequest)
             @php
                 $badgeClasses = match ($leaveRequest->status) {
-                    \App\Models\LeaveRequest::STATUS_ACCEPTED => 'bg-emerald-100 text-emerald-700',
-                    \App\Models\LeaveRequest::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
-                    \App\Models\LeaveRequest::STATUS_ACKNOWLEDGED => 'bg-cyan-100 text-cyan-700',
+                    \App\Models\YeuCauXinPhep::STATUS_ACCEPTED => 'bg-emerald-100 text-emerald-700',
+                    \App\Models\YeuCauXinPhep::STATUS_REJECTED => 'bg-rose-100 text-rose-700',
+                    \App\Models\YeuCauXinPhep::STATUS_ACKNOWLEDGED => 'bg-cyan-100 text-cyan-700',
                     default => 'bg-amber-100 text-amber-700',
                 };
             @endphp

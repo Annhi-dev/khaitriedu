@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Quiz;
+use App\Models\BaiKiemTra;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,7 @@ return new class extends Migration
             }
 
             if (! Schema::hasColumn('bai_kiem_tra', 'status')) {
-                $table->string('status', 20)->default(Quiz::STATUS_DRAFT);
+                $table->string('status', 20)->default(BaiKiemTra::STATUS_DRAFT);
             }
 
             if (! Schema::hasColumn('bai_kiem_tra', 'published_at')) {
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->index(['lop_hoc_id', 'status']);
         });
 
-        Quiz::query()
+        BaiKiemTra::query()
             ->with(['lesson.module.course', 'questions'])
             ->chunkById(100, function ($quizzes): void {
                 foreach ($quizzes as $quiz) {
@@ -65,7 +65,7 @@ return new class extends Migration
                         'teacher_id' => $quiz->teacher_id ?? $course->teacher_id,
                         'course_id' => $quiz->course_id ?? $course->id,
                         'subject_id' => $quiz->subject_id ?? $course->subject_id,
-                        'status' => $quiz->status ?? Quiz::STATUS_PUBLISHED,
+                        'status' => $quiz->status ?? BaiKiemTra::STATUS_PUBLISHED,
                         'duration_minutes' => $quiz->duration_minutes ?? $quiz->lesson?->duration ?? 15,
                         'total_score' => $quiz->total_score ?? ($totalScore > 0 ? $totalScore : 10),
                         'published_at' => $quiz->published_at ?? $quiz->created_at ?? now(),

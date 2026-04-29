@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\ClassRoom;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NhomHoc;
+use App\Models\LopHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\DiemSo;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,10 +18,10 @@ class quan_ly_diem_so_test extends TestCase
 
     public function test_admin_can_browse_and_filter_student_grades(): void
     {
-        $admin = User::factory()->admin()->create();
-        $teacher = User::factory()->teacher()->create();
-        $studentA = User::factory()->student()->create(['name' => 'Hoc vien A']);
-        $studentB = User::factory()->student()->create(['name' => 'Hoc vien B']);
+        $admin = NguoiDung::factory()->admin()->create();
+        $teacher = NguoiDung::factory()->teacher()->create();
+        $studentA = NguoiDung::factory()->student()->create(['name' => 'Hoc vien A']);
+        $studentB = NguoiDung::factory()->student()->create(['name' => 'Hoc vien B']);
 
         ['subject' => $subjectA, 'course' => $courseA, 'classRoom' => $classRoomA, 'enrollment' => $enrollmentA] = $this->createGradeFixture(
             $teacher,
@@ -67,7 +67,7 @@ class quan_ly_diem_so_test extends TestCase
 
     public function test_non_admin_cannot_access_admin_grade_page(): void
     {
-        $student = User::factory()->student()->create();
+        $student = NguoiDung::factory()->student()->create();
 
         $response = $this
             ->actingAs($student)
@@ -78,8 +78,8 @@ class quan_ly_diem_so_test extends TestCase
     }
 
     private function createGradeFixture(
-        User $teacher,
-        User $student,
+        NguoiDung $teacher,
+        NguoiDung $student,
         string $subjectName,
         string $courseTitle,
         string $className,
@@ -88,54 +88,54 @@ class quan_ly_diem_so_test extends TestCase
     ): array {
         $slug = str()->slug($subjectName . ' ' . $courseTitle . ' ' . $className) . '-' . str()->random(4);
 
-        $category = Category::create([
+        $category = NhomHoc::create([
             'name' => 'Nhom hoc ' . $slug,
             'slug' => 'nhom-hoc-' . $slug,
-            'status' => Category::STATUS_ACTIVE,
+            'status' => NhomHoc::STATUS_ACTIVE,
         ]);
 
-        $subject = Subject::create([
+        $subject = MonHoc::create([
             'name' => $subjectName,
             'category_id' => $category->id,
-            'status' => Subject::STATUS_OPEN,
+            'status' => MonHoc::STATUS_OPEN,
             'price' => 1500000,
             'duration' => 3,
         ]);
 
-        $course = Course::create([
+        $course = KhoaHoc::create([
             'subject_id' => $subject->id,
             'title' => $courseTitle,
             'teacher_id' => $teacher->id,
-            'status' => Course::STATUS_SCHEDULED,
+            'status' => KhoaHoc::STATUS_SCHEDULED,
             'start_date' => now()->toDateString(),
             'end_date' => now()->addMonths(2)->toDateString(),
             'start_time' => '18:00',
             'end_time' => '20:00',
         ]);
 
-        $classRoom = ClassRoom::create([
+        $classRoom = LopHoc::create([
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'name' => $className,
             'teacher_id' => $teacher->id,
             'start_date' => now()->toDateString(),
             'duration' => 3,
-            'status' => ClassRoom::STATUS_OPEN,
+            'status' => LopHoc::STATUS_OPEN,
         ]);
 
-        $enrollment = Enrollment::create([
+        $enrollment = GhiDanh::create([
             'user_id' => $student->id,
             'subject_id' => $subject->id,
             'course_id' => $course->id,
             'lop_hoc_id' => $classRoom->id,
             'assigned_teacher_id' => $teacher->id,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => GhiDanh::STATUS_ACTIVE,
             'schedule' => $course->formattedSchedule(),
             'is_submitted' => true,
             'submitted_at' => now(),
         ]);
 
-        Grade::create([
+        DiemSo::create([
             'enrollment_id' => $enrollment->id,
             'class_room_id' => $classRoom->id,
             'student_id' => $student->id,

@@ -183,4 +183,4 @@ RÀNG BUỘC QUAN TRỌNG
 === FILE: usecase_khaitriedu.drawio.xml ===
 [nội dung file]
 
-Hãy bắt đầu tạo đầy đủ 2 file ngay bây giờ.
+Hãy bắt đầu tạo đầy đủ 2 file ngay bây giờ. 

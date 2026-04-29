@@ -3,11 +3,11 @@
 @section('content')
 @php
     $totalUsers = $users->count();
-    $adminCount = $users->filter(fn ($item) => $item->getRoleName() === \App\Models\User::ROLE_ADMIN)->count();
-    $teacherCount = $users->filter(fn ($item) => $item->getRoleName() === \App\Models\User::ROLE_TEACHER)->count();
-    $studentCount = $users->filter(fn ($item) => $item->getRoleName() === \App\Models\User::ROLE_STUDENT)->count();
-    $activeCount = $users->filter(fn ($item) => $item->status === \App\Models\User::STATUS_ACTIVE)->count();
-    $lockedCount = $users->filter(fn ($item) => $item->status === \App\Models\User::STATUS_LOCKED)->count();
+    $adminCount = $users->filter(fn ($item) => $item->getRoleName() === \App\Models\NguoiDung::ROLE_ADMIN)->count();
+    $teacherCount = $users->filter(fn ($item) => $item->getRoleName() === \App\Models\NguoiDung::ROLE_TEACHER)->count();
+    $studentCount = $users->filter(fn ($item) => $item->getRoleName() === \App\Models\NguoiDung::ROLE_STUDENT)->count();
+    $activeCount = $users->filter(fn ($item) => $item->status === \App\Models\NguoiDung::STATUS_ACTIVE)->count();
+    $lockedCount = $users->filter(fn ($item) => $item->status === \App\Models\NguoiDung::STATUS_LOCKED)->count();
 
     $summaryCards = [
         [
@@ -209,15 +209,15 @@
                         @forelse ($users as $u)
                             @php
                                 $roleBadge = match ($u->getRoleName()) {
-                                    \App\Models\User::ROLE_ADMIN => ['type' => 'danger', 'text' => 'Admin'],
-                                    \App\Models\User::ROLE_TEACHER => ['type' => 'info', 'text' => 'Giảng viên'],
-                                    \App\Models\User::ROLE_STUDENT => ['type' => 'success', 'text' => 'Học viên'],
+                                    \App\Models\NguoiDung::ROLE_ADMIN => ['type' => 'danger', 'text' => 'Admin'],
+                                    \App\Models\NguoiDung::ROLE_TEACHER => ['type' => 'info', 'text' => 'Giảng viên'],
+                                    \App\Models\NguoiDung::ROLE_STUDENT => ['type' => 'success', 'text' => 'Học viên'],
                                     default => ['type' => 'default', 'text' => $u->roleLabel()],
                                 };
                                 $statusBadge = match ($u->status) {
-                                    \App\Models\User::STATUS_ACTIVE => ['type' => 'success', 'text' => 'Hoạt động'],
-                                    \App\Models\User::STATUS_LOCKED => ['type' => 'danger', 'text' => 'Đã khóa'],
-                                    \App\Models\User::STATUS_INACTIVE => ['type' => 'warning', 'text' => 'Tạm dừng'],
+                                    \App\Models\NguoiDung::STATUS_ACTIVE => ['type' => 'success', 'text' => 'Hoạt động'],
+                                    \App\Models\NguoiDung::STATUS_LOCKED => ['type' => 'danger', 'text' => 'Đã khóa'],
+                                    \App\Models\NguoiDung::STATUS_INACTIVE => ['type' => 'warning', 'text' => 'Tạm dừng'],
                                     default => ['type' => 'default', 'text' => $u->statusLabel()],
                                 };
                             @endphp

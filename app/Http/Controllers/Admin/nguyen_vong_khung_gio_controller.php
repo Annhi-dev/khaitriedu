@@ -3,23 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SlotRegistration;
-use App\Models\Subject;
-use App\Models\User;
+use App\Models\NguyenVongKhungGio;
+use App\Models\MonHoc;
+use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 
 class SlotRegistrationController extends Controller
 {
     public function index(Request $request)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }
 
         $filters = $request->only(['search', 'status', 'subject_id']);
 
-        $registrations = SlotRegistration::query()
+        $registrations = NguyenVongKhungGio::query()
             ->with(['student', 'subject.category', 'reviewer'])
             ->withCount('choices')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -38,21 +38,21 @@ class SlotRegistrationController extends Controller
             ->withQueryString();
 
         $summary = [
-            'total' => SlotRegistration::count(),
-            'pending' => SlotRegistration::where('status', SlotRegistration::STATUS_PENDING)->count(),
-            'scheduled' => SlotRegistration::where('status', SlotRegistration::STATUS_SCHEDULED)->count(),
-            'needs_reselect' => SlotRegistration::where('status', SlotRegistration::STATUS_NEEDS_RESELECT)->count(),
+            'total' => NguyenVongKhungGio::count(),
+            'pending' => NguyenVongKhungGio::where('status', NguyenVongKhungGio::STATUS_PENDING)->count(),
+            'scheduled' => NguyenVongKhungGio::where('status', NguyenVongKhungGio::STATUS_SCHEDULED)->count(),
+            'needs_reselect' => NguyenVongKhungGio::where('status', NguyenVongKhungGio::STATUS_NEEDS_RESELECT)->count(),
         ];
 
         return view('quan_tri.nguyen_vong_khung_gio.index', compact('current', 'filters', 'registrations', 'summary') + [
-            'statuses' => SlotRegistration::statusOptions(),
-            'subjects' => Subject::with('category')->orderBy('name')->get(),
+            'statuses' => NguyenVongKhungGio::statusOptions(),
+            'subjects' => MonHoc::with('category')->orderBy('name')->get(),
         ]);
     }
 
-    public function show(SlotRegistration $slotRegistration)
+    public function show(NguyenVongKhungGio $slotRegistration)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_ADMIN);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_ADMIN);
         if ($redirect) {
             return $redirect;
         }

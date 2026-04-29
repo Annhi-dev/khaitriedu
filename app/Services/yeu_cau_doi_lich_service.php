@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\ClassRoom;
-use App\Models\ClassSchedule;
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Notification;
-use App\Models\Room;
-use App\Models\ScheduleChangeRequest;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\LichHoc;
+use App\Models\KhoaHoc;
+use App\Models\GhiDanh;
+use App\Models\ThongBao;
+use App\Models\PhongHoc;
+use App\Models\YeuCauDoiLich;
+use App\Models\NguoiDung;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -23,7 +23,7 @@ class AdminScheduleChangeRequestService
         $status = $filters['status'] ?? null;
         $search = trim((string) ($filters['search'] ?? ''));
 
-        return ScheduleChangeRequest::query()
+        return YeuCauDoiLich::query()
             ->with([
                 'teacher',
                 'course.subject.category',
@@ -33,7 +33,7 @@ class AdminScheduleChangeRequestService
                 'requestedRoom',
                 'reviewer',
             ])
-            ->when(in_array($status, ScheduleChangeRequest::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
+            ->when(in_array($status, YeuCauDoiLich::filterableStatuses(), true), fn (Builder $query) => $query->where('status', $status))
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $builder) use ($search) {
                     $builder->whereHas('teacher', function (Builder $teacherQuery) use ($search) {
@@ -48,16 +48,16 @@ class AdminScheduleChangeRequestService
                     })->orWhere('reason', 'like', '%' . $search . '%');
                 });
             })
-            ->orderByRaw("case when status = '" . ScheduleChangeRequest::STATUS_PENDING . "' then 0 else 1 end")
+            ->orderByRaw("case when status = '" . YeuCauDoiLich::STATUS_PENDING . "' then 0 else 1 end")
             ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();
     }
 
-    public function review(ScheduleChangeRequest $scheduleChangeRequest, array $data, User $admin): string
+    public function review(YeuCauDoiLich $scheduleChangeRequest, array $data, NguoiDung $admin): string
     {
         return DB::transaction(function () use ($scheduleChangeRequest, $data, $admin): string {
-            $scheduleChangeRequest = ScheduleChangeRequest::query()
+            $scheduleChangeRequest = YeuCauDoiLich::query()
                 ->lockForUpdate()
                 ->with([
                     'teacher',
@@ -96,7 +96,7 @@ class AdminScheduleChangeRequestService
                 }
 
                 $scheduleChangeRequest->update([
-                    'status' => ScheduleChangeRequest::STATUS_APPROVED,
+                    'status' => YeuCauDoiLich::STATUS_APPROVED,
                     'admin_note' => $data['admin_note'] ?? null,
                     'reviewed_by' => $admin->id,
                     'reviewed_at' => now(),
@@ -108,7 +108,7 @@ class AdminScheduleChangeRequestService
             }
 
             $scheduleChangeRequest->update([
-                'status' => ScheduleChangeRequest::STATUS_REJECTED,
+                'status' => YeuCauDoiLich::STATUS_REJECTED,
                 'admin_note' => $data['admin_note'],
                 'reviewed_by' => $admin->id,
                 'reviewed_at' => now(),
@@ -120,9 +120,9 @@ class AdminScheduleChangeRequestService
         });
     }
 
-    protected function applyApprovedSchedule(ScheduleChangeRequest $scheduleChangeRequest): string
+    protected function applyApprovedSchedule(YeuCauDoiLich $scheduleChangeRequest): string
     {
-        $course = Course::query()
+        $course = KhoaHoc::query()
             ->lockForUpdate()
             ->findOrFail($scheduleChangeRequest->course_id);
 
@@ -140,28 +140,28 @@ class AdminScheduleChangeRequestService
 
         $course->enrollments()
             ->whereIn('status', [
-                Enrollment::LEGACY_STATUS_CONFIRMED,
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::STATUS_ACTIVE,
+                GhiDanh::LEGACY_STATUS_CONFIRMED,
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::STATUS_ACTIVE,
             ])
             ->update(['schedule' => $newSchedule]);
 
         return $newSchedule;
     }
 
-    protected function ensureTeacherAvailability(ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function ensureTeacherAvailability(YeuCauDoiLich $scheduleChangeRequest): void
     {
         $course = $scheduleChangeRequest->course;
         $targetStartDate = optional($scheduleChangeRequest->requested_date)->format('Y-m-d');
         $targetEndDate = optional($scheduleChangeRequest->requested_end_date)->format('Y-m-d') ?: $targetStartDate;
 
-        $conflict = Course::query()
+        $conflict = KhoaHoc::query()
             ->where('teacher_id', $course->teacher_id)
             ->whereKeyNot($course->id)
             ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
             ->where('start_time', '<', $scheduleChangeRequest->requested_end_time)
             ->where('end_time', '>', $scheduleChangeRequest->requested_start_time)
-            ->whereIn('status', Course::schedulingStatuses())
+            ->whereIn('status', KhoaHoc::schedulingStatuses())
             ->whereDate('start_date', '<=', $targetEndDate)
             ->where(function (Builder $query) use ($targetStartDate) {
                 $query->whereNull('end_date')
@@ -176,14 +176,14 @@ class AdminScheduleChangeRequestService
         }
     }
 
-    protected function ensureStudentsAvailability(ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function ensureStudentsAvailability(YeuCauDoiLich $scheduleChangeRequest): void
     {
         $course = $scheduleChangeRequest->course;
         $studentIds = $course->enrollments()
             ->whereIn('status', [
-                Enrollment::LEGACY_STATUS_CONFIRMED,
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::STATUS_ACTIVE,
+                GhiDanh::LEGACY_STATUS_CONFIRMED,
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::STATUS_ACTIVE,
             ])
             ->pluck('user_id');
 
@@ -194,20 +194,20 @@ class AdminScheduleChangeRequestService
         $targetStartDate = optional($scheduleChangeRequest->requested_date)->format('Y-m-d');
         $targetEndDate = optional($scheduleChangeRequest->requested_end_date)->format('Y-m-d') ?: $targetStartDate;
 
-        $conflict = Enrollment::query()
+        $conflict = GhiDanh::query()
             ->with('user')
             ->whereIn('user_id', $studentIds)
             ->whereIn('status', [
-                Enrollment::LEGACY_STATUS_CONFIRMED,
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::STATUS_ACTIVE,
+                GhiDanh::LEGACY_STATUS_CONFIRMED,
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::STATUS_ACTIVE,
             ])
             ->whereHas('course', function (Builder $query) use ($course, $scheduleChangeRequest, $targetStartDate, $targetEndDate) {
                 $query->whereKeyNot($course->id)
                     ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
                     ->where('start_time', '<', $scheduleChangeRequest->requested_end_time)
                     ->where('end_time', '>', $scheduleChangeRequest->requested_start_time)
-                    ->whereIn('status', Course::schedulingStatuses())
+                    ->whereIn('status', KhoaHoc::schedulingStatuses())
                     ->whereDate('start_date', '<=', $targetEndDate)
                     ->where(function (Builder $builder) use ($targetStartDate) {
                         $builder->whereNull('end_date')
@@ -223,16 +223,16 @@ class AdminScheduleChangeRequestService
         }
     }
 
-    protected function applyApprovedClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): string
+    protected function applyApprovedClassSchedule(YeuCauDoiLich $scheduleChangeRequest): string
     {
-        $classSchedule = ClassSchedule::query()
+        $classSchedule = LichHoc::query()
             ->lockForUpdate()
             ->findOrFail($scheduleChangeRequest->class_schedule_id);
 
         $classRoom = null;
 
         if ($scheduleChangeRequest->class_room_id) {
-            $classRoom = ClassRoom::query()
+            $classRoom = LopHoc::query()
                 ->lockForUpdate()
                 ->find($scheduleChangeRequest->class_room_id);
         }
@@ -262,22 +262,22 @@ class AdminScheduleChangeRequestService
         return $classSchedule->fresh()->label();
     }
 
-    protected function ensureTeacherAvailabilityForClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function ensureTeacherAvailabilityForClassSchedule(YeuCauDoiLich $scheduleChangeRequest): void
     {
         $requestedRange = $this->requestedDateRange($scheduleChangeRequest);
 
-        $conflict = ClassSchedule::query()
+        $conflict = LichHoc::query()
             ->whereKeyNot($scheduleChangeRequest->class_schedule_id)
             ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
             ->where('start_time', '<', $scheduleChangeRequest->requested_end_time)
             ->where('end_time', '>', $scheduleChangeRequest->requested_start_time)
             ->whereHas('classRoom', function (Builder $query) use ($scheduleChangeRequest) {
                 $query->where('teacher_id', $scheduleChangeRequest->teacher_id)
-                    ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED]);
+                    ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED]);
             })
             ->with(['classRoom.course.subject'])
             ->get()
-            ->first(function (ClassSchedule $classSchedule) use ($requestedRange) {
+            ->first(function (LichHoc $classSchedule) use ($requestedRange) {
                 if ($requestedRange === null) {
                     return true;
                 }
@@ -292,7 +292,7 @@ class AdminScheduleChangeRequestService
         }
     }
 
-    protected function ensureStudentsAvailabilityForClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function ensureStudentsAvailabilityForClassSchedule(YeuCauDoiLich $scheduleChangeRequest): void
     {
         $classRoom = $scheduleChangeRequest->classRoom;
         $requestedRange = $this->requestedDateRange($scheduleChangeRequest);
@@ -302,31 +302,31 @@ class AdminScheduleChangeRequestService
         }
 
         $studentIds = $classRoom->enrollments()
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->pluck('user_id');
 
         if ($studentIds->isEmpty()) {
             return;
         }
 
-        $conflict = ClassSchedule::query()
+        $conflict = LichHoc::query()
             ->whereKeyNot($scheduleChangeRequest->class_schedule_id)
             ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
             ->where('start_time', '<', $scheduleChangeRequest->requested_end_time)
             ->where('end_time', '>', $scheduleChangeRequest->requested_start_time)
             ->whereHas('classRoom', function (Builder $query) use ($classRoom, $studentIds) {
                 $query->whereKeyNot($classRoom->id)
-                    ->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED])
+                    ->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED])
                     ->whereHas('enrollments', function (Builder $enrollmentQuery) use ($studentIds) {
                         $enrollmentQuery->whereIn('user_id', $studentIds)
-                            ->whereIn('status', Enrollment::courseAccessStatuses());
+                            ->whereIn('status', GhiDanh::courseAccessStatuses());
                     });
             })
             ->with(['classRoom.enrollments' => function ($query) use ($studentIds) {
                 $query->whereIn('user_id', $studentIds)->with('user');
             }, 'classRoom.course.subject'])
             ->get()
-            ->first(function (ClassSchedule $classSchedule) use ($requestedRange) {
+            ->first(function (LichHoc $classSchedule) use ($requestedRange) {
                 if ($requestedRange === null) {
                     return true;
                 }
@@ -345,7 +345,7 @@ class AdminScheduleChangeRequestService
         }
     }
 
-    protected function ensureRequestedRoomAvailabilityForClassSchedule(ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function ensureRequestedRoomAvailabilityForClassSchedule(YeuCauDoiLich $scheduleChangeRequest): void
     {
         $requestedRoomId = (int) ($scheduleChangeRequest->requested_room_id ?? 0);
         $currentRoomId = (int) ($scheduleChangeRequest->classSchedule?->room_id ?: $scheduleChangeRequest->classRoom?->room_id);
@@ -355,26 +355,26 @@ class AdminScheduleChangeRequestService
             return;
         }
 
-        $requestedRoom = Room::query()->find($requestedRoomId);
+        $requestedRoom = PhongHoc::query()->find($requestedRoomId);
 
-        if (! $requestedRoom || $requestedRoom->status !== Room::STATUS_ACTIVE) {
+        if (! $requestedRoom || $requestedRoom->status !== PhongHoc::STATUS_ACTIVE) {
             throw ValidationException::withMessages([
                 'action' => 'Phong hoc de xuat khong hop le hoac dang tam ngung.',
             ]);
         }
 
-        $conflict = ClassSchedule::query()
+        $conflict = LichHoc::query()
             ->whereKeyNot($scheduleChangeRequest->class_schedule_id)
             ->where('room_id', $requestedRoomId)
             ->where('day_of_week', $scheduleChangeRequest->requested_day_of_week)
             ->where('start_time', '<', $scheduleChangeRequest->requested_end_time)
             ->where('end_time', '>', $scheduleChangeRequest->requested_start_time)
             ->whereHas('classRoom', function (Builder $query) {
-                $query->whereNotIn('status', [ClassRoom::STATUS_CLOSED, ClassRoom::STATUS_COMPLETED]);
+                $query->whereNotIn('status', [LopHoc::STATUS_CLOSED, LopHoc::STATUS_COMPLETED]);
             })
             ->with(['classRoom.course.subject'])
             ->get()
-            ->first(function (ClassSchedule $classSchedule) use ($requestedRange) {
+            ->first(function (LichHoc $classSchedule) use ($requestedRange) {
                 if ($requestedRange === null) {
                     return true;
                 }
@@ -389,7 +389,7 @@ class AdminScheduleChangeRequestService
         }
     }
 
-    protected function requestedDateRange(ScheduleChangeRequest $scheduleChangeRequest): ?array
+    protected function requestedDateRange(YeuCauDoiLich $scheduleChangeRequest): ?array
     {
         if (! $scheduleChangeRequest->requested_date) {
             return null;
@@ -402,7 +402,7 @@ class AdminScheduleChangeRequestService
         return [$startDate, $endDate];
     }
 
-    protected function syncLinkedCourseScheduleForClassRoom(?ClassRoom $classRoom, ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function syncLinkedCourseScheduleForClassRoom(?LopHoc $classRoom, YeuCauDoiLich $scheduleChangeRequest): void
     {
         if (! $classRoom || ! $classRoom->course_id) {
             return;
@@ -442,14 +442,14 @@ class AdminScheduleChangeRequestService
 
         $course->enrollments()
             ->whereIn('status', [
-                Enrollment::LEGACY_STATUS_CONFIRMED,
-                Enrollment::STATUS_SCHEDULED,
-                Enrollment::STATUS_ACTIVE,
+                GhiDanh::LEGACY_STATUS_CONFIRMED,
+                GhiDanh::STATUS_SCHEDULED,
+                GhiDanh::STATUS_ACTIVE,
             ])
             ->update(['schedule' => $course->schedule]);
     }
 
-    protected function buildLinkedCourseSchedule(Course $course): string
+    protected function buildLinkedCourseSchedule(KhoaHoc $course): string
     {
         $segments = [];
 
@@ -469,9 +469,9 @@ class AdminScheduleChangeRequestService
         return $segments !== [] ? implode(' | ', $segments) : 'Chưa có lịch cụ thể';
     }
 
-    protected function buildScheduleLabel(ScheduleChangeRequest $scheduleChangeRequest): string
+    protected function buildScheduleLabel(YeuCauDoiLich $scheduleChangeRequest): string
     {
-        $preview = new Course([
+        $preview = new KhoaHoc([
             'day_of_week' => $scheduleChangeRequest->requested_day_of_week,
             'start_date' => optional($scheduleChangeRequest->requested_date)->format('Y-m-d'),
             'end_date' => optional($scheduleChangeRequest->requested_end_date)->format('Y-m-d'),
@@ -482,13 +482,13 @@ class AdminScheduleChangeRequestService
         return $preview->formattedSchedule();
     }
 
-    protected function notifyApproval(ScheduleChangeRequest $scheduleChangeRequest): void
+    protected function notifyApproval(YeuCauDoiLich $scheduleChangeRequest): void
     {
         $title = 'Yêu cầu dời lịch đã được duyệt';
         $teacherMessage = $this->buildTeacherNotificationMessage($scheduleChangeRequest);
         $studentMessage = $this->buildStudentNotificationMessage($scheduleChangeRequest);
 
-        Notification::create([
+        ThongBao::create([
             'user_id' => $scheduleChangeRequest->teacher_id,
             'title' => $title,
             'message' => $teacherMessage,
@@ -497,7 +497,7 @@ class AdminScheduleChangeRequestService
         ]);
 
         foreach ($this->affectedStudentIds($scheduleChangeRequest) as $studentId) {
-            Notification::create([
+            ThongBao::create([
                 'user_id' => $studentId,
                 'title' => 'Lịch học đã thay đổi',
                 'message' => $studentMessage,
@@ -507,9 +507,9 @@ class AdminScheduleChangeRequestService
         }
     }
 
-    protected function notifyTeacher(ScheduleChangeRequest $scheduleChangeRequest, bool $approved): void
+    protected function notifyTeacher(YeuCauDoiLich $scheduleChangeRequest, bool $approved): void
     {
-        Notification::create([
+        ThongBao::create([
             'user_id' => $scheduleChangeRequest->teacher_id,
             'title' => $approved ? 'Yêu cầu dời lịch đã được duyệt' : 'Yêu cầu dời lịch bị từ chối',
             'message' => $approved
@@ -520,7 +520,7 @@ class AdminScheduleChangeRequestService
         ]);
     }
 
-    protected function affectedStudentIds(ScheduleChangeRequest $scheduleChangeRequest): Collection
+    protected function affectedStudentIds(YeuCauDoiLich $scheduleChangeRequest): Collection
     {
         $query = $scheduleChangeRequest->classRoom
             ? $scheduleChangeRequest->classRoom->enrollments()
@@ -531,24 +531,24 @@ class AdminScheduleChangeRequestService
         }
 
         return $query
-            ->whereIn('status', Enrollment::courseAccessStatuses())
+            ->whereIn('status', GhiDanh::courseAccessStatuses())
             ->pluck('user_id')
             ->filter()
             ->unique()
             ->values();
     }
 
-    protected function buildTeacherNotificationMessage(ScheduleChangeRequest $scheduleChangeRequest): string
+    protected function buildTeacherNotificationMessage(YeuCauDoiLich $scheduleChangeRequest): string
     {
         return $this->buildScheduleChangeNotificationMessage($scheduleChangeRequest, true);
     }
 
-    protected function buildStudentNotificationMessage(ScheduleChangeRequest $scheduleChangeRequest): string
+    protected function buildStudentNotificationMessage(YeuCauDoiLich $scheduleChangeRequest): string
     {
         return $this->buildScheduleChangeNotificationMessage($scheduleChangeRequest, false);
     }
 
-    protected function buildScheduleChangeNotificationMessage(ScheduleChangeRequest $scheduleChangeRequest, bool $isTeacher): string
+    protected function buildScheduleChangeNotificationMessage(YeuCauDoiLich $scheduleChangeRequest, bool $isTeacher): string
     {
         $segments = [];
 

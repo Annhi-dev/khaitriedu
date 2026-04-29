@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\OtpHelper;
 use App\Http\Controllers\Controller;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\VaiTro;
+use App\Models\NguoiDung;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +40,7 @@ class AuthController extends Controller
             return back()->with('error', "Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau {$seconds} giây.");
         }
 
-        $user = User::where('email', $request->login)
+        $user = NguoiDung::where('email', $request->login)
             ->orWhere('username', $request->login)
             ->first();
 
@@ -50,7 +50,7 @@ class AuthController extends Controller
             return back()->with('error', 'Tên đăng nhập/email hoặc mật khẩu không đúng.');
         }
 
-        if ($user->status !== User::STATUS_ACTIVE) {
+        if ($user->status !== NguoiDung::STATUS_ACTIVE) {
             return back()->with('error', 'Tài khoản của bạn hiện không thể đăng nhập. Vui lòng liên hệ quản trị viên.');
         }
 
@@ -93,20 +93,20 @@ class AuthController extends Controller
             return redirect()->route('register')->with('error', 'Dữ liệu đăng ký không tồn tại hoặc đã hết hạn. Vui lòng đăng ký lại.');
         }
 
-        if (User::where('username', $pending['username'])->orWhere('email', $pending['email'])->exists()) {
+        if (NguoiDung::where('username', $pending['username'])->orWhere('email', $pending['email'])->exists()) {
             session()->forget('pending_user');
 
             return redirect()->route('login')->with('status', 'Tài khoản đã tồn tại. Vui lòng đăng nhập.');
         }
 
-        User::create([
+        NguoiDung::create([
             'username' => $pending['username'],
             'name' => $pending['name'],
             'email' => $pending['email'],
             'phone' => $pending['phone'],
             'password' => $pending['password_hash'],
             'role_id' => $pending['role_id'],
-            'status' => User::STATUS_ACTIVE,
+            'status' => NguoiDung::STATUS_ACTIVE,
             'email_verified_at' => Carbon::now(),
         ]);
 
@@ -160,19 +160,19 @@ class AuthController extends Controller
 
         $data = $request->validate($rules);
 
-        if (User::where('username', $data['username'])->exists() || User::where('email', $data['email'])->exists()) {
+        if (NguoiDung::where('username', $data['username'])->exists() || NguoiDung::where('email', $data['email'])->exists()) {
             return back()->withErrors(['email' => 'Tên đăng nhập hoặc email đã tồn tại.'])->withInput();
         }
 
         if ($isAdminCreating) {
-            User::create([
+            NguoiDung::create([
                 'username' => $data['username'],
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => Hash::make($data['password']),
-                'role_id' => Role::idByName($data['role']),
-                'status' => User::STATUS_ACTIVE,
+                'role_id' => VaiTro::idByName($data['role']),
+                'status' => NguoiDung::STATUS_ACTIVE,
                 'email_verified_at' => Carbon::now(),
             ]);
 
@@ -185,7 +185,7 @@ class AuthController extends Controller
             'email' => $data['email'],
             'phone' => $data['phone'],
             'password_hash' => Hash::make($data['password']),
-            'role_id' => Role::idByName(User::ROLE_STUDENT),
+            'role_id' => VaiTro::idByName(NguoiDung::ROLE_STUDENT),
         ]]);
 
         OtpHelper::sendOtp($data['email'], 'register');
@@ -204,7 +204,7 @@ class AuthController extends Controller
             'email' => 'required|email',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = NguoiDung::where('email', $request->email)->first();
 
         if (! $user || ! $user->email_verified_at) {
             return back()->with('status', 'Nếu email tồn tại và đã được xác minh, chúng tôi đã gửi mã OTP.');
@@ -255,7 +255,7 @@ class AuthController extends Controller
             'password' => 'required|min:6|confirmed',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = NguoiDung::where('email', $request->email)->first();
 
         if (! $user) {
             return redirect()->route('forgot.reset', ['email' => $request->email])->with('status', 'Email không tồn tại.');
@@ -267,7 +267,7 @@ class AuthController extends Controller
         return redirect()->route('login')->with('status', 'Mật khẩu đã đặt lại thành công. Đăng nhập lại.');
     }
 
-    private function redirectAfterLogin(User $user)
+    private function redirectAfterLogin(NguoiDung $user)
     {
         if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClassRoom;
-use App\Models\Quiz;
-use App\Models\User;
+use App\Models\LopHoc;
+use App\Models\BaiKiemTra;
+use App\Models\NguoiDung;
 use App\Services\TeacherTestService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -14,7 +14,7 @@ class TeacherTestController extends Controller
 {
     public function index(Request $request, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -39,7 +39,7 @@ class TeacherTestController extends Controller
 
     public function create(Request $request, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -49,7 +49,7 @@ class TeacherTestController extends Controller
         $selectedClassRoomId = (int) $request->query('lop_hoc_id', 0);
 
         if ($selectedClassRoomId > 0) {
-            $selectedClassRoom = ClassRoom::query()
+            $selectedClassRoom = LopHoc::query()
                 ->where('teacher_id', $current->id)
                 ->with(['course.subject', 'room'])
                 ->find($selectedClassRoomId);
@@ -66,15 +66,15 @@ class TeacherTestController extends Controller
             'questionRows' => $service->getQuizFormRows(),
             'selectedClassRoom' => $selectedClassRoom,
             'statusOptions' => [
-                Quiz::STATUS_DRAFT => 'Nháp',
-                Quiz::STATUS_PUBLISHED => 'Công khai',
+                BaiKiemTra::STATUS_DRAFT => 'Nháp',
+                BaiKiemTra::STATUS_PUBLISHED => 'Công khai',
             ],
         ]);
     }
 
     public function store(Request $request, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -91,9 +91,9 @@ class TeacherTestController extends Controller
             ->with('status', 'Đã tạo bài kiểm tra mới.');
     }
 
-    public function show(Quiz $test, TeacherTestService $service)
+    public function show(BaiKiemTra $test, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -109,9 +109,9 @@ class TeacherTestController extends Controller
         ]);
     }
 
-    public function edit(Quiz $test, TeacherTestService $service)
+    public function edit(BaiKiemTra $test, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -126,15 +126,15 @@ class TeacherTestController extends Controller
             'questionRows' => $service->getQuizFormRows($quiz),
             'selectedClassRoom' => $quiz->classRoom,
             'statusOptions' => [
-                Quiz::STATUS_DRAFT => 'Nháp',
-                Quiz::STATUS_PUBLISHED => 'Công khai',
+                BaiKiemTra::STATUS_DRAFT => 'Nháp',
+                BaiKiemTra::STATUS_PUBLISHED => 'Công khai',
             ],
         ]);
     }
 
-    public function update(Request $request, Quiz $test, TeacherTestService $service)
+    public function update(Request $request, BaiKiemTra $test, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
@@ -153,9 +153,9 @@ class TeacherTestController extends Controller
             ->with('status', 'Đã cập nhật bài kiểm tra.');
     }
 
-    public function destroy(Quiz $test, TeacherTestService $service)
+    public function destroy(BaiKiemTra $test, TeacherTestService $service)
     {
-        [$current, $redirect] = $this->requireRole(User::ROLE_TEACHER);
+        [$current, $redirect] = $this->requireRole(NguoiDung::ROLE_TEACHER);
 
         if ($redirect) {
             return $redirect;
