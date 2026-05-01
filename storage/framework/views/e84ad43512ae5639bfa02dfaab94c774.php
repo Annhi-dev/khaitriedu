@@ -148,7 +148,7 @@
                     <div class="sm:col-span-2">
                         <label class="mb-2 block text-sm font-medium text-slate-700">Ngày học</label>
                         <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                            <?php $__currentLoopData = \App\Models\Course::dayOptions(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dayValue => $dayLabel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php $__currentLoopData = \App\Models\KhoaHoc::dayOptions(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dayValue => $dayLabel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <label class="flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50">
                                     <input type="checkbox" name="meeting_days[]" value="<?php echo e($dayValue); ?>" class="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500" <?php if(in_array($dayValue, $selectedMeetingDays, true)): echo 'checked'; endif; ?>>
                                     <span><?php echo e($dayLabel); ?></span>
@@ -245,7 +245,7 @@ unset($__errorArgs, $__bag); ?>
         <div class="mt-5 grid gap-4">
             <?php $__empty_1 = true; $__currentLoopData = $course->modules; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $module): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <?php
-                    $statusClasses = $module->status === \App\Models\Module::STATUS_PUBLISHED
+                    $statusClasses = $module->status === \App\Models\HocPhan::STATUS_PUBLISHED
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                         : 'border-amber-200 bg-amber-50 text-amber-700';
                 ?>
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewUrl = form?.dataset.schedulePreviewUrl || '';
     const templateSelect = document.getElementById('schedule-template');
     const preview = document.getElementById('schedule-preview');
-    const dayLabels = <?php echo json_encode(\App\Models\Course::dayOptions(), 15, 512) ?>;
+    const dayLabels = <?php echo json_encode(\App\Models\KhoaHoc::dayOptions(), 15, 512) ?>;
     const sessionMinutes = <?php echo json_encode(\App\Helpers\ScheduleHelper::sessionMinutes(), 15, 512) ?>;
     const dayCheckboxes = Array.from(document.querySelectorAll('input[name="meeting_days[]"]'));
     const teacherSelect = document.querySelector('select[name="teacher_id"]');

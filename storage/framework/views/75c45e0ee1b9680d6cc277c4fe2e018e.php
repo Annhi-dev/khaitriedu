@@ -9,11 +9,11 @@
     <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo e(asset('css/app.css')); ?>">
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800">
 <?php
-    $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag();
+    $adminUser = $adminAuthUser ?? (session('user_id') ? \App\Models\NguoiDung::find(session('user_id')) : null);
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Quản trị hệ thống';
     $sidebarBadges = $adminSidebarBadges ?? [];
     $adminNotificationItems = $adminUser ? $adminUser->notifications()->latest('id')->take(5)->get() : collect();
